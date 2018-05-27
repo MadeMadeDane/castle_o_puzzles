@@ -29,7 +29,7 @@ public class InputManager : MonoBehaviour {
 
         mouse_multiplier = 100;
         controller_multiplier = 50;
-        mouse_sensitivity = 2 * Vector2.one;
+        mouse_sensitivity = 2f * Vector2.one;
         controller_sensitivity = new Vector2(6, 3);
 
         _input_vertical_axis = 0f;
