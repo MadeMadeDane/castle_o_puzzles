@@ -38,10 +38,11 @@ public class PlayerController : MonoBehaviour {
     private Vector3 current_velocity;
     private Vector3 accel;
     private ControllerColliderHit lastHit;
+    private ControllerColliderHit currentHit;
     private float GravityMult;
 
     // Use this for initialization
-    void Start () {
+    private void Start () {
         // Movement values
         maxSpeed = 4;
         RunSpeed = 9;
@@ -76,15 +77,15 @@ public class PlayerController : MonoBehaviour {
     }
 
     // Fixed Update is called once per physics tick
-    void FixedUpdate () {
+    private void FixedUpdate () {
         // Get starting values
         GravityMult = 1;
         //Debug.Log("Current velocity: " + Vector3.ProjectOnPlane(current_velocity, transform.up).magnitude.ToString());
         Debug.Log("Velocity error: " + (current_velocity - cc.velocity).ToString());
         accel = Vector3.zero;
 
+        ProcessHits();
         HandleMovement();
-
         HandleJumping();
 
         // Update character state based on desired movement
@@ -96,6 +97,45 @@ public class PlayerController : MonoBehaviour {
         LandingTimeDelta = Mathf.Clamp(LandingTimeDelta + Time.deltaTime, 0, 2 * jumpGracePeriod);
         SlideTimeDelta = Mathf.Clamp(SlideTimeDelta + Time.deltaTime, 0, 2 * SlideGracePeriod);
         BufferJumpTimeDelta = Mathf.Clamp(BufferJumpTimeDelta + Time.deltaTime, 0, 2 * BufferJumpGracePeriod);
+    }
+
+    private void ProcessHits()
+    {
+        if (lastHit == null)
+        {
+            return;
+        }
+        // isGrounded doesn't work properly on slopes, replace with this.
+        if (lastHit.normal.y > 0.6)
+        {
+            Debug.Log("On the ground");
+            //Debug.DrawRay(transform.position, hit.normal, Color.red, 100);
+            canJump = true;
+            LandingTimeDelta = 0;
+
+            // Handle buffered jumps
+            if (BufferJumpTimeDelta < BufferJumpGracePeriod)
+            {
+                // Defer the jump so that it happens in update
+                willJump = true;
+            }
+        }
+        // Use this for detecting slopes to slide down
+        else
+        {
+            Debug.Log("On a slide");
+            if (Vector3.Dot(current_velocity, lastHit.normal) < 0)
+            {
+                // Conserve velocity along plane, zero it out on the normal
+                current_velocity = Vector3.ProjectOnPlane(current_velocity, lastHit.normal);
+            }
+        }
+        if (lastHit.gameObject.tag == "Respawn")
+        {
+            StartCoroutine(DeferedTeleport(StartPos));
+        }
+        currentHit = lastHit;
+        lastHit = null;
     }
 
     // Apply movement forces from input (FAST edition)
@@ -113,7 +153,7 @@ public class PlayerController : MonoBehaviour {
         }
         else
         {
-            planevelocity = Vector3.ProjectOnPlane(current_velocity, lastHit.normal);
+            planevelocity = Vector3.ProjectOnPlane(current_velocity, currentHit.normal);
         }
         // Normal ground behavior
         if (OnGround() && !willJump && (SlideTimeDelta >= SlideGracePeriod || planevelocity.magnitude < SlideSpeed))
@@ -121,10 +161,10 @@ public class PlayerController : MonoBehaviour {
             // If we weren't fast enough we aren't going to slide
             SlideTimeDelta = SlideGracePeriod;
             // Use character controller grounded check to be certain we are actually on the ground
-            if (lastHit != null && cc.isGrounded)
+            if (cc.isGrounded)
             {
                 Debug.Log("We are on the ground");
-                movVec = Vector3.ProjectOnPlane(movVec, lastHit.normal);
+                movVec = Vector3.ProjectOnPlane(movVec, currentHit.normal);
             }
             AccelerateTo(movVec, RunSpeed, GroundAcceleration);
             accel += -current_velocity * SpeedDamp;
@@ -211,37 +251,7 @@ public class PlayerController : MonoBehaviour {
     // Handle collisions on player move
     private void OnControllerColliderHit(ControllerColliderHit hit)
     {
-        // Conserve velocity along plane, zero it out on the normal
         lastHit = hit;
-        //Debug.Log("Hit normal: " + hit.normal);
-        // isGrounded doesn't work properly on slopes, replace with this.
-        if (hit.normal.y > 0.6)
-        {
-            Debug.Log("On the ground");
-            Debug.DrawRay(transform.position, hit.normal, Color.red, 100);
-            canJump = true;
-            LandingTimeDelta = 0;
-
-            // Handle buffered jumps
-            if (BufferJumpTimeDelta < BufferJumpGracePeriod)
-            {
-                // Defer the jump so that it happens in update
-                willJump = true;
-            }
-        }
-        // Use this for detecting slopes to slide down
-        else
-        {
-            Debug.Log("On a slide");
-            if (Vector3.Dot(current_velocity, hit.normal) < 0)
-            {
-                current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
-            }
-        }
-        if (hit.gameObject.tag == "Respawn")
-        {
-            StartCoroutine(DeferedTeleport(StartPos));
-        }
     }
 
     // Teleport coroutine (needed due to bug in character controller teleport)
