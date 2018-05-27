@@ -1,67 +1,84 @@
 fileFormatVersion: 2
-guid: d4257bd6202b91d44af1ab66865d9186
+guid: b6ce783f040a60340b8b4a8293220a9c
 ModelImporter:
   serializedVersion: 22
   fileIDToRecycleName:
     100000: Armature
     100002: Cylinder
     100004: ElbowL
-    100006: ElbowR
-    100008: Head
-    100010: HipL
-    100012: HipR
-    100014: IKArmL
-    100016: IKArmR
-    100018: IKLegL
-    100020: IKLegR
-    100022: KneeL
-    100024: KneeR
-    100026: LowArmL
-    100028: LowArmR
-    100030: LowLegL
-    100032: LowLegR
-    100034: LowSpine
-    100036: Neck
-    100038: //RootNode
-    100040: UpArmL
-    100042: UpArmR
-    100044: UpLegL
-    100046: UpLegR
-    100048: UpSpine
+    100006: ElbowL_end
+    100008: ElbowR
+    100010: ElbowR_end
+    100012: Head
+    100014: Head_end
+    100016: HipL
+    100018: HipR
+    100020: IKArmL
+    100022: IKArmR
+    100024: IKLegL
+    100026: IKLegR
+    100028: KneeL
+    100030: KneeL_end
+    100032: KneeR
+    100034: KneeR_end
+    100036: LowArmL
+    100038: LowArmL_end
+    100040: LowArmR
+    100042: LowArmR_end
+    100044: LowLegL
+    100046: LowLegL_end
+    100048: LowLegR
+    100050: LowLegR_end
+    100052: LowSpine
+    100054: Neck
+    100056: //RootNode
+    100058: UpArmL
+    100060: UpArmR
+    100062: UpLegL
+    100064: UpLegR
+    100066: UpSpine
     400000: Armature
     400002: Cylinder
     400004: ElbowL
-    400006: ElbowR
-    400008: Head
-    400010: HipL
-    400012: HipR
-    400014: IKArmL
-    400016: IKArmR
-    400018: IKLegL
-    400020: IKLegR
-    400022: KneeL
-    400024: KneeR
-    400026: LowArmL
-    400028: LowArmR
-    400030: LowLegL
-    400032: LowLegR
-    400034: LowSpine
-    400036: Neck
-    400038: //RootNode
-    400040: UpArmL
-    400042: UpArmR
-    400044: UpLegL
-    400046: UpLegR
-    400048: UpSpine
-    2100000: unnamed
+    400006: ElbowL_end
+    400008: ElbowR
+    400010: ElbowR_end
+    400012: Head
+    400014: Head_end
+    400016: HipL
+    400018: HipR
+    400020: IKArmL
+    400022: IKArmR
+    400024: IKLegL
+    400026: IKLegR
+    400028: KneeL
+    400030: KneeL_end
+    400032: KneeR
+    400034: KneeR_end
+    400036: LowArmL
+    400038: LowArmL_end
+    400040: LowArmR
+    400042: LowArmR_end
+    400044: LowLegL
+    400046: LowLegL_end
+    400048: LowLegR
+    400050: LowLegR_end
+    400052: LowSpine
+    400054: Neck
+    400056: //RootNode
+    400058: UpArmL
+    400060: UpArmR
+    400062: UpLegL
+    400064: UpLegR
+    400066: UpSpine
+    2100000: No Name
     4300000: Cylinder
-    7400000: Default Take
-    7400002: Idle
-    7400004: Jump
-    7400006: PoseLib
-    7400008: PoseLib_001
-    7400010: Walk
-    7400012: Wave
+    7400000: Armature|Idle
+    7400002: Armature|Jump
+    7400004: Armature|PoseLib
+    7400006: Armature|PoseLib.001
+    7400008: Armature|Walk
+    7400010: Armature|Wave
     9500000: //RootNode
     13700000: Cylinder
   externalObjects: {}
