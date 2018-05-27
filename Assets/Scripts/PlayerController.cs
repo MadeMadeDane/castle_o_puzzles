@@ -73,6 +73,7 @@ public class PlayerController : MonoBehaviour {
 
         // Initial state
         current_velocity = Vector3.zero;
+        currentHit = new ControllerColliderHit();
         StartPos = transform.position;
     }
 
