@@ -80,8 +80,7 @@ public class PlayerController : MonoBehaviour {
         _input_scroll_axis = 0f;
 
         current_velocity = Vector3.zero;
-        StartPos = new Vector3(0.5f, 1.5f, 0.5f);
-        transform.position = StartPos;
+        StartPos = transform.position;
     }
 
     // Update is called once per frame
