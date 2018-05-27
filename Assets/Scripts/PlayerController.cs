@@ -4,7 +4,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour {
+    [Header("Linked Components")]
+    public InputManager input_manager;
+    public CharacterController cc;
     public Camera player_camera;
+    [Header("Movement constants")]
     public float maxSpeed;
     public float RunSpeed;
     public float AirSpeed;
@@ -13,15 +17,14 @@ public class PlayerController : MonoBehaviour {
     public float SpeedDamp;
     public float AirSpeedDamp;
     public float SlideSpeed;
-    private float SlideGracePeriod;
-    private float SlideTimeDelta;
-    public CharacterController cc;
-
     public float DownGravityAdd;
     public float ShortHopGravityAdd;
     public float JumpVelocity;
     public Vector3 StartPos;
 
+    // Jumping state variables
+    private float SlideGracePeriod;
+    private float SlideTimeDelta;
     private bool isJumping;
     private bool isFalling;
     private bool canJump;
@@ -31,12 +34,7 @@ public class PlayerController : MonoBehaviour {
     private float BufferJumpTimeDelta;
     private float BufferJumpGracePeriod;
 
-    private float _input_vertical_axis;
-    private float _input_horizontal_axis;
-    private bool _input_jump_button;
-    private bool _input_jump_buttondown;
-    private float _input_scroll_axis;
-
+    // Physics state variables
     private Vector3 current_velocity;
     private Vector3 accel;
     private ControllerColliderHit lastHit;
@@ -54,7 +52,7 @@ public class PlayerController : MonoBehaviour {
         AirSpeedDamp = 0.01f;
         SlideGracePeriod = 0.2f;
         SlideTimeDelta = SlideGracePeriod;
-        SlideSpeed = 4f;
+        SlideSpeed = 12f;
 
         // Gravity modifiers
         DownGravityAdd = 0;
@@ -73,29 +71,8 @@ public class PlayerController : MonoBehaviour {
         BufferJumpTimeDelta = BufferJumpGracePeriod;
 
         // Initial state
-        _input_vertical_axis = 0f;
-        _input_horizontal_axis = 0f;
-        _input_jump_button = false;
-        _input_jump_buttondown = false;
-        _input_scroll_axis = 0f;
-
         current_velocity = Vector3.zero;
         StartPos = transform.position;
-    }
-
-    // Update is called once per frame
-    private void Update()
-    {
-        GetInputs();
-    }
-
-    private void GetInputs()
-    {
-        _input_vertical_axis = Input.GetAxisRaw("Vertical");
-        _input_horizontal_axis = Input.GetAxisRaw("Horizontal");
-        _input_jump_button = Input.GetButton("Jump");
-        _input_jump_buttondown = Input.GetButtonDown("Jump");
-        _input_scroll_axis = Input.GetAxis("Mouse ScrollWheel");
     }
 
     // Fixed Update is called once per physics tick
@@ -125,7 +102,8 @@ public class PlayerController : MonoBehaviour {
     private void HandleMovement()
     {
         Vector3 planevelocity;
-        Vector3 movVec = _input_vertical_axis * transform.forward + _input_horizontal_axis * transform.right;
+        Vector3 movVec = (input_manager.GetMoveVertical() * transform.forward +
+                          input_manager.GetMoveHorizontal() * transform.right);
         // Do this first so we cancel out incremented time from update before checking it
         if (!OnGround())
         {
@@ -195,7 +173,7 @@ public class PlayerController : MonoBehaviour {
         }
 
         // Handle jumping and falling
-        if (_input_jump_buttondown || Mathf.Abs(_input_scroll_axis) > 0 || willJump)
+        if (input_manager.GetJump() || willJump)
         {
             BufferJumpTimeDelta = 0;
             if (OnGround())
@@ -204,7 +182,7 @@ public class PlayerController : MonoBehaviour {
             }
         }
         // Fall fast when we let go of jump (optional)
-        if (isFalling || isJumping && !_input_jump_button)
+        if (isFalling || isJumping && !input_manager.GetJumpHold())
         {
             GravityMult += ShortHopGravityAdd;
             isFalling = true;
@@ -239,7 +217,7 @@ public class PlayerController : MonoBehaviour {
         // isGrounded doesn't work properly on slopes, replace with this.
         if (hit.normal.y > 0.6)
         {
-            //Debug.Log("On the ground");
+            Debug.Log("On the ground");
             Debug.DrawRay(transform.position, hit.normal, Color.red, 100);
             canJump = true;
             LandingTimeDelta = 0;

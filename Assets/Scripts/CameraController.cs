@@ -5,33 +5,21 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour {
-
-    [Header("Parenting")]
+    [Header("Linked Components")]
+    public InputManager input_manager;
     public Camera controlled_camera;
     public GameObject home;
     [Header("Camera Settings")]
     public Vector3 target_follow_distance;
     public Vector3 target_follow_angle;
-    public Vector2 mouse_sensitivity;
-    public float mouse_multiplier;
-    public Vector2 controller_sensitivity;
-    public float controller_multiplier;
 
+    // Camera state
     private PlayerController current_player;
     private GameObject pivot;
-
-    private Queue<Vector2> mouseQueue;
-    private Vector2 mouseQueueAvg = Vector2.zero;
-    private int mouseQueueCount = 4;
     private Vector2 mouseAccumlator = Vector2.zero;
 
     // Use this for initialization
     void Start () { 
-        mouseQueue = new Queue<Vector2>(Enumerable.Repeat<Vector2>(Vector2.zero, mouseQueueCount));
-        mouse_multiplier = 100;
-        controller_multiplier = 50;
-        mouse_sensitivity = 2*Vector2.one;
-        controller_sensitivity = new Vector2(6, 3);
         //target_follow_distance = new Vector3(0f, 0.4f, -1f);
         //target_follow_angle = new Vector3(14f, 0f, 0f);
         pivot = new GameObject("pivot");
@@ -47,6 +35,8 @@ public class CameraController : MonoBehaviour {
         transform.parent = pivot.transform;
         transform.localPosition = target_follow_distance;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
+
+        // TODO: Move this mouse hiding logic somewhere else
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
@@ -59,21 +49,8 @@ public class CameraController : MonoBehaviour {
     // Rotate the camera
     private void UpdateCameraAngles()
     {
-        // Handle both mouse and gamepad at the same time
-        Vector2 rotVecM = new Vector2(
-            Input.GetAxis("Mouse X"),
-            Input.GetAxis("Mouse Y")) * mouse_sensitivity * mouse_multiplier * Time.deltaTime;
-        Vector2 rotVecC = new Vector2(
-            Input.GetAxisRaw("Joy X"),
-            Input.GetAxisRaw("Joy Y")) * controller_sensitivity * controller_multiplier * Time.deltaTime;
-        Vector2 rotVec = rotVecM + rotVecC;
-
-        // Use rolling average for mouse smoothing (unity sucks at mouse input)
-        mouseQueueAvg = mouseQueueAvg + ((rotVec - mouseQueue.Dequeue()) / mouseQueueCount);
-        mouseQueue.Enqueue(rotVec);
-
         // Accumulate the angle changes and ensure x revolves in (-360, 360) and y is clamped in (-90,90)
-        mouseAccumlator += mouseQueueAvg;
+        mouseAccumlator += input_manager.GetMouseMotion();
         mouseAccumlator.x = mouseAccumlator.x % 360;
         mouseAccumlator.y = Mathf.Clamp(mouseAccumlator.y, -90, 90);
         // Set camera pitch
