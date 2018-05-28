@@ -78,7 +78,7 @@ public class PlayerController : MonoBehaviour {
         LandingTimeDelta = 0;
         BufferJumpGracePeriod = 0.1f;
         BufferJumpTimeDelta = BufferJumpGracePeriod;
-        WallJumpGracePeriod = 0.1f;
+        WallJumpGracePeriod = 0.2f;
         WallJumpTimeDelta = WallJumpGracePeriod;
 
         // Initial state
@@ -129,8 +129,7 @@ public class PlayerController : MonoBehaviour {
         // isGrounded doesn't work properly on slopes, replace with this.
         if (lastHit.normal.y > 0.6f)
         {
-            //Debug.Log("On the ground");
-            //Debug.DrawRay(transform.position, hit.normal, Color.red, 100);
+            // On the ground
             canJump = true;
             LandingTimeDelta = 0;
 
@@ -147,10 +146,9 @@ public class PlayerController : MonoBehaviour {
         }
         else if (lastHit.normal.y > -0.17f)
         {
-            //Debug.Log("On a wall");
+            // On a wall
             if (!OnGround() && Vector3.Dot(current_velocity, lastHit.normal) < -WallJumpThreshold)
             {
-                Debug.Log(Vector3.Dot(current_velocity, lastHit.normal));
                 WallJumpTimeDelta = 0;
                 WallJumpReflect = Vector3.Reflect(current_velocity, lastHit.normal);
                 if (BufferJumpTimeDelta < BufferJumpGracePeriod)
@@ -210,8 +208,6 @@ public class PlayerController : MonoBehaviour {
             AccelerateTo(movVec, AirSpeed, AirAcceleration);
             accel += -Vector3.ProjectOnPlane(current_velocity, transform.up) * AirSpeedDamp;
         }
-        Debug.DrawRay(transform.position, Vector3.ProjectOnPlane(current_velocity, transform.up).normalized, Color.green, 0);
-        Debug.DrawRay(transform.position, movVec.normalized, Color.blue, 0);
     }
 
     // Try to accelerate to the desired speed in the direction specified

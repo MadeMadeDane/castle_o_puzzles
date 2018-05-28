@@ -20,7 +20,7 @@ public class InputManager : MonoBehaviour {
     // Mouse state
     private Queue<Vector2> mouseQueue;
     private Vector2 mouseQueueAvg = Vector2.zero;
-    private int mouseQueueCount = 4;
+    private int mouseQueueCount = 1;
 
     // Use this for initialization
     void Start () {

@@ -19,9 +19,11 @@ public class CameraController : MonoBehaviour {
     private Vector2 mouseAccumlator = Vector2.zero;
 
     // Use this for initialization
-    void Start () { 
+    void Start () {
         //target_follow_distance = new Vector3(0f, 0.4f, -1f);
         //target_follow_angle = new Vector3(14f, 0f, 0f);
+        //QualitySettings.vSyncCount = 0;
+        //Application.targetFrameRate = 45;
         pivot = new GameObject("pivot");
         PlayerController player_home = home.GetComponent<PlayerController>();
         if (player_home == null)
