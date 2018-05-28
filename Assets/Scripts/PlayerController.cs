@@ -38,6 +38,7 @@ public class PlayerController : MonoBehaviour {
     private float WallJumpTimeDelta;
     private float WallJumpGracePeriod;
     private Vector3 WallJumpReflect;
+    private Vector3 PreviousWallNormal;
 
     // Physics state variables
     private Vector3 current_velocity;
@@ -69,6 +70,7 @@ public class PlayerController : MonoBehaviour {
         WallJumpThreshold = 5;
         WallJumpBoost = 1.0f;
         WallJumpReflect = Vector3.zero;
+        PreviousWallNormal = Vector3.zero;
         isJumping = false;
         isFalling = false;
         canJump = false;
@@ -136,42 +138,53 @@ public class PlayerController : MonoBehaviour {
             // Handle buffered jumps
             if (BufferJumpTimeDelta < BufferJumpGracePeriod)
             {
-                // Defer the jump so that it happens in update
+                // Buffer a jump
                 willJump = true;
             }
+            PreviousWallNormal = Vector3.zero;
         }
         else if (lastHit.normal.y > 0.34f)
         {
             // Slides
+            PreviousWallNormal = Vector3.zero;
         }
         else if (lastHit.normal.y > -0.17f)
         {
             // On a wall
             if (!OnGround() && Vector3.Dot(current_velocity, lastHit.normal) < -WallJumpThreshold)
             {
-                WallJumpTimeDelta = 0;
-                WallJumpReflect = Vector3.Reflect(current_velocity, lastHit.normal);
-                if (BufferJumpTimeDelta < BufferJumpGracePeriod)
+                if (Vector3.Dot(PreviousWallNormal, lastHit.normal) < 0.34f)
                 {
-                    // Defer the jump so that it happens in update
-                    willJump = true;
+                    WallJumpTimeDelta = 0;
+                    WallJumpReflect = Vector3.Reflect(current_velocity, lastHit.normal);
+                    if (BufferJumpTimeDelta < BufferJumpGracePeriod)
+                    {
+                        // Buffer a jump
+                        willJump = true;
+                    }
+                    PreviousWallNormal = lastHit.normal;
                 }
             }
         }
         else
         {
             // Overhang
+            PreviousWallNormal = Vector3.zero;
         }
+        // Keep velocity in the direction of the plane if the plane is not a ceiling
+        // Or if it is a ceiling only cancel out the velocity if we are moving fast enough into its normal
         if (Vector3.Dot(lastHit.normal, Physics.gravity) < 0 || Vector3.Dot(current_velocity, lastHit.normal) < -1f)
         {
             current_velocity = Vector3.ProjectOnPlane(current_velocity, lastHit.normal);
         }
+        // Save the most recent last hit
         currentHit = lastHit;
 
         if (lastHit.gameObject.tag == "Respawn")
         {
             StartCoroutine(DeferedTeleport(StartPos));
         }
+        // Set last hit null so we don't process it again
         lastHit = null;
     }
 
@@ -279,6 +292,7 @@ public class PlayerController : MonoBehaviour {
     // Set the player to a jumping state
     private void DoJump()
     {
+        // Wall jump if we need to
         if (CanWallJump() && WallJumpReflect.magnitude > 0)
         {
             current_velocity = WallJumpReflect * WallJumpBoost;
@@ -288,7 +302,7 @@ public class PlayerController : MonoBehaviour {
         canJump = false;
         willJump = false;
 
-        // Intentionally set the timer over the limit
+        // Intentionally set the timers over the limit
         BufferJumpTimeDelta = BufferJumpGracePeriod;
         WallJumpTimeDelta = WallJumpGracePeriod;
         WallJumpReflect = Vector3.zero;
