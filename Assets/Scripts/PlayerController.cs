@@ -29,7 +29,6 @@ public class PlayerController : MonoBehaviour {
     private float SlideTimeDelta;
     private bool isJumping;
     private bool isFalling;
-    private bool canJump;
     private bool willJump;
     private float LandingTimeDelta;
     private float jumpGracePeriod;
@@ -57,8 +56,6 @@ public class PlayerController : MonoBehaviour {
         AirAcceleration = 500;
         SpeedDamp = 10f;
         AirSpeedDamp = 0.01f;
-        SlideGracePeriod = 0.2f;
-        SlideTimeDelta = SlideGracePeriod;
         SlideSpeed = 12f;
 
         // Gravity modifiers
@@ -73,13 +70,14 @@ public class PlayerController : MonoBehaviour {
         PreviousWallNormal = Vector3.zero;
         isJumping = false;
         isFalling = false;
-        canJump = false;
         willJump = false;
-        // Jump timers for early/late jumps
+        // Timers
         jumpGracePeriod = 0.1f;
-        LandingTimeDelta = 0;
+        LandingTimeDelta = jumpGracePeriod;
         BufferJumpGracePeriod = 0.1f;
         BufferJumpTimeDelta = BufferJumpGracePeriod;
+        SlideGracePeriod = 0.2f;
+        SlideTimeDelta = SlideGracePeriod;
         WallJumpGracePeriod = 0.2f;
         WallJumpTimeDelta = WallJumpGracePeriod;
 
@@ -132,7 +130,6 @@ public class PlayerController : MonoBehaviour {
         if (lastHit.normal.y > 0.6f)
         {
             // On the ground
-            canJump = true;
             LandingTimeDelta = 0;
 
             // Handle buffered jumps
@@ -277,11 +274,10 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
-    // Double check if on ground using a separate canJump test
+    // Double check if on ground using a separate test
     private bool OnGround()
     {
-        canJump = canJump && (LandingTimeDelta < jumpGracePeriod);
-        return canJump;
+        return (LandingTimeDelta < jumpGracePeriod);
     }
 
     private bool CanWallJump()
@@ -299,12 +295,12 @@ public class PlayerController : MonoBehaviour {
         }
         current_velocity.y = JumpVelocity;
         isJumping = true;
-        canJump = false;
         willJump = false;
 
         // Intentionally set the timers over the limit
         BufferJumpTimeDelta = BufferJumpGracePeriod;
         WallJumpTimeDelta = WallJumpGracePeriod;
+        LandingTimeDelta = jumpGracePeriod;
         WallJumpReflect = Vector3.zero;
     }
 
