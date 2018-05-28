@@ -20,6 +20,8 @@ public class PlayerController : MonoBehaviour {
     public float DownGravityAdd;
     public float ShortHopGravityAdd;
     public float JumpVelocity;
+    public float WallJumpThreshold;
+    public float WallJumpBoost;
     public Vector3 StartPos;
 
     // Jumping state variables
@@ -33,6 +35,9 @@ public class PlayerController : MonoBehaviour {
     private float jumpGracePeriod;
     private float BufferJumpTimeDelta;
     private float BufferJumpGracePeriod;
+    private float WallJumpTimeDelta;
+    private float WallJumpGracePeriod;
+    private Vector3 WallJumpReflect;
 
     // Physics state variables
     private Vector3 current_velocity;
@@ -61,6 +66,9 @@ public class PlayerController : MonoBehaviour {
         
         // Jump states/values
         JumpVelocity = 12;
+        WallJumpThreshold = 5;
+        WallJumpBoost = 1.0f;
+        WallJumpReflect = Vector3.zero;
         isJumping = false;
         isFalling = false;
         canJump = false;
@@ -70,6 +78,8 @@ public class PlayerController : MonoBehaviour {
         LandingTimeDelta = 0;
         BufferJumpGracePeriod = 0.1f;
         BufferJumpTimeDelta = BufferJumpGracePeriod;
+        WallJumpGracePeriod = 0.1f;
+        WallJumpTimeDelta = WallJumpGracePeriod;
 
         // Initial state
         current_velocity = Vector3.zero;
@@ -81,8 +91,8 @@ public class PlayerController : MonoBehaviour {
     private void FixedUpdate () {
         // Get starting values
         GravityMult = 1;
-        //Debug.Log("Current velocity: " + Vector3.ProjectOnPlane(current_velocity, transform.up).magnitude.ToString());
-        Debug.Log("Velocity error: " + (current_velocity - cc.velocity).ToString());
+        //Debug.Log("Current velocity: " + cc.velocity.magnitude.ToString());
+        //Debug.Log("Velocity error: " + (current_velocity - cc.velocity).ToString());
         accel = Vector3.zero;
 
         ProcessHits();
@@ -90,7 +100,16 @@ public class PlayerController : MonoBehaviour {
         HandleJumping();
 
         // Update character state based on desired movement
-        accel += Physics.gravity * GravityMult;
+        if (!OnGround())
+        {
+            accel += Physics.gravity * GravityMult;
+        }
+        else
+        {
+            // Push the character controller into the normal of the surface
+            // This should trigger ground detection
+            accel += -Mathf.Sign(currentHit.normal.y) * Physics.gravity.magnitude * currentHit.normal;
+        }
         current_velocity += accel * Time.deltaTime;
         cc.Move(current_velocity * Time.deltaTime);
 
@@ -98,6 +117,7 @@ public class PlayerController : MonoBehaviour {
         LandingTimeDelta = Mathf.Clamp(LandingTimeDelta + Time.deltaTime, 0, 2 * jumpGracePeriod);
         SlideTimeDelta = Mathf.Clamp(SlideTimeDelta + Time.deltaTime, 0, 2 * SlideGracePeriod);
         BufferJumpTimeDelta = Mathf.Clamp(BufferJumpTimeDelta + Time.deltaTime, 0, 2 * BufferJumpGracePeriod);
+        WallJumpTimeDelta = Mathf.Clamp(WallJumpTimeDelta + Time.deltaTime, 0, 2 * WallJumpGracePeriod);
     }
 
     private void ProcessHits()
@@ -107,9 +127,9 @@ public class PlayerController : MonoBehaviour {
             return;
         }
         // isGrounded doesn't work properly on slopes, replace with this.
-        if (lastHit.normal.y > 0.6)
+        if (lastHit.normal.y > 0.6f)
         {
-            Debug.Log("On the ground");
+            //Debug.Log("On the ground");
             //Debug.DrawRay(transform.position, hit.normal, Color.red, 100);
             canJump = true;
             LandingTimeDelta = 0;
@@ -121,21 +141,34 @@ public class PlayerController : MonoBehaviour {
                 willJump = true;
             }
         }
-        // Use this for detecting slopes to slide down
+        else if (lastHit.normal.y > 0.34f)
+        {
+            // Slides
+        }
         else
         {
-            Debug.Log("On a slide");
-            if (Vector3.Dot(current_velocity, lastHit.normal) < 0)
+            //Debug.Log("On a wall");
+            if (!OnGround() && Vector3.Dot(current_velocity, lastHit.normal) < -WallJumpThreshold)
             {
-                // Conserve velocity along plane, zero it out on the normal
-                current_velocity = Vector3.ProjectOnPlane(current_velocity, lastHit.normal);
+                Debug.Log(Vector3.Dot(current_velocity, lastHit.normal));
+                WallJumpTimeDelta = 0;
+                WallJumpReflect = Vector3.Reflect(current_velocity, lastHit.normal);
+                if (BufferJumpTimeDelta < BufferJumpGracePeriod)
+                {
+                    // Defer the jump so that it happens in update
+                    willJump = true;
+                }
+
             }
         }
+
+        current_velocity = Vector3.ProjectOnPlane(current_velocity, lastHit.normal);
+        currentHit = lastHit;
+
         if (lastHit.gameObject.tag == "Respawn")
         {
             StartCoroutine(DeferedTeleport(StartPos));
         }
-        currentHit = lastHit;
         lastHit = null;
     }
 
@@ -162,11 +195,7 @@ public class PlayerController : MonoBehaviour {
             // If we weren't fast enough we aren't going to slide
             SlideTimeDelta = SlideGracePeriod;
             // Use character controller grounded check to be certain we are actually on the ground
-            if (cc.isGrounded)
-            {
-                Debug.Log("We are on the ground");
-                movVec = Vector3.ProjectOnPlane(movVec, currentHit.normal);
-            }
+            movVec = Vector3.ProjectOnPlane(movVec, currentHit.normal);
             AccelerateTo(movVec, RunSpeed, GroundAcceleration);
             accel += -current_velocity * SpeedDamp;
         }
@@ -214,13 +243,17 @@ public class PlayerController : MonoBehaviour {
         }
 
         // Handle jumping and falling
-        if (input_manager.GetJump() || willJump)
+        if (input_manager.GetJump())
         {
             BufferJumpTimeDelta = 0;
-            if (OnGround())
+            if (OnGround() || CanWallJump())
             {
                 DoJump();
             }
+        }
+        if (willJump)
+        {
+            DoJump();
         }
         // Fall fast when we let go of jump (optional)
         if (isFalling || isJumping && !input_manager.GetJumpHold())
@@ -237,9 +270,18 @@ public class PlayerController : MonoBehaviour {
         return canJump;
     }
 
+    private bool CanWallJump()
+    {
+        return (WallJumpTimeDelta < WallJumpGracePeriod);
+    }
+
     // Set the player to a jumping state
     private void DoJump()
     {
+        if (WallJumpReflect.magnitude > 0)
+        {
+            current_velocity = WallJumpReflect * WallJumpBoost;
+        }
         current_velocity.y = JumpVelocity;
         isJumping = true;
         canJump = false;
@@ -247,6 +289,8 @@ public class PlayerController : MonoBehaviour {
 
         // Intentionally set the timer over the limit
         BufferJumpTimeDelta = BufferJumpGracePeriod;
+        WallJumpTimeDelta = WallJumpGracePeriod;
+        WallJumpReflect = Vector3.zero;
     }
 
     // Handle collisions on player move
