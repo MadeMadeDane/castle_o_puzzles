@@ -15,6 +15,7 @@ public class InputManager : MonoBehaviour {
     private float _input_horizontal_axis;
     private bool _input_jump_button;
     private bool _input_jump_buttondown;
+    private bool _new_jump;
     private float _input_scroll_axis;
 
     // Mouse state
@@ -36,6 +37,7 @@ public class InputManager : MonoBehaviour {
         _input_horizontal_axis = 0f;
         _input_jump_button = false;
         _input_jump_buttondown = false;
+        _new_jump = false;
         _input_scroll_axis = 0f;
     }
 
@@ -43,6 +45,7 @@ public class InputManager : MonoBehaviour {
     private void Update()
     {
         UpdateInputs();
+        RefreshButtons();
     }
 
     private void UpdateInputs()
@@ -53,6 +56,11 @@ public class InputManager : MonoBehaviour {
         _input_jump_buttondown = Input.GetButtonDown("Jump");
         _input_scroll_axis = Input.GetAxis("Mouse ScrollWheel");
         MouseUpdate();
+    }
+
+    private void RefreshButtons()
+    {
+        _new_jump = true;
     }
 
     private void MouseUpdate()
@@ -93,7 +101,12 @@ public class InputManager : MonoBehaviour {
 
     public bool GetJump()
     {
-        return _input_jump_buttondown || (Mathf.Abs(_input_scroll_axis) > 0f);
+        if (_new_jump)
+        {
+            _new_jump = false;
+            return _input_jump_buttondown || (Mathf.Abs(_input_scroll_axis) > 0f);
+        }
+        return false;
     }
 
     public bool GetJumpHold()
