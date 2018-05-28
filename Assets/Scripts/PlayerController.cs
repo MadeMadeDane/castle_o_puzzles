@@ -145,7 +145,7 @@ public class PlayerController : MonoBehaviour {
         {
             // Slides
         }
-        else
+        else if (lastHit.normal.y > -0.17f)
         {
             //Debug.Log("On a wall");
             if (!OnGround() && Vector3.Dot(current_velocity, lastHit.normal) < -WallJumpThreshold)
@@ -158,11 +158,16 @@ public class PlayerController : MonoBehaviour {
                     // Defer the jump so that it happens in update
                     willJump = true;
                 }
-
             }
         }
-
-        current_velocity = Vector3.ProjectOnPlane(current_velocity, lastHit.normal);
+        else
+        {
+            // Overhang
+        }
+        if (Vector3.Dot(lastHit.normal, Physics.gravity) < 0 || Vector3.Dot(current_velocity, lastHit.normal) < -1f)
+        {
+            current_velocity = Vector3.ProjectOnPlane(current_velocity, lastHit.normal);
+        }
         currentHit = lastHit;
 
         if (lastHit.gameObject.tag == "Respawn")
@@ -278,7 +283,7 @@ public class PlayerController : MonoBehaviour {
     // Set the player to a jumping state
     private void DoJump()
     {
-        if (WallJumpReflect.magnitude > 0)
+        if (CanWallJump() && WallJumpReflect.magnitude > 0)
         {
             current_velocity = WallJumpReflect * WallJumpBoost;
         }
