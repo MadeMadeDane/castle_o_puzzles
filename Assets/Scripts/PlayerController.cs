@@ -22,6 +22,7 @@ public class PlayerController : MonoBehaviour {
     public float JumpVelocity;
     public float WallJumpThreshold;
     public float WallJumpBoost;
+    public float WallRunSuction;
     public Vector3 StartPos;
 
     // Jumping state variables
@@ -36,6 +37,8 @@ public class PlayerController : MonoBehaviour {
     private float BufferJumpGracePeriod;
     private float WallJumpTimeDelta;
     private float WallJumpGracePeriod;
+    private float WallRunTimeDelta;
+    private float WallRunGracePeriod;
     private Vector3 WallJumpReflect;
     private Vector3 PreviousWallNormal;
 
@@ -66,6 +69,7 @@ public class PlayerController : MonoBehaviour {
         JumpVelocity = 12;
         WallJumpThreshold = 5;
         WallJumpBoost = 1.0f;
+        WallRunSuction = 10.0f;
         WallJumpReflect = Vector3.zero;
         PreviousWallNormal = Vector3.zero;
         isJumping = false;
@@ -80,6 +84,8 @@ public class PlayerController : MonoBehaviour {
         SlideTimeDelta = SlideGracePeriod;
         WallJumpGracePeriod = 0.2f;
         WallJumpTimeDelta = WallJumpGracePeriod;
+        WallRunGracePeriod = 0.1f;
+        WallRunTimeDelta = WallRunGracePeriod;
 
         // Initial state
         current_velocity = Vector3.zero;
@@ -94,7 +100,7 @@ public class PlayerController : MonoBehaviour {
         //Debug.Log("Current velocity: " + cc.velocity.magnitude.ToString());
         //Debug.Log("Velocity error: " + (current_velocity - cc.velocity).ToString());
         accel = Vector3.zero;
-
+        
         ProcessHits();
         HandleMovement();
         HandleJumping();
@@ -102,6 +108,12 @@ public class PlayerController : MonoBehaviour {
         // Update character state based on desired movement
         if (!OnGround())
         {
+            if (IsWallRunning())
+            {
+                Debug.DrawRay(transform.position, currentHit.normal, Color.green, 10);
+                GravityMult *= 0.25f;
+                accel += -currentHit.normal * WallRunSuction;
+            }
             accel += Physics.gravity * GravityMult;
         }
         else
@@ -118,6 +130,7 @@ public class PlayerController : MonoBehaviour {
         SlideTimeDelta = Mathf.Clamp(SlideTimeDelta + Time.deltaTime, 0, 2 * SlideGracePeriod);
         BufferJumpTimeDelta = Mathf.Clamp(BufferJumpTimeDelta + Time.deltaTime, 0, 2 * BufferJumpGracePeriod);
         WallJumpTimeDelta = Mathf.Clamp(WallJumpTimeDelta + Time.deltaTime, 0, 2 * WallJumpGracePeriod);
+        WallRunTimeDelta = Mathf.Clamp(WallRunTimeDelta + Time.deltaTime, 0, 2 * WallRunGracePeriod);
     }
 
     private void ProcessHits()
@@ -126,63 +139,90 @@ public class PlayerController : MonoBehaviour {
         {
             return;
         }
-        // isGrounded doesn't work properly on slopes, replace with this.
-        if (lastHit.normal.y > 0.6f)
-        {
-            // On the ground
-            LandingTimeDelta = 0;
-
-            // Handle buffered jumps
-            if (BufferJumpTimeDelta < BufferJumpGracePeriod)
-            {
-                // Buffer a jump
-                willJump = true;
-            }
-            PreviousWallNormal = Vector3.zero;
-        }
-        else if (lastHit.normal.y > 0.34f)
-        {
-            // Slides
-            PreviousWallNormal = Vector3.zero;
-        }
-        else if (lastHit.normal.y > -0.17f)
-        {
-            // On a wall
-            if (!OnGround() && Vector3.Dot(current_velocity, lastHit.normal) < -WallJumpThreshold)
-            {
-                if (Vector3.Dot(PreviousWallNormal, lastHit.normal) < 0.34f)
-                {
-                    WallJumpTimeDelta = 0;
-                    WallJumpReflect = Vector3.Reflect(current_velocity, lastHit.normal);
-                    if (BufferJumpTimeDelta < BufferJumpGracePeriod)
-                    {
-                        // Buffer a jump
-                        willJump = true;
-                    }
-                    PreviousWallNormal = lastHit.normal;
-                }
-            }
-        }
-        else
-        {
-            // Overhang
-            PreviousWallNormal = Vector3.zero;
-        }
-        // Keep velocity in the direction of the plane if the plane is not a ceiling
-        // Or if it is a ceiling only cancel out the velocity if we are moving fast enough into its normal
-        if (Vector3.Dot(lastHit.normal, Physics.gravity) < 0 || Vector3.Dot(current_velocity, lastHit.normal) < -1f)
-        {
-            current_velocity = Vector3.ProjectOnPlane(current_velocity, lastHit.normal);
-        }
         // Save the most recent last hit
         currentHit = lastHit;
 
-        if (lastHit.gameObject.tag == "Respawn")
+        if (currentHit.normal.y > 0.6f)
+        {
+            ProcessFloorHit();
+        }
+        else if (currentHit.normal.y > 0.34f)
+        {
+            ProcessSlideHit();
+        }
+        else if (currentHit.normal.y > -0.17f)
+        {
+            ProcessWallHit();
+        }
+        else
+        {
+            ProcessCeilingHit();
+        }
+        // Keep velocity in the direction of the plane if the plane is not a ceiling
+        // Or if it is a ceiling only cancel out the velocity if we are moving fast enough into its normal
+        if (Vector3.Dot(currentHit.normal, Physics.gravity) < 0 || Vector3.Dot(current_velocity, currentHit.normal) < -1f)
+        {
+            current_velocity = Vector3.ProjectOnPlane(current_velocity, currentHit.normal);
+        }
+
+        if (currentHit.gameObject.tag == "Respawn")
         {
             StartCoroutine(DeferedTeleport(StartPos));
         }
         // Set last hit null so we don't process it again
         lastHit = null;
+    }
+
+    private void ProcessFloorHit()
+    {
+        // On the ground
+        LandingTimeDelta = 0;
+
+        // Handle buffered jumps
+        if (BufferJumpTimeDelta < BufferJumpGracePeriod)
+        {
+            // Buffer a jump
+            willJump = true;
+        }
+        PreviousWallNormal = Vector3.zero;
+    }
+
+    private void ProcessSlideHit()
+    {
+        // Slides
+        PreviousWallNormal = Vector3.zero;
+    }
+
+    private void ProcessWallHit()
+    {
+        // Did we hit a wall hard enough to jump
+        if (!OnGround() && Vector3.Dot(current_velocity, currentHit.normal) < -WallJumpThreshold)
+        {
+            // Are we jumping in a new direction
+            if (Vector3.Dot(PreviousWallNormal, currentHit.normal) < 0.34f)
+            {
+                WallJumpTimeDelta = 0;
+                WallJumpReflect = Vector3.Reflect(current_velocity, currentHit.normal);
+                if (BufferJumpTimeDelta < BufferJumpGracePeriod)
+                {
+                    // Buffer a jump
+                    willJump = true;
+                }
+                PreviousWallNormal = currentHit.normal;
+            }
+        }
+        // If we can't walljump and were still in the air, wall run instead
+        if (!OnGround())
+        {
+            // Wall running is broken. Probuilder probably needs to be reinstalled
+            //WallRunTimeDelta = 0;
+        }
+    }
+
+    private void ProcessCeilingHit()
+    {
+        // Overhang
+        PreviousWallNormal = Vector3.zero;
     }
 
     // Apply movement forces from input (FAST edition)
@@ -280,6 +320,11 @@ public class PlayerController : MonoBehaviour {
         return (LandingTimeDelta < jumpGracePeriod);
     }
 
+    private bool IsWallRunning()
+    {
+        return (WallRunTimeDelta < WallRunGracePeriod);
+    }
+
     private bool CanWallJump()
     {
         return (WallJumpTimeDelta < WallJumpGracePeriod);
@@ -300,6 +345,7 @@ public class PlayerController : MonoBehaviour {
         // Intentionally set the timers over the limit
         BufferJumpTimeDelta = BufferJumpGracePeriod;
         WallJumpTimeDelta = WallJumpGracePeriod;
+        WallRunTimeDelta = WallRunGracePeriod;
         LandingTimeDelta = jumpGracePeriod;
         WallJumpReflect = Vector3.zero;
     }
