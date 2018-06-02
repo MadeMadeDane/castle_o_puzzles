@@ -22,7 +22,8 @@ public class PlayerController : MonoBehaviour {
     public float JumpVelocity;
     public float WallJumpThreshold;
     public float WallJumpBoost;
-    public float WallRunSuction;
+    public float WallRunLimit;
+    public float WallClimbLimit;
     public Vector3 StartPos;
 
     // Jumping state variables
@@ -67,9 +68,10 @@ public class PlayerController : MonoBehaviour {
         
         // Jump states/values
         JumpVelocity = 12;
-        WallJumpThreshold = 5;
+        WallJumpThreshold = 5f;
         WallJumpBoost = 1.0f;
-        WallRunSuction = 10.0f;
+        WallRunLimit = 3f;
+        WallClimbLimit = 6f;
         WallJumpReflect = Vector3.zero;
         PreviousWallNormal = Vector3.zero;
         isJumping = false;
@@ -108,12 +110,6 @@ public class PlayerController : MonoBehaviour {
         // Update character state based on desired movement
         if (!OnGround())
         {
-            if (IsWallRunning())
-            {
-                Debug.DrawRay(transform.position, currentHit.normal, Color.green, 10);
-                GravityMult *= 0.25f;
-                accel += -currentHit.normal * WallRunSuction;
-            }
             accel += Physics.gravity * GravityMult;
         }
         else
@@ -211,13 +207,27 @@ public class PlayerController : MonoBehaviour {
                 PreviousWallNormal = currentHit.normal;
             }
         }
-        // Start a wall run if we are moving into the wall at a 30 degree angle or less 
+        // Wall running is broken. Unity can't handle collisions with walls very well
+        // TODO: Use the trigger collider instead and convert this code
+        // Start a wall run/climb if we are moving into the wall at a 30 degree angle or less 
         // (a buffered/frame perfect walljump will cancel this)
-        if (!OnGround() && Mathf.Abs(Vector3.Dot(current_velocity.normalized, currentHit.normal)) < 0.5f)
+        if (!IsWallRunning() && !OnGround())
         {
-            // Wall running is broken. Unity can't handle collisions with walls very well
-            WallRunTimeDelta = 0;
-            PreviousWallNormal = currentHit.normal;
+            Vector3 wall_axis = Vector3.Cross(currentHit.normal, Physics.gravity).normalized;
+            Vector3 along_wall_vel = Vector3.Dot(current_velocity, wall_axis) * wall_axis;
+            Vector3 up_wall_vel = current_velocity - along_wall_vel;
+            // First attempt a wall run if we pass the limit and are looking along the wall. 
+            // If we don't try to wall climb instead if we are looking at the wall.
+            if (along_wall_vel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(currentHit.normal, transform.forward)) < 0.5f)
+            {
+                WallRunTimeDelta = 0;
+                PreviousWallNormal = currentHit.normal;
+            }
+            else if (Vector3.Dot(up_wall_vel, -Physics.gravity.normalized) > WallClimbLimit &&
+                     Vector3.Dot(transform.forward, -currentHit.normal) > 0.7)
+            {
+                Debug.DrawRay(transform.position, currentHit.normal, Color.blue, 10);
+            }
         }
     }
 
