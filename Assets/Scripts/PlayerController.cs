@@ -7,6 +7,7 @@ public class PlayerController : MonoBehaviour {
     [Header("Linked Components")]
     public InputManager input_manager;
     public CharacterController cc;
+    [HideInInspector]
     public Camera player_camera;
     [Header("Movement constants")]
     public float maxSpeed;
