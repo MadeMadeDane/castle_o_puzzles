@@ -422,17 +422,9 @@ MonoBehaviour:
     angleError: 8
     areaError: 15
   dontDestroyMeshOnDelete: 0
-  m_selectedFaces: 03000000
-  m_SelectedEdges:
-  - x: 12
-    y: 13
-  - x: 14
-    y: 12
-  - x: 13
-    y: 15
-  - x: 15
-    y: 14
-  m_selectedTriangles: 0c0000000d0000000e0000000f000000
+  m_selectedFaces: 
+  m_SelectedEdges: []
+  m_selectedTriangles: 
 --- !u!33 &31349923
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -1265,6 +1257,11 @@ Prefab:
         type: 2}
       propertyPath: m_SlopeLimit
       value: 80
+      objectReference: {fileID: 0}
+    - target: {fileID: 143490867400911512, guid: c1f33c72c932c445989404e2b6908563,
+        type: 2}
+      propertyPath: m_SkinWidth
+      value: 0.01
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_ParentPrefab: {fileID: 100100000, guid: c1f33c72c932c445989404e2b6908563, type: 2}
@@ -2342,7 +2339,7 @@ Mesh:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: pb_Mesh-959302
+  m_Name: pb_Mesh3894
   serializedVersion: 8
   m_SubMeshes:
   - serializedVersion: 2

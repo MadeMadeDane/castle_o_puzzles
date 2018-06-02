@@ -198,8 +198,8 @@ public class PlayerController : MonoBehaviour {
         // Did we hit a wall hard enough to jump
         if (!OnGround() && Vector3.Dot(current_velocity, currentHit.normal) < -WallJumpThreshold)
         {
-            // Are we jumping in a new direction
-            if (Vector3.Dot(PreviousWallNormal, currentHit.normal) < 0.34f)
+            // Are we jumping in a new direction (atleast 20 degrees difference)
+            if (Vector3.Dot(PreviousWallNormal, currentHit.normal) < 0.94f)
             {
                 WallJumpTimeDelta = 0;
                 WallJumpReflect = Vector3.Reflect(current_velocity, currentHit.normal);
@@ -211,11 +211,13 @@ public class PlayerController : MonoBehaviour {
                 PreviousWallNormal = currentHit.normal;
             }
         }
-        // If we can't walljump and were still in the air, wall run instead
-        if (!OnGround())
+        // Start a wall run if we are moving into the wall at a 30 degree angle or less 
+        // (a buffered/frame perfect walljump will cancel this)
+        if (!OnGround() && Mathf.Abs(Vector3.Dot(current_velocity.normalized, currentHit.normal)) < 0.5f)
         {
-            // Wall running is broken. Probuilder probably needs to be reinstalled
-            //WallRunTimeDelta = 0;
+            // Wall running is broken. Unity can't handle collisions with walls very well
+            WallRunTimeDelta = 0;
+            PreviousWallNormal = currentHit.normal;
         }
     }
 
@@ -231,6 +233,7 @@ public class PlayerController : MonoBehaviour {
         Vector3 planevelocity;
         Vector3 movVec = (input_manager.GetMoveVertical() * transform.forward +
                           input_manager.GetMoveHorizontal() * transform.right);
+        float movmag = movVec.magnitude < 0.8f ? movVec.magnitude : 1f;
         // Do this first so we cancel out incremented time from update before checking it
         if (!OnGround())
         {
@@ -249,13 +252,13 @@ public class PlayerController : MonoBehaviour {
             SlideTimeDelta = SlideGracePeriod;
             // Use character controller grounded check to be certain we are actually on the ground
             movVec = Vector3.ProjectOnPlane(movVec, currentHit.normal);
-            AccelerateTo(movVec, RunSpeed, GroundAcceleration);
+            AccelerateTo(movVec, RunSpeed*movmag, GroundAcceleration);
             accel += -current_velocity * SpeedDamp;
         }
         // We are either in the air, buffering a jump, or sliding (recent contact with ground). Use air accel.
         else
         {
-            AccelerateTo(movVec, AirSpeed, AirAcceleration);
+            AccelerateTo(movVec, AirSpeed*movmag, AirAcceleration);
             accel += -Vector3.ProjectOnPlane(current_velocity, transform.up) * AirSpeedDamp;
         }
     }
