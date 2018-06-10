@@ -7,6 +7,7 @@ public class PlayerController : MonoBehaviour {
     [Header("Linked Components")]
     public InputManager input_manager;
     public CharacterController cc;
+    public Collider WallRunCollider;
     [HideInInspector]
     public Camera player_camera;
     [Header("Movement constants")]
@@ -24,6 +25,7 @@ public class PlayerController : MonoBehaviour {
     public float WallJumpThreshold;
     public float WallJumpBoost;
     public float WallRunLimit;
+    public float WallRunJumpSpeed;
     public float WallClimbLimit;
     public Vector3 StartPos;
 
@@ -41,6 +43,8 @@ public class PlayerController : MonoBehaviour {
     private float WallJumpGracePeriod;
     private float WallRunTimeDelta;
     private float WallRunGracePeriod;
+    private float WallClimbTimeDelta;
+    private float WallClimbGracePeriod;
     private Vector3 WallJumpReflect;
     private Vector3 PreviousWallNormal;
 
@@ -48,6 +52,7 @@ public class PlayerController : MonoBehaviour {
     private Vector3 current_velocity;
     private Vector3 accel;
     private ControllerColliderHit lastHit;
+    private Collider lastTrigger;
     private ControllerColliderHit currentHit;
     private float GravityMult;
 
@@ -68,11 +73,12 @@ public class PlayerController : MonoBehaviour {
         ShortHopGravityAdd = 0;
         
         // Jump states/values
-        JumpVelocity = 12;
+        JumpVelocity = 12f;
         WallJumpThreshold = 5f;
         WallJumpBoost = 1.0f;
         WallRunLimit = 3f;
         WallClimbLimit = 6f;
+        WallRunJumpSpeed = 12f;
         WallJumpReflect = Vector3.zero;
         PreviousWallNormal = Vector3.zero;
         isJumping = false;
@@ -87,13 +93,17 @@ public class PlayerController : MonoBehaviour {
         SlideTimeDelta = SlideGracePeriod;
         WallJumpGracePeriod = 0.2f;
         WallJumpTimeDelta = WallJumpGracePeriod;
-        WallRunGracePeriod = 0.1f;
+        WallRunGracePeriod = 0.2f;
         WallRunTimeDelta = WallRunGracePeriod;
+        WallClimbGracePeriod = 0.2f;
+        WallClimbTimeDelta = WallClimbGracePeriod;
 
         // Initial state
         current_velocity = Vector3.zero;
         currentHit = new ControllerColliderHit();
         StartPos = transform.position;
+
+        Physics.IgnoreCollision(WallRunCollider, cc);
     }
 
     // Fixed Update is called once per physics tick
@@ -105,6 +115,7 @@ public class PlayerController : MonoBehaviour {
         accel = Vector3.zero;
         
         ProcessHits();
+        ProcessTriggers();
         HandleMovement();
         HandleJumping();
 
@@ -128,6 +139,19 @@ public class PlayerController : MonoBehaviour {
         BufferJumpTimeDelta = Mathf.Clamp(BufferJumpTimeDelta + Time.deltaTime, 0, 2 * BufferJumpGracePeriod);
         WallJumpTimeDelta = Mathf.Clamp(WallJumpTimeDelta + Time.deltaTime, 0, 2 * WallJumpGracePeriod);
         WallRunTimeDelta = Mathf.Clamp(WallRunTimeDelta + Time.deltaTime, 0, 2 * WallRunGracePeriod);
+        WallClimbTimeDelta = Mathf.Clamp(WallClimbTimeDelta + Time.deltaTime, 0, 2 * WallClimbGracePeriod);
+    }
+
+    private void ProcessTriggers()
+    {
+        if (lastTrigger == null)
+        {
+            return;
+        }
+
+
+
+        lastTrigger = null;
     }
 
     private void ProcessHits()
@@ -212,22 +236,24 @@ public class PlayerController : MonoBehaviour {
         // TODO: Use the trigger collider instead and convert this code
         // Start a wall run/climb if we are moving into the wall at a 30 degree angle or less 
         // (a buffered/frame perfect walljump will cancel this)
-        if (!IsWallRunning() && !OnGround())
+        if (!OnGround())
         {
             Vector3 wall_axis = Vector3.Cross(currentHit.normal, Physics.gravity).normalized;
             Vector3 along_wall_vel = Vector3.Dot(current_velocity, wall_axis) * wall_axis;
             Vector3 up_wall_vel = current_velocity - along_wall_vel;
             // First attempt a wall run if we pass the limit and are looking along the wall. 
             // If we don't try to wall climb instead if we are looking at the wall.
-            if (along_wall_vel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(currentHit.normal, transform.forward)) < 0.5f)
+            if (along_wall_vel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(currentHit.normal, transform.forward)) < 0.71f)
             {
                 WallRunTimeDelta = 0;
                 PreviousWallNormal = currentHit.normal;
             }
             else if (Vector3.Dot(up_wall_vel, -Physics.gravity.normalized) > WallClimbLimit &&
-                     Vector3.Dot(transform.forward, -currentHit.normal) > 0.7)
+                     Vector3.Dot(transform.forward, -currentHit.normal) >= 0.71f)
             {
-                Debug.DrawRay(transform.position, currentHit.normal, Color.blue, 10);
+                WallClimbTimeDelta = 0;
+                PreviousWallNormal = currentHit.normal;
+                //Debug.DrawRay(transform.position, currentHit.normal, Color.blue, 10);
             }
         }
     }
@@ -311,7 +337,7 @@ public class PlayerController : MonoBehaviour {
         if (input_manager.GetJump())
         {
             BufferJumpTimeDelta = 0;
-            if (OnGround() || CanWallJump())
+            if (OnGround() || CanWallJump() || IsWallRunning() || IsWallClimbing())
             {
                 DoJump();
             }
@@ -339,6 +365,11 @@ public class PlayerController : MonoBehaviour {
         return (WallRunTimeDelta < WallRunGracePeriod);
     }
 
+    private bool IsWallClimbing()
+    {
+        return (WallClimbTimeDelta < WallClimbGracePeriod);
+    }
+
     private bool CanWallJump()
     {
         return (WallJumpTimeDelta < WallJumpGracePeriod);
@@ -352,7 +383,18 @@ public class PlayerController : MonoBehaviour {
         {
             current_velocity = WallJumpReflect * WallJumpBoost;
         }
-        current_velocity.y = JumpVelocity;
+        else if (IsWallRunning())
+        {
+            current_velocity += PreviousWallNormal * WallRunJumpSpeed;
+        }
+        else if (IsWallClimbing())
+        {
+            current_velocity += PreviousWallNormal * WallRunJumpSpeed;
+        }
+        if (OnGround() || willJump || CanWallJump() || IsWallRunning())
+        {
+            current_velocity.y = Math.Max(current_velocity.y + JumpVelocity, JumpVelocity);
+        }
         isJumping = true;
         willJump = false;
 
@@ -360,8 +402,14 @@ public class PlayerController : MonoBehaviour {
         BufferJumpTimeDelta = BufferJumpGracePeriod;
         WallJumpTimeDelta = WallJumpGracePeriod;
         WallRunTimeDelta = WallRunGracePeriod;
+        WallClimbTimeDelta = WallClimbGracePeriod;
         LandingTimeDelta = jumpGracePeriod;
         WallJumpReflect = Vector3.zero;
+    }
+
+    private void OnTriggerStay(Collider other)
+    {
+        lastTrigger = other;
     }
 
     // Handle collisions on player move
@@ -369,6 +417,7 @@ public class PlayerController : MonoBehaviour {
     {
         lastHit = hit;
     }
+
 
     // Teleport coroutine (needed due to bug in character controller teleport)
     IEnumerator DeferedTeleport(Vector3 position)
