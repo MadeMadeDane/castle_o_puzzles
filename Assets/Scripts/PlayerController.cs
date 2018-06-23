@@ -47,6 +47,7 @@ public class PlayerController : MonoBehaviour {
     private float WallClimbGracePeriod;
     private Vector3 WallJumpReflect;
     private Vector3 PreviousWallNormal;
+    private Vector3 PreviousWallJumpNormal;
 
     // Physics state variables
     private Vector3 current_velocity;
@@ -81,6 +82,7 @@ public class PlayerController : MonoBehaviour {
         WallRunJumpSpeed = 12f;
         WallJumpReflect = Vector3.zero;
         PreviousWallNormal = Vector3.zero;
+        PreviousWallJumpNormal = Vector3.zero;
         isJumping = false;
         isFalling = false;
         willJump = false;
@@ -149,9 +151,76 @@ public class PlayerController : MonoBehaviour {
             return;
         }
 
-
+        if (!OnGround())
+        {
+            RaycastHit hit;
+            Boolean hit_wall = false;
+            if (IsWallRunning() || IsWallClimbing())
+            {
+                // Scan toward the wall normal
+                if (Physics.Raycast(transform.position, -PreviousWallNormal, out hit, 2.0f))
+                {
+                    hit_wall = true;
+                }
+            }
+            else
+            {
+                // Scan forward and sideways to find a wall
+                if (Physics.Raycast(transform.position, transform.right, out hit, 2.0f))
+                {
+                    hit_wall = true;
+                }
+                else if (Physics.Raycast(transform.position, -transform.right, out hit, 2.0f))
+                {
+                    hit_wall = true;
+                }
+                else if (Physics.Raycast(transform.position, transform.forward, out hit, 2.0f))
+                {
+                    hit_wall = true;
+                }
+            }
+            // Update my current state based on my scan results
+            if (hit_wall) 
+            {
+                Debug.DrawRay(transform.position, hit.normal, Color.cyan, 10.0f);
+                UpdateWallConditions(hit.normal);
+            }
+            if (IsWallClimbing())
+            {
+                // Scan for ledge
+                // If all ledge climb conditions are met, climb it to the surface on top
+                // and clear all wall conditions
+            }
+        }
 
         lastTrigger = null;
+    }
+
+    private void UpdateWallConditions(Vector3 wall_normal)
+    {
+        Vector3 wall_axis = Vector3.Cross(wall_normal, Physics.gravity).normalized;
+        Vector3 along_wall_vel = Vector3.Dot(current_velocity, wall_axis) * wall_axis;
+        Vector3 up_wall_vel = current_velocity - along_wall_vel;
+        // First attempt a wall run if we pass the limit and are looking along the wall. 
+        // If we don't try to wall climb instead if we are looking at the wall.
+        // Debug.Log("Previous Wall: " + PreviousWallNormal + ", Wall Normal: " + wall_normal.ToString());
+        if (along_wall_vel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(wall_normal, transform.forward)) < 0.71f)
+        {
+            if (IsWallRunning() || Vector3.Dot(PreviousWallNormal, wall_normal) < 0.94f)
+            {
+                WallRunTimeDelta = 0;
+            }
+        }
+        else if (Vector3.Dot(up_wall_vel, -Physics.gravity.normalized) > WallClimbLimit &&
+                 Vector3.Dot(transform.forward, -wall_normal) >= 0.71f)
+        {
+            if (IsWallClimbing() || Vector3.Dot(PreviousWallNormal, wall_normal) < 0.94f)
+            {
+                WallClimbTimeDelta = 0;
+            }
+            //Debug.DrawRay(transform.position, wall_normal, Color.blue, 10);
+        }
+        PreviousWallNormal = wall_normal;
     }
 
     private void ProcessHits()
@@ -206,12 +275,14 @@ public class PlayerController : MonoBehaviour {
             willJump = true;
         }
         PreviousWallNormal = Vector3.zero;
+        PreviousWallJumpNormal = Vector3.zero;
     }
 
     private void ProcessSlideHit()
     {
         // Slides
         PreviousWallNormal = Vector3.zero;
+        PreviousWallJumpNormal = Vector3.zero;
     }
 
     private void ProcessWallHit()
@@ -220,7 +291,7 @@ public class PlayerController : MonoBehaviour {
         if (!OnGround() && Vector3.Dot(current_velocity, currentHit.normal) < -WallJumpThreshold)
         {
             // Are we jumping in a new direction (atleast 20 degrees difference)
-            if (Vector3.Dot(PreviousWallNormal, currentHit.normal) < 0.94f)
+            if (Vector3.Dot(PreviousWallJumpNormal, currentHit.normal) < 0.94f)
             {
                 WallJumpTimeDelta = 0;
                 WallJumpReflect = Vector3.Reflect(current_velocity, currentHit.normal);
@@ -229,7 +300,7 @@ public class PlayerController : MonoBehaviour {
                     // Buffer a jump
                     willJump = true;
                 }
-                PreviousWallNormal = currentHit.normal;
+                PreviousWallJumpNormal = currentHit.normal;
             }
         }
         // Wall running is broken. Unity can't handle collisions with walls very well
@@ -238,23 +309,7 @@ public class PlayerController : MonoBehaviour {
         // (a buffered/frame perfect walljump will cancel this)
         if (!OnGround())
         {
-            Vector3 wall_axis = Vector3.Cross(currentHit.normal, Physics.gravity).normalized;
-            Vector3 along_wall_vel = Vector3.Dot(current_velocity, wall_axis) * wall_axis;
-            Vector3 up_wall_vel = current_velocity - along_wall_vel;
-            // First attempt a wall run if we pass the limit and are looking along the wall. 
-            // If we don't try to wall climb instead if we are looking at the wall.
-            if (along_wall_vel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(currentHit.normal, transform.forward)) < 0.71f)
-            {
-                WallRunTimeDelta = 0;
-                PreviousWallNormal = currentHit.normal;
-            }
-            else if (Vector3.Dot(up_wall_vel, -Physics.gravity.normalized) > WallClimbLimit &&
-                     Vector3.Dot(transform.forward, -currentHit.normal) >= 0.71f)
-            {
-                WallClimbTimeDelta = 0;
-                PreviousWallNormal = currentHit.normal;
-                //Debug.DrawRay(transform.position, currentHit.normal, Color.blue, 10);
-            }
+            UpdateWallConditions(currentHit.normal);
         }
     }
 
@@ -262,6 +317,7 @@ public class PlayerController : MonoBehaviour {
     {
         // Overhang
         PreviousWallNormal = Vector3.zero;
+        PreviousWallJumpNormal = Vector3.zero;
     }
 
     // Apply movement forces from input (FAST edition)
@@ -381,18 +437,22 @@ public class PlayerController : MonoBehaviour {
         // Wall jump if we need to
         if (CanWallJump() && WallJumpReflect.magnitude > 0)
         {
+            Debug.Log("Wall Jump");
             current_velocity = WallJumpReflect * WallJumpBoost;
         }
         else if (IsWallRunning())
         {
+            Debug.Log("Wall Run Jump");
             current_velocity += PreviousWallNormal * WallRunJumpSpeed;
         }
         else if (IsWallClimbing())
         {
+            Debug.Log("Wall Climb Jump");
             current_velocity += PreviousWallNormal * WallRunJumpSpeed;
         }
         if (OnGround() || willJump || CanWallJump() || IsWallRunning())
         {
+            Debug.Log("Upward Jump");
             current_velocity.y = Math.Max(current_velocity.y + JumpVelocity, JumpVelocity);
         }
         isJumping = true;
