@@ -45,9 +45,13 @@ public class PlayerController : MonoBehaviour {
     private float WallRunGracePeriod;
     private float WallClimbTimeDelta;
     private float WallClimbGracePeriod;
+    // Wall related variables
     private Vector3 WallJumpReflect;
     private Vector3 PreviousWallNormal;
     private Vector3 PreviousWallJumpNormal;
+    private Vector3 WallAxis;
+    private Vector3 AlongWallVel;
+    private Vector3 UpWallVel;
 
     // Physics state variables
     private Vector3 current_velocity;
@@ -80,12 +84,16 @@ public class PlayerController : MonoBehaviour {
         WallRunLimit = 3f;
         WallClimbLimit = 6f;
         WallRunJumpSpeed = 12f;
-        WallJumpReflect = Vector3.zero;
-        PreviousWallNormal = Vector3.zero;
-        PreviousWallJumpNormal = Vector3.zero;
         isJumping = false;
         isFalling = false;
         willJump = false;
+        // Wall related vars
+        WallAxis = Vector3.zero;
+        AlongWallVel = Vector3.zero;
+        UpWallVel = Vector3.zero;
+        WallJumpReflect = Vector3.zero;
+        PreviousWallNormal = Vector3.zero;
+        PreviousWallJumpNormal = Vector3.zero;
         // Timers
         jumpGracePeriod = 0.1f;
         LandingTimeDelta = jumpGracePeriod;
@@ -198,20 +206,20 @@ public class PlayerController : MonoBehaviour {
 
     private void UpdateWallConditions(Vector3 wall_normal)
     {
-        Vector3 wall_axis = Vector3.Cross(wall_normal, Physics.gravity).normalized;
-        Vector3 along_wall_vel = Vector3.Dot(current_velocity, wall_axis) * wall_axis;
-        Vector3 up_wall_vel = current_velocity - along_wall_vel;
+        WallAxis = Vector3.Cross(wall_normal, Physics.gravity).normalized;
+        AlongWallVel = Vector3.Dot(current_velocity, WallAxis) * WallAxis;
+        UpWallVel = current_velocity - AlongWallVel;
         // First attempt a wall run if we pass the limit and are looking along the wall. 
         // If we don't try to wall climb instead if we are looking at the wall.
         // Debug.Log("Previous Wall: " + PreviousWallNormal + ", Wall Normal: " + wall_normal.ToString());
-        if (along_wall_vel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(wall_normal, transform.forward)) < 0.71f)
+        if (AlongWallVel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(wall_normal, transform.forward)) < 0.71f)
         {
             if (IsWallRunning() || Vector3.Dot(PreviousWallNormal, wall_normal) < 0.94f)
             {
                 WallRunTimeDelta = 0;
             }
         }
-        else if (Vector3.Dot(up_wall_vel, -Physics.gravity.normalized) > WallClimbLimit &&
+        else if (Vector3.Dot(UpWallVel, -Physics.gravity.normalized) > WallClimbLimit &&
                  Vector3.Dot(transform.forward, -wall_normal) >= 0.71f)
         {
             if (IsWallClimbing() || Vector3.Dot(PreviousWallNormal, wall_normal) < 0.94f)
@@ -351,7 +359,25 @@ public class PlayerController : MonoBehaviour {
         // We are either in the air, buffering a jump, or sliding (recent contact with ground). Use air accel.
         else
         {
-            AccelerateTo(movVec, AirSpeed*movmag, AirAcceleration);
+            // Handle wall movement and return early
+            if (IsWallRunning())
+            {
+                float away_from_wall_speed = Vector3.Dot(current_velocity, PreviousWallNormal);
+                // Only remove velocity if we are attempting to move away from the wall
+                if (away_from_wall_speed > 0)
+                {
+                    // Remove the component of the wall normal velocity that is along the gravity axis
+                    float gravity_resist = Vector3.Dot(away_from_wall_speed * PreviousWallNormal, Physics.gravity.normalized);
+                    Vector3 lost_wall_velocity = (away_from_wall_speed * PreviousWallNormal - gravity_resist * Physics.gravity);
+                    current_velocity -= lost_wall_velocity;
+                    // consider adding a portion of the lost velocity back along the wall axis
+                    // current_velocity += WallAxis * lost_wall_velocity.magnitude * percent_kept
+                }
+            }
+            else
+            {
+                AccelerateTo(movVec, AirSpeed * movmag, AirAcceleration);
+            }
             accel += -Vector3.ProjectOnPlane(current_velocity, transform.up) * AirSpeedDamp;
         }
     }
