@@ -30,6 +30,8 @@ public class PlayerController : MonoBehaviour {
     public Vector3 StartPos;
 
     // Jumping state variables
+    private float JumpMeterSize;
+    private float JumpMeter;
     private float SlideGracePeriod;
     private float SlideTimeDelta;
     private bool isJumping;
@@ -95,6 +97,8 @@ public class PlayerController : MonoBehaviour {
         PreviousWallNormal = Vector3.zero;
         PreviousWallJumpNormal = Vector3.zero;
         // Timers
+        JumpMeterSize = 0.3f;
+        JumpMeter = JumpMeterSize;
         jumpGracePeriod = 0.1f;
         LandingTimeDelta = jumpGracePeriod;
         BufferJumpGracePeriod = 0.1f;
@@ -144,6 +148,7 @@ public class PlayerController : MonoBehaviour {
         cc.Move(current_velocity * Time.deltaTime);
 
         // Increment timers
+        JumpMeter = Mathf.Clamp(JumpMeter + Time.deltaTime, 0, JumpMeterSize);
         LandingTimeDelta = Mathf.Clamp(LandingTimeDelta + Time.deltaTime, 0, 2 * jumpGracePeriod);
         SlideTimeDelta = Mathf.Clamp(SlideTimeDelta + Time.deltaTime, 0, 2 * SlideGracePeriod);
         BufferJumpTimeDelta = Mathf.Clamp(BufferJumpTimeDelta + Time.deltaTime, 0, 2 * BufferJumpGracePeriod);
@@ -190,7 +195,6 @@ public class PlayerController : MonoBehaviour {
             // Update my current state based on my scan results
             if (hit_wall) 
             {
-                Debug.DrawRay(transform.position, hit.normal, Color.cyan, 10.0f);
                 UpdateWallConditions(hit.normal);
             }
             if (IsWallClimbing())
@@ -302,7 +306,7 @@ public class PlayerController : MonoBehaviour {
             if (Vector3.Dot(PreviousWallJumpNormal, currentHit.normal) < 0.94f)
             {
                 WallJumpTimeDelta = 0;
-                WallJumpReflect = Vector3.Reflect(current_velocity, currentHit.normal);
+                WallJumpReflect = -Vector3.Dot(current_velocity, currentHit.normal)* currentHit.normal;
                 if (BufferJumpTimeDelta < BufferJumpGracePeriod)
                 {
                     // Buffer a jump
@@ -368,10 +372,14 @@ public class PlayerController : MonoBehaviour {
                 {
                     // Remove the component of the wall normal velocity that is along the gravity axis
                     float gravity_resist = Vector3.Dot(away_from_wall_speed * PreviousWallNormal, Physics.gravity.normalized);
-                    Vector3 lost_wall_velocity = (away_from_wall_speed * PreviousWallNormal - gravity_resist * Physics.gravity);
-                    current_velocity -= lost_wall_velocity;
+                    float previous_velocity_mag = current_velocity.magnitude;
+                    current_velocity -= (away_from_wall_speed * PreviousWallNormal - gravity_resist * Physics.gravity);
                     // consider adding a portion of the lost velocity back along the wall axis
-                    // current_velocity += WallAxis * lost_wall_velocity.magnitude * percent_kept
+                    current_velocity += WallAxis * Mathf.Sign(Vector3.Dot(current_velocity, WallAxis)) * (previous_velocity_mag - current_velocity.magnitude);
+                }
+                if (Vector3.Dot(UpWallVel, Physics.gravity) >= 0)
+                {
+                    GravityMult = 0.25f;
                 }
             }
             else
@@ -464,23 +472,24 @@ public class PlayerController : MonoBehaviour {
         if (CanWallJump() && WallJumpReflect.magnitude > 0)
         {
             Debug.Log("Wall Jump");
-            current_velocity = WallJumpReflect * WallJumpBoost;
+            current_velocity += WallJumpReflect * WallJumpBoost * (JumpMeter / JumpMeterSize);
         }
         else if (IsWallRunning())
         {
             Debug.Log("Wall Run Jump");
-            current_velocity += PreviousWallNormal * WallRunJumpSpeed;
+            current_velocity += PreviousWallNormal * WallRunJumpSpeed * (JumpMeter / JumpMeterSize);
         }
         else if (IsWallClimbing())
         {
             Debug.Log("Wall Climb Jump");
-            current_velocity += PreviousWallNormal * WallRunJumpSpeed;
+            current_velocity += PreviousWallNormal * WallRunJumpSpeed * (JumpMeter / JumpMeterSize);
         }
         if (OnGround() || willJump || CanWallJump() || IsWallRunning())
         {
             Debug.Log("Upward Jump");
-            current_velocity.y = Math.Max(current_velocity.y + JumpVelocity, JumpVelocity);
+            current_velocity.y = Math.Max(current_velocity.y + JumpVelocity*(JumpMeter/JumpMeterSize), JumpVelocity);
         }
+        JumpMeter = 0;
         isJumping = true;
         willJump = false;
 
