@@ -210,6 +210,21 @@ public class PlayerController : MonoBehaviour {
 
     private void UpdateWallConditions(Vector3 wall_normal)
     {
+        if (Vector3.Dot(current_velocity, wall_normal) < -WallJumpThreshold)
+        {
+            // Are we jumping in a new direction (atleast 20 degrees difference)
+            if (Vector3.Dot(PreviousWallJumpNormal, wall_normal) < 0.94f)
+            {
+                WallJumpTimeDelta = 0;
+                WallJumpReflect = Vector3.Reflect(current_velocity, wall_normal);
+                if (BufferJumpTimeDelta < BufferJumpGracePeriod)
+                {
+                    // Buffer a jump
+                    willJump = true;
+                }
+                PreviousWallJumpNormal = wall_normal;
+            }
+        }
         WallAxis = Vector3.Cross(wall_normal, Physics.gravity).normalized;
         AlongWallVel = Vector3.Dot(current_velocity, WallAxis) * WallAxis;
         UpWallVel = current_velocity - AlongWallVel;
@@ -299,26 +314,6 @@ public class PlayerController : MonoBehaviour {
 
     private void ProcessWallHit()
     {
-        // Did we hit a wall hard enough to jump
-        if (!OnGround() && Vector3.Dot(current_velocity, currentHit.normal) < -WallJumpThreshold)
-        {
-            // Are we jumping in a new direction (atleast 20 degrees difference)
-            if (Vector3.Dot(PreviousWallJumpNormal, currentHit.normal) < 0.94f)
-            {
-                WallJumpTimeDelta = 0;
-                WallJumpReflect = -Vector3.Dot(current_velocity, currentHit.normal)* currentHit.normal;
-                if (BufferJumpTimeDelta < BufferJumpGracePeriod)
-                {
-                    // Buffer a jump
-                    willJump = true;
-                }
-                PreviousWallJumpNormal = currentHit.normal;
-            }
-        }
-        // Wall running is broken. Unity can't handle collisions with walls very well
-        // TODO: Use the trigger collider instead and convert this code
-        // Start a wall run/climb if we are moving into the wall at a 30 degree angle or less 
-        // (a buffered/frame perfect walljump will cancel this)
         if (!OnGround())
         {
             UpdateWallConditions(currentHit.normal);
@@ -472,7 +467,7 @@ public class PlayerController : MonoBehaviour {
         if (CanWallJump() && WallJumpReflect.magnitude > 0)
         {
             Debug.Log("Wall Jump");
-            current_velocity += WallJumpReflect * WallJumpBoost * (JumpMeter / JumpMeterSize);
+            current_velocity += (WallJumpReflect - current_velocity) * WallJumpBoost * (JumpMeter / JumpMeterSize);
         }
         else if (IsWallRunning())
         {
