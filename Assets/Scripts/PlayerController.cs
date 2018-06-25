@@ -124,8 +124,6 @@ public class PlayerController : MonoBehaviour {
     private void FixedUpdate () {
         // Get starting values
         GravityMult = 1;
-        //Debug.Log("Current velocity: " + cc.velocity.magnitude.ToString());
-        //Debug.Log("Velocity error: " + (current_velocity - cc.velocity).ToString());
         accel = Vector3.zero;
         
         ProcessHits();
@@ -145,7 +143,21 @@ public class PlayerController : MonoBehaviour {
             accel += -Mathf.Sign(currentHit.normal.y) * Physics.gravity.magnitude * currentHit.normal;
         }
         current_velocity += accel * Time.deltaTime;
+        Vector3 previous_position = transform.position;
         cc.Move(current_velocity * Time.deltaTime);
+
+        if ((cc.velocity - current_velocity).magnitude > 100.0f)
+        {
+            Debug.Log("Detected large error in velocity... Aborting move");
+            Debug.Log("Previous position: " + previous_position.ToString());
+            Debug.Log("Current position: " + transform.position.ToString());
+            Debug.Log("Current cc velocity: " + cc.velocity.magnitude.ToString());
+            Debug.Log("Current velocity: " + current_velocity.magnitude.ToString());
+            Debug.Log("Velocity error: " + (current_velocity - cc.velocity).ToString());
+            Debug.Log("WallJumpReflect: " + WallJumpReflect.ToString());
+            Debug.Log("Accel: " + accel.ToString());
+            StartCoroutine(DeferedTeleport(previous_position + new Vector3(UnityEngine.Random.Range(-0.5f, 0.5f), UnityEngine.Random.Range(-0.5f, 0.5f), 0.5f)));
+        }
 
         // Increment timers
         JumpMeter = Mathf.Clamp(JumpMeter + Time.deltaTime, 0, JumpMeterSize);
@@ -193,7 +205,7 @@ public class PlayerController : MonoBehaviour {
                 }
             }
             // Update my current state based on my scan results
-            if (hit_wall) 
+            if (hit_wall && hit.normal.y > -0.17f && hit.normal.y <= 0.34f) 
             {
                 UpdateWallConditions(hit.normal);
             }
@@ -368,7 +380,7 @@ public class PlayerController : MonoBehaviour {
                     // Remove the component of the wall normal velocity that is along the gravity axis
                     float gravity_resist = Vector3.Dot(away_from_wall_speed * PreviousWallNormal, Physics.gravity.normalized);
                     float previous_velocity_mag = current_velocity.magnitude;
-                    current_velocity -= (away_from_wall_speed * PreviousWallNormal - gravity_resist * Physics.gravity);
+                    current_velocity -= (away_from_wall_speed * PreviousWallNormal - gravity_resist * Physics.gravity.normalized);
                     // consider adding a portion of the lost velocity back along the wall axis
                     current_velocity += WallAxis * Mathf.Sign(Vector3.Dot(current_velocity, WallAxis)) * (previous_velocity_mag - current_velocity.magnitude);
                 }
