@@ -54,6 +54,8 @@ public class PlayerController : MonoBehaviour {
     private Vector3 WallAxis;
     private Vector3 AlongWallVel;
     private Vector3 UpWallVel;
+    private float WallRunImpulse;
+    private float WallRunSpeed;
 
     // Physics state variables
     private Vector3 current_velocity;
@@ -67,7 +69,7 @@ public class PlayerController : MonoBehaviour {
     private void Start () {
         // Movement values
         maxSpeed = 4;
-        RunSpeed = 9;
+        RunSpeed = 10;
         AirSpeed = 0.90f;
         GroundAcceleration = 20;
         AirAcceleration = 500;
@@ -81,11 +83,13 @@ public class PlayerController : MonoBehaviour {
         
         // Jump states/values
         JumpVelocity = 12f;
-        WallJumpThreshold = 5f;
+        WallJumpThreshold = 6f;
         WallJumpBoost = 1.0f;
-        WallRunLimit = 3f;
+        WallRunLimit = 4f;
         WallClimbLimit = 6f;
         WallRunJumpSpeed = 12f;
+        WallRunImpulse = 3.0f;
+        WallRunSpeed = 10.0f;
         isJumping = false;
         isFalling = false;
         willJump = false;
@@ -222,7 +226,7 @@ public class PlayerController : MonoBehaviour {
 
     private void UpdateWallConditions(Vector3 wall_normal)
     {
-        if (Vector3.Dot(current_velocity, wall_normal) < -WallJumpThreshold)
+        if (Vector3.Dot(Vector3.ProjectOnPlane(current_velocity, Physics.gravity), wall_normal) < -WallJumpThreshold)
         {
             // Are we jumping in a new direction (atleast 20 degrees difference)
             if (Vector3.Dot(PreviousWallJumpNormal, wall_normal) < 0.94f)
@@ -243,10 +247,18 @@ public class PlayerController : MonoBehaviour {
         // First attempt a wall run if we pass the limit and are looking along the wall. 
         // If we don't try to wall climb instead if we are looking at the wall.
         // Debug.Log("Previous Wall: " + PreviousWallNormal + ", Wall Normal: " + wall_normal.ToString());
-        if (AlongWallVel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(wall_normal, transform.forward)) < 0.71f)
+        if (AlongWallVel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(wall_normal, transform.forward)) < 0.866f)
         {
             if (IsWallRunning() || Vector3.Dot(PreviousWallNormal, wall_normal) < 0.94f)
             {
+                if (!IsWallRunning())
+                {
+                    if (AlongWallVel.magnitude < WallRunSpeed)
+                    {
+                        current_velocity = UpWallVel + Mathf.Sign(Vector3.Dot(current_velocity, WallAxis)) * WallRunSpeed * WallAxis;
+                    }
+                    current_velocity.y = Math.Max(current_velocity.y + WallRunImpulse, WallRunImpulse);
+                }
                 WallRunTimeDelta = 0;
             }
         }
