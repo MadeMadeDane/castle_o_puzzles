@@ -34,6 +34,7 @@ public class PlayerController : MonoBehaviour {
     private float JumpMeter;
     private float SlideGracePeriod;
     private float SlideTimeDelta;
+    private bool isHanging;
     private bool isJumping;
     private bool isFalling;
     private bool willJump;
@@ -47,6 +48,8 @@ public class PlayerController : MonoBehaviour {
     private float WallRunGracePeriod;
     private float WallClimbTimeDelta;
     private float WallClimbGracePeriod;
+    private float ReGrabTimeDelta;
+    private float ReGrabGracePeriod;
     // Wall related variables
     private Vector3 WallJumpReflect;
     private Vector3 PreviousWallNormal;
@@ -56,6 +59,8 @@ public class PlayerController : MonoBehaviour {
     private Vector3 UpWallVel;
     private float WallRunImpulse;
     private float WallRunSpeed;
+    private float LedgeClimbOffset;
+    private float LedgeClimbBoost;
 
     // Physics state variables
     private Vector3 current_velocity;
@@ -100,6 +105,8 @@ public class PlayerController : MonoBehaviour {
         WallJumpReflect = Vector3.zero;
         PreviousWallNormal = Vector3.zero;
         PreviousWallJumpNormal = Vector3.zero;
+        LedgeClimbOffset = 1.0f;
+        LedgeClimbBoost = Mathf.Sqrt(2 * cc.height * 1.1f * Physics.gravity.magnitude);
         // Timers
         JumpMeterSize = 0.3f;
         JumpMeter = JumpMeterSize;
@@ -115,6 +122,8 @@ public class PlayerController : MonoBehaviour {
         WallRunTimeDelta = WallRunGracePeriod;
         WallClimbGracePeriod = 0.2f;
         WallClimbTimeDelta = WallClimbGracePeriod;
+        ReGrabGracePeriod = 0.5f;
+        ReGrabTimeDelta = ReGrabGracePeriod;
 
         // Initial state
         current_velocity = Vector3.zero;
@@ -171,6 +180,7 @@ public class PlayerController : MonoBehaviour {
         WallJumpTimeDelta = Mathf.Clamp(WallJumpTimeDelta + Time.deltaTime, 0, 2 * WallJumpGracePeriod);
         WallRunTimeDelta = Mathf.Clamp(WallRunTimeDelta + Time.deltaTime, 0, 2 * WallRunGracePeriod);
         WallClimbTimeDelta = Mathf.Clamp(WallClimbTimeDelta + Time.deltaTime, 0, 2 * WallClimbGracePeriod);
+        ReGrabTimeDelta = Mathf.Clamp(ReGrabTimeDelta + Time.deltaTime, 0, 2 * ReGrabGracePeriod);
     }
 
     private void ProcessTriggers()
@@ -203,7 +213,7 @@ public class PlayerController : MonoBehaviour {
                 {
                     hit_wall = true;
                 }
-                else if (Physics.Raycast(transform.position, transform.forward, out hit, 2.0f))
+                else if (Physics.Raycast(transform.position + transform.up * (cc.height / 2 - 0.5f), transform.forward, out hit, 2.0f))
                 {
                     hit_wall = true;
                 }
@@ -213,9 +223,17 @@ public class PlayerController : MonoBehaviour {
             {
                 UpdateWallConditions(hit.normal);
             }
-            if (IsWallClimbing())
+            if (IsWallClimbing() && !isHanging)
             {
                 // Scan for ledge
+                Vector3 LedgeScanPos = transform.position + (transform.up * cc.height / 2) + LedgeClimbOffset * transform.forward;
+                if (Physics.Raycast(LedgeScanPos, -transform.up, out hit, LedgeClimbOffset))
+                {
+                    if (CanGrabLedge() && Vector3.Dot(hit.normal, Physics.gravity) < -0.866f)
+                    {
+                        isHanging = true;
+                    }
+                }
                 // If all ledge climb conditions are met, climb it to the surface on top
                 // and clear all wall conditions
             }
@@ -247,7 +265,7 @@ public class PlayerController : MonoBehaviour {
         // First attempt a wall run if we pass the limit and are looking along the wall. 
         // If we don't try to wall climb instead if we are looking at the wall.
         // Debug.Log("Previous Wall: " + PreviousWallNormal + ", Wall Normal: " + wall_normal.ToString());
-        if (AlongWallVel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(wall_normal, transform.forward)) < 0.866f)
+        if (AlongWallVel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(wall_normal, transform.forward)) < 0.866f && Vector3.Dot(AlongWallVel, transform.forward) > 0)
         {
             if (IsWallRunning() || Vector3.Dot(PreviousWallNormal, wall_normal) < 0.94f)
             {
@@ -262,13 +280,10 @@ public class PlayerController : MonoBehaviour {
                 WallRunTimeDelta = 0;
             }
         }
-        else if (Vector3.Dot(UpWallVel, -Physics.gravity.normalized) > WallClimbLimit &&
-                 Vector3.Dot(transform.forward, -wall_normal) >= 0.71f)
+        else if (Vector3.Dot(transform.forward, -wall_normal) >= 0.866f)
         {
-            if (IsWallClimbing() || Vector3.Dot(PreviousWallNormal, wall_normal) < 0.94f)
-            {
-                WallClimbTimeDelta = 0;
-            }
+
+            WallClimbTimeDelta = 0;
             //Debug.DrawRay(transform.position, wall_normal, Color.blue, 10);
         }
         PreviousWallNormal = wall_normal;
@@ -354,6 +369,13 @@ public class PlayerController : MonoBehaviour {
     // Apply movement forces from input (FAST edition)
     private void HandleMovement()
     {
+        // If we are hanging stay still
+        if (isHanging)
+        {
+            current_velocity = Vector3.zero;
+            GravityMult = 0;
+            return;
+        }
         Vector3 planevelocity;
         Vector3 movVec = (input_manager.GetMoveVertical() * transform.forward +
                           input_manager.GetMoveHorizontal() * transform.right);
@@ -446,7 +468,7 @@ public class PlayerController : MonoBehaviour {
         if (input_manager.GetJump())
         {
             BufferJumpTimeDelta = 0;
-            if (OnGround() || CanWallJump() || IsWallRunning() || IsWallClimbing())
+            if (OnGround() || CanWallJump() || IsWallRunning() || isHanging)
             {
                 DoJump();
             }
@@ -479,6 +501,11 @@ public class PlayerController : MonoBehaviour {
         return (WallClimbTimeDelta < WallClimbGracePeriod);
     }
 
+    private bool CanGrabLedge()
+    {
+        return (ReGrabTimeDelta >= ReGrabGracePeriod);
+    }
+
     private bool CanWallJump()
     {
         return (WallJumpTimeDelta < WallJumpGracePeriod);
@@ -488,29 +515,33 @@ public class PlayerController : MonoBehaviour {
     private void DoJump()
     {
         // Wall jump if we need to
-        if (CanWallJump() && WallJumpReflect.magnitude > 0)
+        if (!isHanging)
         {
-            Debug.Log("Wall Jump");
-            current_velocity += (WallJumpReflect - current_velocity) * WallJumpBoost * (JumpMeter / JumpMeterSize);
+            if (CanWallJump() && WallJumpReflect.magnitude > 0)
+            {
+                //Debug.Log("Wall Jump");
+                current_velocity += (WallJumpReflect - current_velocity) * WallJumpBoost * (JumpMeter / JumpMeterSize);
+            }
+            else if (IsWallRunning())
+            {
+                //Debug.Log("Wall Run Jump");
+                current_velocity += PreviousWallNormal * WallRunJumpSpeed * (JumpMeter / JumpMeterSize);
+            }
+            if (OnGround() || willJump || CanWallJump() || IsWallRunning())
+            {
+                //Debug.Log("Upward Jump");
+                current_velocity.y = Math.Max(current_velocity.y + JumpVelocity * (JumpMeter / JumpMeterSize), JumpVelocity);
+            }
         }
-        else if (IsWallRunning())
+        else
         {
-            Debug.Log("Wall Run Jump");
-            current_velocity += PreviousWallNormal * WallRunJumpSpeed * (JumpMeter / JumpMeterSize);
-        }
-        else if (IsWallClimbing())
-        {
-            Debug.Log("Wall Climb Jump");
-            current_velocity += PreviousWallNormal * WallRunJumpSpeed * (JumpMeter / JumpMeterSize);
-        }
-        if (OnGround() || willJump || CanWallJump() || IsWallRunning())
-        {
-            Debug.Log("Upward Jump");
-            current_velocity.y = Math.Max(current_velocity.y + JumpVelocity*(JumpMeter/JumpMeterSize), JumpVelocity);
+            current_velocity.y = LedgeClimbBoost;
         }
         JumpMeter = 0;
+        ReGrabTimeDelta = 0;
         isJumping = true;
         willJump = false;
+        isHanging = false;
 
         // Intentionally set the timers over the limit
         BufferJumpTimeDelta = BufferJumpGracePeriod;
