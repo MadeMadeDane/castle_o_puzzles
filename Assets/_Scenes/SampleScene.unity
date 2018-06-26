@@ -485,7 +485,7 @@ Mesh:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: pb_Mesh4092
+  m_Name: pb_Mesh4102
   serializedVersion: 8
   m_SubMeshes:
   - serializedVersion: 2
@@ -1209,7 +1209,7 @@ Mesh:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: pb_Mesh-140280
+  m_Name: pb_Mesh4146
   serializedVersion: 8
   m_SubMeshes:
   - serializedVersion: 2
@@ -4129,9 +4129,9 @@ CapsuleCollider:
   m_IsTrigger: 1
   m_Enabled: 1
   m_Radius: 0.75
-  m_Height: 3
+  m_Height: 5.5
   m_Direction: 1
-  m_Center: {x: 0, y: -1, z: 0}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1058979806
 GameObject:
   m_ObjectHideFlags: 0
@@ -9486,7 +9486,7 @@ Mesh:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: pb_Mesh-348958
+  m_Name: pb_Mesh4036
   serializedVersion: 8
   m_SubMeshes:
   - serializedVersion: 2
