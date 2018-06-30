@@ -50,6 +50,11 @@ public class PlayerController : MonoBehaviour {
     private float WallClimbGracePeriod;
     private float ReGrabTimeDelta;
     private float ReGrabGracePeriod;
+    private float MovingColliderTimeDelta;
+    private float MovingColliderGracePeriod;
+    private float MovingPlatformTimeDelta;
+    private float MovingPlatformGracePeriod;
+
     // Wall related variables
     private Vector3 WallJumpReflect;
     private Vector3 PreviousWallJumpPos;
@@ -65,9 +70,11 @@ public class PlayerController : MonoBehaviour {
     private float WallDistanceThreshold;
 
     // Physics state variables
+    private Vector3 moving_frame_velocity;
     private Vector3 current_velocity;
     private Vector3 accel;
     private ControllerColliderHit lastHit;
+    private Collider lastMovingTrigger;
     private Collider lastTrigger;
     private ControllerColliderHit currentHit;
     private float GravityMult;
@@ -132,11 +139,16 @@ public class PlayerController : MonoBehaviour {
         WallClimbTimeDelta = WallClimbGracePeriod;
         ReGrabGracePeriod = 0.5f;
         ReGrabTimeDelta = ReGrabGracePeriod;
+        MovingColliderGracePeriod = 0.1f;
+        MovingColliderTimeDelta = MovingColliderGracePeriod;
+        MovingPlatformGracePeriod = 0.1f;
+        MovingPlatformTimeDelta = MovingPlatformGracePeriod;
 
         // Initial state
         total_error = 0f;
         error_accum_size = 10;
         error_accum = new Queue<float>(Enumerable.Repeat<float>(0f, error_accum_size));
+        moving_frame_velocity = Vector3.zero;
         current_velocity = Vector3.zero;
         currentHit = new ControllerColliderHit();
         StartPos = transform.position;
@@ -230,6 +242,8 @@ public class PlayerController : MonoBehaviour {
         WallRunTimeDelta = Mathf.Clamp(WallRunTimeDelta + Time.deltaTime, 0, 2 * WallRunGracePeriod);
         WallClimbTimeDelta = Mathf.Clamp(WallClimbTimeDelta + Time.deltaTime, 0, 2 * WallClimbGracePeriod);
         ReGrabTimeDelta = Mathf.Clamp(ReGrabTimeDelta + Time.deltaTime, 0, 2 * ReGrabGracePeriod);
+        MovingColliderTimeDelta = Mathf.Clamp(MovingColliderTimeDelta + Time.deltaTime, 0, 2 * MovingColliderGracePeriod);
+        MovingPlatformTimeDelta = Mathf.Clamp(MovingPlatformTimeDelta + Time.deltaTime, 0, 2 * MovingPlatformGracePeriod);
     }
 
     private void ProcessTriggers()
@@ -238,6 +252,21 @@ public class PlayerController : MonoBehaviour {
         {
             return;
         }
+
+        MovingGeneric moving_obj = lastTrigger.GetComponent<MovingCollider>();
+        if (moving_obj != null)
+        {
+            transform.parent = moving_obj.transform;
+            lastMovingTrigger = lastTrigger;
+            MovingColliderTimeDelta = 0;
+        }
+        /*{
+            float speed_with_obj = Vector3.Dot(current_velocity, moving_obj.velocity.normalized);
+            if (Vector3.Dot(moving_obj.transform.position - transform.position, moving_obj.velocity) < 0)
+            {
+                current_velocity += 0.1f * moving_obj.velocity.normalized + moving_obj.velocity - speed_with_obj * moving_obj.velocity.normalized;
+            }
+        }*/
 
         if (!OnGround())
         {
@@ -388,6 +417,12 @@ public class PlayerController : MonoBehaviour {
             // Buffer a jump
             willJump = true;
         }
+        MovingGeneric moving_platform = lastHit.gameObject.GetComponent<MovingGeneric>();
+        if (moving_platform != null)
+        {
+            transform.parent = moving_platform.transform;
+            MovingPlatformTimeDelta = 0;
+        }
         PreviousWallNormal = Vector3.zero;
         PreviousWallJumpNormal = Vector3.zero;
         PreviousWallJumpPos = Vector3.positiveInfinity;
@@ -420,6 +455,9 @@ public class PlayerController : MonoBehaviour {
     // Apply movement forces from input (FAST edition)
     private void HandleMovement()
     {
+        // Handle moving collisions
+        HandleMovingCollisions();
+
         // If we are hanging stay still
         if (isHanging)
         {
@@ -427,6 +465,7 @@ public class PlayerController : MonoBehaviour {
             GravityMult = 0;
             return;
         }
+
         Vector3 planevelocity;
         Vector3 movVec = (input_manager.GetMoveVertical() * transform.forward +
                           input_manager.GetMoveHorizontal() * transform.right);
@@ -450,7 +489,7 @@ public class PlayerController : MonoBehaviour {
             // Use character controller grounded check to be certain we are actually on the ground
             movVec = Vector3.ProjectOnPlane(movVec, currentHit.normal);
             AccelerateTo(movVec, RunSpeed*movmag, GroundAcceleration);
-            accel += -current_velocity * SpeedDamp;
+            accel += -(current_velocity + moving_frame_velocity) * SpeedDamp;
         }
         // We are either in the air, buffering a jump, or sliding (recent contact with ground). Use air accel.
         else
@@ -478,7 +517,39 @@ public class PlayerController : MonoBehaviour {
             {
                 AccelerateTo(movVec, AirSpeed * movmag, AirAcceleration);
             }
-            accel += -Vector3.ProjectOnPlane(current_velocity, transform.up) * AirSpeedDamp;
+            accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, transform.up) * AirSpeedDamp;
+        }
+    }
+
+    private void HandleMovingCollisions()
+    {
+        if (!InMovingCollision() && !OnMovingPlatform())
+        {
+            moving_frame_velocity = Vector3.zero;
+            if (transform.parent != null)
+            {
+                transform.parent = null;
+            }
+        }
+        else if (InMovingCollision())
+        {
+            MovingGeneric moving_obj = lastMovingTrigger.GetComponent<MovingGeneric>();
+            if (moving_obj != null)
+            {
+                moving_frame_velocity = lastMovingTrigger.GetComponent<MovingGeneric>().velocity;
+            }
+            /*Vector3 contact_point = lastMovingTrigger.ClosestPointOnBounds(transform.position);
+            Vector3 contact_path = (transform.position - contact_point).normalized;
+            Vector3 moving_obj_vel = lastMovingTrigger.GetComponent<MovingGeneric>().velocity;
+            //float path_relative_vel = Vector3.Dot(moving_obj_vel, contact_path);
+
+            if (Vector3.Dot(moving_obj_vel.normalized, contact_path) < 0.5f)
+            {
+                float speed_with_obj = Vector3.Dot(current_velocity, moving_obj_vel.normalized);
+                current_velocity += (-moving_obj_vel - speed_with_obj * moving_obj_vel.normalized);
+            }*/
+            //current_velocity += contact_path * Mathf.Abs(path_relative_vel);
+            //current_velocity -= contact_path * Vector3.Dot(contact_path, velocity_change);
         }
     }
 
@@ -496,6 +567,7 @@ public class PlayerController : MonoBehaviour {
 
         // Scale acceleration by speed because we want to go fast
         deltaSpeed = Mathf.Clamp(acceleration * Time.deltaTime * desiredSpeed, 0, deltaSpeed);
+        // Take care of all moving platfrom related actions
         current_velocity += deltaSpeed * direction;
     }
 
@@ -562,6 +634,16 @@ public class PlayerController : MonoBehaviour {
         return (WallJumpTimeDelta < WallJumpGracePeriod);
     }
 
+    private bool InMovingCollision()
+    {
+        return (MovingColliderTimeDelta < MovingColliderGracePeriod);
+    }
+
+    private bool OnMovingPlatform()
+    {
+        return (MovingPlatformTimeDelta < MovingPlatformGracePeriod);
+    }
+
     private bool WallDistanceCheck()
     {
         float horizontal_distance_sqr = Vector3.ProjectOnPlane(PreviousWallJumpPos - transform.position, Physics.gravity).sqrMagnitude;
@@ -610,6 +692,7 @@ public class PlayerController : MonoBehaviour {
         WallRunTimeDelta = WallRunGracePeriod;
         WallClimbTimeDelta = WallClimbGracePeriod;
         LandingTimeDelta = jumpGracePeriod;
+        MovingPlatformTimeDelta = MovingPlatformGracePeriod;
         WallJumpReflect = Vector3.zero;
     }
 
