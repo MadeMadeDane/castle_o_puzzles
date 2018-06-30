@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class PlayerController : MonoBehaviour {
@@ -71,6 +72,9 @@ public class PlayerController : MonoBehaviour {
     private ControllerColliderHit currentHit;
     private float GravityMult;
     private float JumpMeterComputed;
+    private Queue<float> error_accum;
+    private float total_error;
+    private int error_accum_size;
 
     // Use this for initialization
     private void Start () {
@@ -130,6 +134,9 @@ public class PlayerController : MonoBehaviour {
         ReGrabTimeDelta = ReGrabGracePeriod;
 
         // Initial state
+        total_error = 0f;
+        error_accum_size = 10;
+        error_accum = new Queue<float>(Enumerable.Repeat<float>(0f, error_accum_size));
         current_velocity = Vector3.zero;
         currentHit = new ControllerColliderHit();
         StartPos = transform.position;
@@ -167,11 +174,35 @@ public class PlayerController : MonoBehaviour {
             // This should trigger ground detection
             accel += -Mathf.Sign(currentHit.normal.y) * Physics.gravity.magnitude * currentHit.normal;
         }
-        current_velocity += accel * Time.deltaTime;
-        Vector3 previous_position = transform.position;
-        cc.Move(current_velocity * Time.deltaTime);
 
-        if ((cc.velocity - current_velocity).magnitude > 100.0f)
+
+        current_velocity += accel * Time.deltaTime;
+
+        Vector3 previous_position = transform.position;
+        float error = cc.velocity.magnitude - current_velocity.magnitude;
+        total_error += error - error_accum.Dequeue();
+        error_accum.Enqueue(error);
+        if (total_error < -50.0f)
+        {
+            current_velocity = cc.velocity;
+            //Debug.Log("Total error: " + total_error.ToString());
+        }
+
+        bool failed_move = false;
+        try
+        {
+            cc.Move(current_velocity * Time.deltaTime);
+        }
+        catch (Exception ex)
+        {
+            Debug.Log("Failed to move: " + ex.ToString());
+            failed_move = true;
+        } 
+
+        // Check the error again after a move to see if collision detection caused a bad move
+        // This is bandaid-ing a bug in the unity character controller where moving into certain
+        // edges will cause the character to teleport extreme distances, sometimes crashing the game.
+        if (cc.velocity.magnitude - current_velocity.magnitude > 100.0f || failed_move)
         {
             Debug.Log("Detected large error in velocity... Aborting move");
             Debug.Log("Previous position: " + previous_position.ToString());
@@ -181,8 +212,10 @@ public class PlayerController : MonoBehaviour {
             Debug.Log("Velocity error: " + (current_velocity - cc.velocity).ToString());
             Debug.Log("WallJumpReflect: " + WallJumpReflect.ToString());
             Debug.Log("Accel: " + accel.ToString());
-            StartCoroutine(DeferedTeleport(previous_position + new Vector3(UnityEngine.Random.Range(-0.5f, 0.5f), UnityEngine.Random.Range(-0.5f, 0.5f), 0.5f)));
+            cc.SimpleMove(-cc.velocity);
+            Teleport(previous_position);
         }
+
 
         IncrementCounters();
     }
@@ -338,7 +371,7 @@ public class PlayerController : MonoBehaviour {
 
         if (currentHit.gameObject.tag == "Respawn")
         {
-            StartCoroutine(DeferedTeleport(StartPos));
+            Teleport(StartPos);
         }
         // Set last hit null so we don't process it again
         lastHit = null;
@@ -591,11 +624,16 @@ public class PlayerController : MonoBehaviour {
         lastHit = hit;
     }
 
-
-    // Teleport coroutine (needed due to bug in character controller teleport)
-    IEnumerator DeferedTeleport(Vector3 position)
+    private void Teleport(Vector3 position)
     {
-        yield return new WaitForEndOfFrame();
+        foreach (Collider col in GetComponents<Collider>())
+        {
+            col.enabled = false;
+        }
         transform.position = position;
+        foreach (Collider col in GetComponents<Collider>())
+        {
+            col.enabled = true;
+        }
     }
 }
