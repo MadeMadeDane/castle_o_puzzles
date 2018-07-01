@@ -74,6 +74,7 @@ public class PlayerController : MonoBehaviour {
     private Vector3 current_velocity;
     private Vector3 accel;
     private ControllerColliderHit lastHit;
+    private MovingGeneric lastMovingPlatform;
     private Collider lastMovingTrigger;
     private Collider lastTrigger;
     private ControllerColliderHit currentHit;
@@ -191,15 +192,6 @@ public class PlayerController : MonoBehaviour {
         current_velocity += accel * Time.deltaTime;
 
         Vector3 previous_position = transform.position;
-        float error = cc.velocity.magnitude - current_velocity.magnitude;
-        total_error += error - error_accum.Dequeue();
-        error_accum.Enqueue(error);
-        if (total_error < -50.0f)
-        {
-            current_velocity = cc.velocity;
-            //Debug.Log("Total error: " + total_error.ToString());
-        }
-
         bool failed_move = false;
         try
         {
@@ -209,12 +201,21 @@ public class PlayerController : MonoBehaviour {
         {
             Debug.Log("Failed to move: " + ex.ToString());
             failed_move = true;
-        } 
+        }
+
+        float error = cc.velocity.magnitude - current_velocity.magnitude;
+        total_error += error - error_accum.Dequeue();
+        error_accum.Enqueue(error);
+        if (total_error < -50.0f)
+        {
+            current_velocity = cc.velocity;
+            //Debug.Log("Total error: " + total_error.ToString());
+        }
 
         // Check the error again after a move to see if collision detection caused a bad move
         // This is bandaid-ing a bug in the unity character controller where moving into certain
         // edges will cause the character to teleport extreme distances, sometimes crashing the game.
-        if (cc.velocity.magnitude - current_velocity.magnitude > 100.0f || failed_move)
+        if (error > 100.0f || failed_move)
         {
             Debug.Log("Detected large error in velocity... Aborting move");
             Debug.Log("Previous position: " + previous_position.ToString());
@@ -256,17 +257,15 @@ public class PlayerController : MonoBehaviour {
         MovingGeneric moving_obj = lastTrigger.GetComponent<MovingCollider>();
         if (moving_obj != null)
         {
-            transform.parent = moving_obj.transform;
-            lastMovingTrigger = lastTrigger;
+            if (transform.parent != moving_obj.transform)
+            {
+                transform.parent = moving_obj.transform;
+                // Keep custom velocity globally accurate
+                current_velocity -= moving_obj.velocity;
+            }
+            lastMovingPlatform = moving_obj;
             MovingColliderTimeDelta = 0;
         }
-        /*{
-            float speed_with_obj = Vector3.Dot(current_velocity, moving_obj.velocity.normalized);
-            if (Vector3.Dot(moving_obj.transform.position - transform.position, moving_obj.velocity) < 0)
-            {
-                current_velocity += 0.1f * moving_obj.velocity.normalized + moving_obj.velocity - speed_with_obj * moving_obj.velocity.normalized;
-            }
-        }*/
 
         if (!OnGround())
         {
@@ -344,7 +343,7 @@ public class PlayerController : MonoBehaviour {
         // First attempt a wall run if we pass the limit and are looking along the wall
         if (AlongWallVel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(wall_normal, transform.forward)) < 0.866f && Vector3.Dot(AlongWallVel, transform.forward) > 0)
         {
-            if (IsWallRunning() || Vector3.Dot(PreviousWallNormal, wall_normal) < 0.94f)
+            if (IsWallRunning() || CanWallRun(PreviousWallJumpPos, PreviousWallNormal, transform.position, wall_normal))
             {
                 // Get a small boost on new wall runs. Also prevent spamming wall boosts
                 if (!IsWallRunning() && WallDistanceCheck())
@@ -364,6 +363,20 @@ public class PlayerController : MonoBehaviour {
             WallClimbTimeDelta = 0;
         }
         PreviousWallNormal = wall_normal;
+    }
+
+    private bool CanWallRun(Vector3 old_wall_pos, Vector3 old_wall_normal, Vector3 new_wall_pos, Vector3 new_wall_normal)
+    {
+        bool wall_normal_check = Vector3.Dot(old_wall_normal, new_wall_normal) < 0.94f;
+        if (old_wall_pos == Vector3.positiveInfinity)
+        {
+            return wall_normal_check;
+        }
+        // Allow wall running on the same normal if we move to a new position not along the wall
+        else
+        {
+            return wall_normal_check || (WallDistanceCheck() && Mathf.Abs(Vector3.Dot((new_wall_pos - old_wall_pos).normalized, old_wall_normal)) > 0.34f);
+        }
     }
 
     private void ProcessHits()
@@ -420,7 +433,13 @@ public class PlayerController : MonoBehaviour {
         MovingGeneric moving_platform = lastHit.gameObject.GetComponent<MovingGeneric>();
         if (moving_platform != null)
         {
-            transform.parent = moving_platform.transform;
+            if (transform.parent != moving_platform.transform)
+            {
+                transform.parent = moving_platform.transform;
+                // Keep custom velocity globally accurate
+                current_velocity -= moving_platform.velocity;
+            }
+            lastMovingPlatform = moving_platform;
             MovingPlatformTimeDelta = 0;
         }
         PreviousWallNormal = Vector3.zero;
@@ -529,27 +548,18 @@ public class PlayerController : MonoBehaviour {
             if (transform.parent != null)
             {
                 transform.parent = null;
+                // Inherit velocity from previous platform
+                if (lastMovingPlatform != null)
+                {
+                    // Keep custom velocity globally accurate
+                    current_velocity += lastMovingPlatform.velocity;
+                }
             }
+            lastMovingPlatform = null;
         }
         else if (InMovingCollision())
         {
-            MovingGeneric moving_obj = lastMovingTrigger.GetComponent<MovingGeneric>();
-            if (moving_obj != null)
-            {
-                moving_frame_velocity = lastMovingTrigger.GetComponent<MovingGeneric>().velocity;
-            }
-            /*Vector3 contact_point = lastMovingTrigger.ClosestPointOnBounds(transform.position);
-            Vector3 contact_path = (transform.position - contact_point).normalized;
-            Vector3 moving_obj_vel = lastMovingTrigger.GetComponent<MovingGeneric>().velocity;
-            //float path_relative_vel = Vector3.Dot(moving_obj_vel, contact_path);
-
-            if (Vector3.Dot(moving_obj_vel.normalized, contact_path) < 0.5f)
-            {
-                float speed_with_obj = Vector3.Dot(current_velocity, moving_obj_vel.normalized);
-                current_velocity += (-moving_obj_vel - speed_with_obj * moving_obj_vel.normalized);
-            }*/
-            //current_velocity += contact_path * Mathf.Abs(path_relative_vel);
-            //current_velocity -= contact_path * Vector3.Dot(contact_path, velocity_change);
+            moving_frame_velocity = lastMovingPlatform.velocity;
         }
     }
 
