@@ -83,6 +83,9 @@ public class PlayerController : MonoBehaviour {
     private Queue<float> error_accum;
     private float total_error;
     private int error_accum_size;
+    private int error_bucket;
+    private int error_threshold;
+    private int error_stage;
 
     // Use this for initialization
     private void Start () {
@@ -147,6 +150,9 @@ public class PlayerController : MonoBehaviour {
 
         // Initial state
         total_error = 0f;
+        error_threshold = 50;
+        error_stage = 0;
+        error_bucket = 0;
         error_accum_size = 10;
         error_accum = new Queue<float>(Enumerable.Repeat<float>(0f, error_accum_size));
         moving_frame_velocity = Vector3.zero;
@@ -175,7 +181,12 @@ public class PlayerController : MonoBehaviour {
         ProcessTriggers();
         HandleMovement();
         HandleJumping();
+        UpdatePlayerState();
+        IncrementCounters();
+    }
 
+    private void UpdatePlayerState()
+    {
         // Update character state based on desired movement
         if (!OnGround())
         {
@@ -187,7 +198,6 @@ public class PlayerController : MonoBehaviour {
             // This should trigger ground detection
             accel += -Mathf.Sign(currentHit.normal.y) * Physics.gravity.magnitude * currentHit.normal;
         }
-
 
         current_velocity += accel * Time.deltaTime;
 
@@ -206,31 +216,57 @@ public class PlayerController : MonoBehaviour {
         float error = cc.velocity.magnitude - current_velocity.magnitude;
         total_error += error - error_accum.Dequeue();
         error_accum.Enqueue(error);
+        // We are too far off from the real velocity. This mainly happens when trying to move into colliders.
+        // Nothing will significantly change if we reset the velocity here, so use this time to resync it.
         if (total_error < -50.0f)
         {
             current_velocity = cc.velocity;
             //Debug.Log("Total error: " + total_error.ToString());
         }
 
-        // Check the error again after a move to see if collision detection caused a bad move
+        // Unity is too far off from what the velocity should be
         // This is bandaid-ing a bug in the unity character controller where moving into certain
         // edges will cause the character to teleport extreme distances, sometimes crashing the game.
         if (error > 100.0f || failed_move)
         {
-            Debug.Log("Detected large error in velocity... Aborting move");
+            cc.SimpleMove(-cc.velocity);
+            Teleport(previous_position);
+            error_bucket++;
+        }
+        else
+        {
+            if (error_bucket > 0)
+            {
+                error_bucket--;
+                // If the frame didn't have an error, we are probably safe now. Reset to no error stage.
+                error_stage = 0;
+            }
+        }
+
+        // If we have a large number of errors in a row, we are probably stuck.
+        // Try to resolve this in a series of stages.
+        if (error_bucket >= error_threshold)
+        {
+            Debug.Log("Lots of error!");
             Debug.Log("Previous position: " + previous_position.ToString());
             Debug.Log("Current position: " + transform.position.ToString());
             Debug.Log("Current cc velocity: " + cc.velocity.magnitude.ToString());
             Debug.Log("Current velocity: " + current_velocity.magnitude.ToString());
             Debug.Log("Velocity error: " + (current_velocity - cc.velocity).ToString());
-            Debug.Log("WallJumpReflect: " + WallJumpReflect.ToString());
-            Debug.Log("Accel: " + accel.ToString());
-            cc.SimpleMove(-cc.velocity);
-            Teleport(previous_position);
+            error_stage++;
+            Debug.Log("Attempting error resolution stage " + error_stage.ToString());
+            switch (error_stage)
+            {
+                case 1:
+                    Teleport(previous_position - (cc.velocity * Time.deltaTime));
+                    break;
+                case 2:
+                    Debug.Log("Last resort!");
+                    error_stage = 0;
+                    break;
+            }
+            error_bucket = 0;
         }
-
-
-        IncrementCounters();
     }
 
     private void IncrementCounters()
@@ -331,9 +367,10 @@ public class PlayerController : MonoBehaviour {
                 if (BufferJumpTimeDelta < BufferJumpGracePeriod)
                 {
                     // Buffer a jump
+                    Debug.Log("Buffering the jump");
                     willJump = true;
                 }
-                PreviousWallJumpNormal = wall_normal;
+                //PreviousWallJumpNormal = wall_normal;
             }
         }
         WallAxis = Vector3.Cross(wall_normal, Physics.gravity).normalized;
@@ -666,23 +703,24 @@ public class PlayerController : MonoBehaviour {
         if (CanWallJump() || IsWallRunning())
         {
             PreviousWallJumpPos = transform.position;
+            PreviousWallJumpNormal = PreviousWallNormal;
         }
         if (!isHanging && JumpMeter > JumpMeterThreshold)
         {
             if (CanWallJump() && WallJumpReflect.magnitude > 0)
             {
-                //Debug.Log("Wall Jump");
+                Debug.Log("Wall Jump");
                 current_velocity += (WallJumpReflect - current_velocity) * WallJumpBoost * JumpMeterComputed;
             }
             else if (IsWallRunning())
             {
-                //Debug.Log("Wall Run Jump");
+                Debug.Log("Wall Run Jump");
                 current_velocity += PreviousWallNormal * WallRunJumpSpeed * JumpMeterComputed;
                 current_velocity.y = Math.Max(current_velocity.y, JumpVelocity * JumpMeterComputed);
             }
             if (OnGround() || CanWallJump())
             {
-                //Debug.Log("Upward Jump");
+                Debug.Log("Upward Jump");
                 current_velocity.y = Math.Max(current_velocity.y + JumpVelocity * JumpMeterComputed, JumpVelocity * JumpMeterComputed);
             }
         }
@@ -708,7 +746,10 @@ public class PlayerController : MonoBehaviour {
 
     private void OnTriggerStay(Collider other)
     {
-        lastTrigger = other;
+        if (!other.isTrigger)
+        {
+            lastTrigger = other;
+        }
     }
 
     // Handle collisions on player move

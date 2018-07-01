@@ -7,6 +7,7 @@ public class MovingCollider : MovingGeneric {
     public GameObject nextTargetObject;
     private Vector3 target_velocity;
     private float distanceThreshold;
+    private MotionTarget current_target;
     private GameObject home;
 
     // Use this for initialization
@@ -14,6 +15,7 @@ public class MovingCollider : MovingGeneric {
         velocity = Vector3.zero;
         target_velocity = Vector3.zero;
         distanceThreshold = 0.1f;
+        current_target = null;
         // Save the original target as the home
         home = nextTargetObject;
         StartCoroutine(MoveToNextTarget());
@@ -25,6 +27,22 @@ public class MovingCollider : MovingGeneric {
 
     private void FixedUpdate()
     {
+        if (current_target != null)
+        {
+            Vector3 path = current_target.transform.position - transform.position;
+            if (path.magnitude > distanceThreshold)
+            {
+                target_velocity = path.normalized * current_target.speed;
+            }
+            else
+            {
+                target_velocity = path / distanceThreshold;
+            }
+        }
+        else
+        {
+            target_velocity = Vector3.zero;
+        }
         velocity = Vector3.Lerp(velocity, target_velocity, 0.1f);
         transform.Translate(velocity*Time.deltaTime);
     }
@@ -48,20 +66,21 @@ public class MovingCollider : MovingGeneric {
                 continue;
             }
 
-            while ((nextTarget.transform.position - transform.position).magnitude > distanceThreshold)
+            current_target = nextTarget;
+            while ((current_target.transform.position - transform.position).magnitude > distanceThreshold)
             {
-                target_velocity = (nextTarget.transform.position - transform.position).normalized * nextTarget.speed;
+                //target_velocity = (current_target.transform.position - transform.position).normalized * current_target.speed;
                 // Synchronize with fixed update
                 yield return new WaitForFixedUpdate();
             }
 
             // Put the coroutine to sleep while we wait
             target_velocity = Vector3.zero;
-            if (nextTarget.waitTime != 0f)
+            if (current_target.waitTime != 0f)
             {
-                yield return new WaitForSeconds(nextTarget.waitTime);
+                yield return new WaitForSeconds(current_target.waitTime);
             }
-            nextTargetObject = nextTarget.nextTargetObject;
+            nextTargetObject = current_target.nextTargetObject;
         }
     }
 

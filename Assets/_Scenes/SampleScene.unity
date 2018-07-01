@@ -1355,7 +1355,7 @@ Mesh:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: pb_Mesh-3998
+  m_Name: pb_Mesh3996
   serializedVersion: 8
   m_SubMeshes:
   - serializedVersion: 2
@@ -1726,12 +1726,11 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 321962320}
-  - component: {fileID: 321962319}
   - component: {fileID: 321962318}
   m_Layer: 0
   m_Name: Target1
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 5721338939258241955, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -1749,18 +1748,6 @@ MonoBehaviour:
   waitTime: 2
   speed: 20
   nextTargetObject: {fileID: 1976885802}
---- !u!65 &321962319
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 321962317}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 1
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!4 &321962320
 Transform:
   m_ObjectHideFlags: 0
@@ -4080,7 +4067,7 @@ Mesh:
   m_ObjectHideFlags: 0
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
-  m_Name: pb_Mesh3966
+  m_Name: pb_Mesh3970
   serializedVersion: 8
   m_SubMeshes:
   - serializedVersion: 2
@@ -10053,12 +10040,11 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 1976885803}
-  - component: {fileID: 1976885805}
   - component: {fileID: 1976885804}
   m_Layer: 0
   m_Name: Target2
   m_TagString: Untagged
-  m_Icon: {fileID: 0}
+  m_Icon: {fileID: 5721338939258241955, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
@@ -10089,18 +10075,6 @@ MonoBehaviour:
   waitTime: 0
   speed: 20
   nextTargetObject: {fileID: 321962317}
---- !u!65 &1976885805
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
-  m_GameObject: {fileID: 1976885802}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 1
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!43 &2038275221
 Mesh:
   m_ObjectHideFlags: 0
