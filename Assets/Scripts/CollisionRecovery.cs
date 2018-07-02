@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class CollisionRecovery : MonoBehaviour {
+    public PlayerController player;
 
 	// Use this for initialization
 	void Start () {
@@ -22,7 +23,7 @@ public class CollisionRecovery : MonoBehaviour {
     {
         if (!other.isTrigger)
         {
-            Debug.Log("hi");
+            player.Recover(other);
         }
     }
 }

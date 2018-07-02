@@ -54,6 +54,8 @@ public class PlayerController : MonoBehaviour {
     private float MovingColliderGracePeriod;
     private float MovingPlatformTimeDelta;
     private float MovingPlatformGracePeriod;
+    private float StuckTimeDelta;
+    private float StuckGracePeriod;
 
     // Wall related variables
     private Vector3 WallJumpReflect;
@@ -86,6 +88,8 @@ public class PlayerController : MonoBehaviour {
     private int error_bucket;
     private int error_threshold;
     private int error_stage;
+    private int position_history_size;
+    private LinkedList<Vector3> position_history;
 
     // Use this for initialization
     private void Start () {
@@ -147,8 +151,12 @@ public class PlayerController : MonoBehaviour {
         MovingColliderTimeDelta = MovingColliderGracePeriod;
         MovingPlatformGracePeriod = 0.1f;
         MovingPlatformTimeDelta = MovingPlatformGracePeriod;
+        StuckGracePeriod = 0.2f;
+        StuckTimeDelta = StuckGracePeriod;
 
         // Initial state
+        position_history_size = 50;
+        position_history = new LinkedList<Vector3>();
         total_error = 0f;
         error_threshold = 50;
         error_stage = 0;
@@ -267,6 +275,16 @@ public class PlayerController : MonoBehaviour {
             }
             error_bucket = 0;
         }
+
+        // Add to history of not stuck positions
+        if (!IsStuck())
+        {
+            if (position_history.Count == position_history_size)
+            {
+                position_history.RemoveLast();
+            }
+            position_history.AddFirst(transform.position);
+        }
     }
 
     private void IncrementCounters()
@@ -281,6 +299,7 @@ public class PlayerController : MonoBehaviour {
         ReGrabTimeDelta = Mathf.Clamp(ReGrabTimeDelta + Time.deltaTime, 0, 2 * ReGrabGracePeriod);
         MovingColliderTimeDelta = Mathf.Clamp(MovingColliderTimeDelta + Time.deltaTime, 0, 2 * MovingColliderGracePeriod);
         MovingPlatformTimeDelta = Mathf.Clamp(MovingPlatformTimeDelta + Time.deltaTime, 0, 2 * MovingPlatformGracePeriod);
+        StuckTimeDelta = Mathf.Clamp(StuckTimeDelta + Time.deltaTime, 0, 2 * StuckGracePeriod);
     }
 
     private void ProcessTriggers()
@@ -307,10 +326,18 @@ public class PlayerController : MonoBehaviour {
         {
             RaycastHit hit;
             Boolean hit_wall = false;
-            if (IsWallRunning() || IsWallClimbing())
+            if (IsWallRunning())
             {
                 // Scan toward the wall normal
                 if (Physics.Raycast(transform.position, -PreviousWallNormal, out hit, 2.0f))
+                {
+                    hit_wall = true;
+                }
+            }
+            else if (IsWallClimbing())
+            {
+                // Scan toward the wall normal
+                if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - 0.5f)), -PreviousWallNormal, out hit, 2.0f))
                 {
                     hit_wall = true;
                 }
@@ -326,7 +353,7 @@ public class PlayerController : MonoBehaviour {
                 {
                     hit_wall = true;
                 }
-                else if (Physics.Raycast(transform.position + transform.up * (cc.height / 2 - 0.5f), transform.forward, out hit, 2.0f))
+                else if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - 0.5f)), transform.forward, out hit, 2.0f))
                 {
                     hit_wall = true;
                 }
@@ -395,7 +422,7 @@ public class PlayerController : MonoBehaviour {
             }
         }
         // If we fail the wall run try to wall climb instead if we are looking at the wall
-        else if (Vector3.Dot(transform.forward, -wall_normal) >= 0.866f)
+        else if (isHanging || Vector3.Dot(transform.forward, -wall_normal) >= 0.866f)
         {
             WallClimbTimeDelta = 0;
         }
@@ -511,6 +538,11 @@ public class PlayerController : MonoBehaviour {
     // Apply movement forces from input (FAST edition)
     private void HandleMovement()
     {
+        // Check if we can still be hanging
+        if (!IsWallClimbing())
+        {
+            isHanging = false;
+        }
         // Handle moving collisions
         HandleMovingCollisions();
 
@@ -691,6 +723,11 @@ public class PlayerController : MonoBehaviour {
         return (MovingPlatformTimeDelta < MovingPlatformGracePeriod);
     }
 
+    private bool IsStuck()
+    {
+        return (StuckTimeDelta < StuckGracePeriod);
+    }
+
     private bool WallDistanceCheck()
     {
         float horizontal_distance_sqr = Vector3.ProjectOnPlane(PreviousWallJumpPos - transform.position, Physics.gravity).sqrMagnitude;
@@ -768,6 +805,22 @@ public class PlayerController : MonoBehaviour {
         foreach (Collider col in GetComponents<Collider>())
         {
             col.enabled = true;
+        }
+    }
+
+    public void Recover(Collider other)
+    {
+        Debug.Log("Attempting to recover from stuck collision");
+        StuckTimeDelta = 0;
+        isHanging = false;
+        if (position_history.Count > 0)
+        {
+            Teleport(position_history.First.Value);
+            position_history.RemoveFirst();
+        }
+        else
+        {
+            Teleport(StartPos);
         }
     }
 }
