@@ -94,26 +94,8 @@ public class PlayerController : MonoBehaviour {
     // Use this for initialization
     private void Start () {
         // Movement values
-        RunSpeed = 15f;
-        AirSpeed = 0.90f;
-        GroundAcceleration = 20;
-        AirAcceleration = 500;
-        SpeedDamp = 10f;
-        AirSpeedDamp = 0.01f;
-        SlideSpeed = 18f;
+        SetShooterVars();
 
-        // Gravity modifiers
-        DownGravityAdd = 0;
-        ShortHopGravityAdd = 0;
-
-        // Jump states/values
-        JumpVelocity = 12f;
-        WallJumpThreshold = 8f;
-        WallJumpBoost = 1.0f;
-        WallRunLimit = 8f;
-        WallRunJumpSpeed = 15f;
-        WallRunImpulse = 0.0f;
-        WallRunSpeed = 12.0f;
         isJumping = false;
         isFalling = false;
         willJump = false;
@@ -169,6 +151,52 @@ public class PlayerController : MonoBehaviour {
         StartPos = transform.position;
 
         Physics.IgnoreCollision(WallRunCollider, cc);
+    }
+
+    private void SetShooterVars()
+    {
+        // Movement modifiers
+        RunSpeed = 15f;
+        AirSpeed = 0.90f;
+        GroundAcceleration = 20;
+        AirAcceleration = 500;
+        SpeedDamp = 10f;
+        AirSpeedDamp = 0.01f;
+        SlideSpeed = 18f;
+        // Gravity modifiers
+        DownGravityAdd = 0;
+        ShortHopGravityAdd = 0;
+        // Jump/Wall modifiers
+        JumpVelocity = 12f;
+        WallJumpThreshold = 8f;
+        WallJumpBoost = 1.0f;
+        WallRunLimit = 8f;
+        WallRunJumpSpeed = 15f;
+        WallRunImpulse = 0.0f;
+        WallRunSpeed = 12.0f;
+    }
+
+    private void SetThirdPersonActionVars()
+    {
+        // Movement modifiers
+        RunSpeed = 15f;
+        AirSpeed = 6f;
+        GroundAcceleration = 20;
+        AirAcceleration = 10;
+        SpeedDamp = 10f;
+        AirSpeedDamp = 0.01f;
+        SlideSpeed = 18f;
+        // Gravity modifiers
+        DownGravityAdd = 0;
+        ShortHopGravityAdd = 0;
+        // Jump/Wall modifiers
+        JumpVelocity = 16f;
+        WallJumpThreshold = 8f;
+        WallJumpBoost = 1.0f;
+        WallRunLimit = 8f;
+        WallRunJumpSpeed = 15f;
+        WallRunImpulse = 0.0f;
+        WallRunSpeed = 15f;
     }
 
     // Fixed Update is called once per physics tick
@@ -402,7 +430,6 @@ public class PlayerController : MonoBehaviour {
                 if (BufferJumpTimeDelta < BufferJumpGracePeriod)
                 {
                     // Buffer a jump
-                    Debug.Log("Buffering the jump");
                     willJump = true;
                 }
                 //PreviousWallJumpNormal = wall_normal;
@@ -754,18 +781,18 @@ public class PlayerController : MonoBehaviour {
         {
             if (CanWallJump() && WallJumpReflect.magnitude > 0)
             {
-                Debug.Log("Wall Jump");
+                //Debug.Log("Wall Jump");
                 current_velocity += (WallJumpReflect - current_velocity) * WallJumpBoost * JumpMeterComputed;
             }
             else if (IsWallRunning())
             {
-                Debug.Log("Wall Run Jump");
+                //Debug.Log("Wall Run Jump");
                 current_velocity += PreviousWallNormal * WallRunJumpSpeed * JumpMeterComputed;
                 current_velocity.y = Math.Max(current_velocity.y, JumpVelocity * JumpMeterComputed);
             }
             if (OnGround() || CanWallJump())
             {
-                Debug.Log("Upward Jump");
+                //Debug.Log("Upward Jump");
                 current_velocity.y = Math.Max(current_velocity.y + JumpVelocity * JumpMeterComputed, JumpVelocity * JumpMeterComputed);
             }
         }
