@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+delegate void AccelerationFunction(Vector3 direction, float desiredSpeed, float acceleration);
+
 public class PlayerController : MonoBehaviour {
     [Header("Linked Components")]
     public InputManager input_manager;
@@ -25,7 +27,9 @@ public class PlayerController : MonoBehaviour {
     public float WallJumpThreshold;
     public float WallJumpBoost;
     public float WallRunLimit;
+    public float WallJumpSpeed;
     public float WallRunJumpSpeed;
+    public float WallRunJumpUpSpeed;
     public Vector3 StartPos;
 
     // Jumping state variables
@@ -38,6 +42,7 @@ public class PlayerController : MonoBehaviour {
     private bool isJumping;
     private bool isFalling;
     private bool willJump;
+    private bool conserveUpwardMomentum;
     private float LandingTimeDelta;
     private float jumpGracePeriod;
     private float BufferJumpTimeDelta;
@@ -72,6 +77,7 @@ public class PlayerController : MonoBehaviour {
     private float WallDistanceThreshold;
 
     // Physics state variables
+    private AccelerationFunction accelerate;
     private Vector3 moving_frame_velocity;
     private Vector3 current_velocity;
     private Vector3 accel;
@@ -94,7 +100,8 @@ public class PlayerController : MonoBehaviour {
     // Use this for initialization
     private void Start () {
         // Movement values
-        SetShooterVars();
+        SetThirdPersonActionVars();
+        //SetShooterVars();
 
         isJumping = false;
         isFalling = false;
@@ -170,20 +177,24 @@ public class PlayerController : MonoBehaviour {
         JumpVelocity = 12f;
         WallJumpThreshold = 8f;
         WallJumpBoost = 1.0f;
+        WallJumpSpeed = 12f;
         WallRunLimit = 8f;
         WallRunJumpSpeed = 15f;
+        WallRunJumpUpSpeed = 12f;
         WallRunImpulse = 0.0f;
-        WallRunSpeed = 12.0f;
+        WallRunSpeed = 15.0f;
+        conserveUpwardMomentum = true;
+        accelerate = AccelerateCPM;
     }
 
     private void SetThirdPersonActionVars()
     {
         // Movement modifiers
         RunSpeed = 15f;
-        AirSpeed = 6f;
-        GroundAcceleration = 20;
-        AirAcceleration = 10;
-        SpeedDamp = 10f;
+        AirSpeed = 15f;
+        GroundAcceleration = 100;
+        AirAcceleration = 20;
+        SpeedDamp = 5f;
         AirSpeedDamp = 0.01f;
         SlideSpeed = 18f;
         // Gravity modifiers
@@ -193,10 +204,14 @@ public class PlayerController : MonoBehaviour {
         JumpVelocity = 16f;
         WallJumpThreshold = 8f;
         WallJumpBoost = 1.0f;
+        WallJumpSpeed = 12f;
         WallRunLimit = 8f;
-        WallRunJumpSpeed = 15f;
+        WallRunJumpSpeed = 12f;
+        WallRunJumpUpSpeed = 12f;
         WallRunImpulse = 0.0f;
         WallRunSpeed = 15f;
+        conserveUpwardMomentum = false;
+        accelerate = AccelerateStandard;
     }
 
     // Fixed Update is called once per physics tick
@@ -611,7 +626,7 @@ public class PlayerController : MonoBehaviour {
             SlideTimeDelta = SlideGracePeriod;
             // Use character controller grounded check to be certain we are actually on the ground
             movVec = Vector3.ProjectOnPlane(movVec, currentHit.normal);
-            AccelerateTo(movVec, RunSpeed*movmag, GroundAcceleration);
+            accelerate(movVec, RunSpeed*movmag, GroundAcceleration);
             accel += -(current_velocity + moving_frame_velocity) * SpeedDamp;
         }
         // We are either in the air, buffering a jump, or sliding (recent contact with ground). Use air accel.
@@ -638,7 +653,7 @@ public class PlayerController : MonoBehaviour {
             }
             else
             {
-                AccelerateTo(movVec, AirSpeed * movmag, AirAcceleration);
+                accelerate(movVec, AirSpeed * movmag, AirAcceleration);
             }
             accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, transform.up) * AirSpeedDamp;
         }
@@ -668,7 +683,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     // Try to accelerate to the desired speed in the direction specified
-    private void AccelerateTo(Vector3 direction, float desiredSpeed, float acceleration)
+    private void AccelerateCPM(Vector3 direction, float desiredSpeed, float acceleration)
     {
         direction.Normalize();
         float moveAxisSpeed = Vector3.Dot(current_velocity, direction);
@@ -681,8 +696,23 @@ public class PlayerController : MonoBehaviour {
 
         // Scale acceleration by speed because we want to go fast
         deltaSpeed = Mathf.Clamp(acceleration * Time.deltaTime * desiredSpeed, 0, deltaSpeed);
-        // Take care of all moving platfrom related actions
         current_velocity += deltaSpeed * direction;
+    }
+
+    // Regular acceleration
+    private void AccelerateStandard(Vector3 direction, float desiredSpeed, float acceleration)
+    {
+        Vector3 deltaVel = direction.normalized * acceleration * Time.deltaTime;
+        // Accelerate if we aren't at the desired speed
+        if (Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity).magnitude <= desiredSpeed)
+        {
+            current_velocity += deltaVel;
+        }
+        // If we are past the desired speed, subtract the deltaVel off and add it back in the direction we want
+        else
+        {
+            current_velocity = current_velocity - (deltaVel.magnitude * Vector3.ProjectOnPlane(current_velocity, Physics.gravity).normalized) + deltaVel;
+        }
     }
 
     // Handle jumping
@@ -783,24 +813,40 @@ public class PlayerController : MonoBehaviour {
             {
                 //Debug.Log("Wall Jump");
                 current_velocity += (WallJumpReflect - current_velocity) * WallJumpBoost * JumpMeterComputed;
+                if (conserveUpwardMomentum)
+                {
+                    current_velocity.y = Math.Max(current_velocity.y + WallJumpSpeed * JumpMeterComputed, WallJumpSpeed * JumpMeterComputed);
+                }
+                else
+                {
+                    current_velocity.y = Math.Max(current_velocity.y, WallJumpSpeed * JumpMeterComputed);
+                }
+                JumpMeter = 0;
             }
             else if (IsWallRunning())
             {
                 //Debug.Log("Wall Run Jump");
                 current_velocity += PreviousWallNormal * WallRunJumpSpeed * JumpMeterComputed;
-                current_velocity.y = Math.Max(current_velocity.y, JumpVelocity * JumpMeterComputed);
+                current_velocity.y = Math.Max(current_velocity.y, WallRunJumpUpSpeed * JumpMeterComputed);
+                JumpMeter = 0;
             }
-            if (OnGround() || CanWallJump())
+            else if (OnGround())
             {
                 //Debug.Log("Upward Jump");
-                current_velocity.y = Math.Max(current_velocity.y + JumpVelocity * JumpMeterComputed, JumpVelocity * JumpMeterComputed);
+                if (conserveUpwardMomentum)
+                {
+                    current_velocity.y = Math.Max(current_velocity.y + JumpVelocity * JumpMeterComputed, JumpVelocity * JumpMeterComputed);
+                }
+                else
+                {
+                    current_velocity.y = Math.Max(current_velocity.y, JumpVelocity * JumpMeterComputed);
+                }
             }
         }
         else if (isHanging)
         {
             current_velocity.y = LedgeClimbBoost;
         }
-        JumpMeter = 0;
         ReGrabTimeDelta = 0;
         isJumping = true;
         willJump = false;
