@@ -112,7 +112,7 @@ public class PlayerController : MonoBehaviour {
         WallJumpBoost = 1.0f;
         WallRunLimit = 8f;
         WallRunJumpSpeed = 15f;
-        WallRunImpulse = 6.0f;
+        WallRunImpulse = 0.0f;
         WallRunSpeed = 12.0f;
         isJumping = false;
         isFalling = false;
@@ -336,8 +336,12 @@ public class PlayerController : MonoBehaviour {
             }
             else if (IsWallClimbing())
             {
-                // Scan toward the wall normal
-                if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - 0.5f)), -PreviousWallNormal, out hit, 2.0f))
+                // Scan toward the wall normal at both head and stomach height
+                if (Physics.Raycast(transform.position, -PreviousWallNormal, out hit, 2.0f))
+                {
+                    hit_wall = true;
+                }
+                else if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - cc.radius)), -PreviousWallNormal, out hit, 2.0f))
                 {
                     hit_wall = true;
                 }
@@ -353,7 +357,7 @@ public class PlayerController : MonoBehaviour {
                 {
                     hit_wall = true;
                 }
-                else if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - 0.5f)), transform.forward, out hit, 2.0f))
+                else if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - cc.radius)), transform.forward, out hit, 2.0f))
                 {
                     hit_wall = true;
                 }
@@ -366,14 +370,18 @@ public class PlayerController : MonoBehaviour {
             if (IsWallClimbing() && !isHanging)
             {
                 // Scan for ledge
-                Vector3 LedgeScanPos = transform.position + (transform.up * cc.height / 2) + LedgeClimbOffset * transform.forward;
-                if (Physics.Raycast(LedgeScanPos, -transform.up, out hit, LedgeClimbOffset))
+                if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - cc.radius)), -PreviousWallNormal, out hit, 2.0f))
                 {
-                    if (CanGrabLedge() && Vector3.Dot(hit.normal, Physics.gravity) < -0.866f)
+                    Vector3 LedgeScanPos = transform.position + (transform.up * cc.height / 2) + LedgeClimbOffset * transform.forward;
+                    if (Physics.Raycast(LedgeScanPos, -transform.up, out hit, LedgeClimbOffset))
                     {
-                        isHanging = true;
+                        if (CanGrabLedge() && Vector3.Dot(hit.normal, Physics.gravity) < -0.866f)
+                        {
+                            isHanging = true;
+                        }
                     }
                 }
+
                 // If all ledge climb conditions are met, climb it to the surface on top
                 // and clear all wall conditions
             }
