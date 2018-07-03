@@ -31,6 +31,11 @@ public class PlayerController : MonoBehaviour {
     public float WallRunJumpSpeed;
     public float WallRunJumpUpSpeed;
     public Vector3 StartPos;
+    [Header("Movement toggles")]
+    public bool wallRunEnabled;
+    public bool wallJumpEnabled;
+    public bool wallClimbEnabled;
+    public bool conserveUpwardMomentum;
 
     // Jumping state variables
     private float JumpMeterSize;
@@ -42,7 +47,6 @@ public class PlayerController : MonoBehaviour {
     private bool isJumping;
     private bool isFalling;
     private bool willJump;
-    private bool conserveUpwardMomentum;
     private float LandingTimeDelta;
     private float jumpGracePeriod;
     private float BufferJumpTimeDelta;
@@ -75,9 +79,6 @@ public class PlayerController : MonoBehaviour {
     private float LedgeClimbOffset;
     private float LedgeClimbBoost;
     private float WallDistanceThreshold;
-    private bool wallRunEnabled;
-    private bool wallJumpEnabled;
-    private bool wallClimbEnabled;
 
     // Physics state variables
     private AccelerationFunction accelerate;
@@ -103,8 +104,8 @@ public class PlayerController : MonoBehaviour {
     // Use this for initialization
     private void Start () {
         // Movement values
-        //SetThirdPersonActionVars();
-        SetShooterVars();
+        SetThirdPersonActionVars();
+        //SetShooterVars();
 
         isJumping = false;
         isFalling = false;
@@ -121,29 +122,17 @@ public class PlayerController : MonoBehaviour {
         LedgeClimbBoost = Mathf.Sqrt(2 * cc.height * 1.1f * Physics.gravity.magnitude);
         WallDistanceThreshold = 14f;
         // Timers
-        JumpMeterSize = 0.3f;
-        JumpMeterThreshold = JumpMeterSize / 3;
         JumpMeter = JumpMeterSize;
         JumpMeterComputed = JumpMeter / JumpMeterSize;
-        jumpGracePeriod = 0.1f;
         LandingTimeDelta = jumpGracePeriod;
-        BufferJumpGracePeriod = 0.1f;
         BufferJumpTimeDelta = BufferJumpGracePeriod;
-        SlideGracePeriod = 0.2f;
         SlideTimeDelta = SlideGracePeriod;
-        WallJumpGracePeriod = 0.2f;
         WallJumpTimeDelta = WallJumpGracePeriod;
-        WallRunGracePeriod = 0.2f;
         WallRunTimeDelta = WallRunGracePeriod;
-        WallClimbGracePeriod = 0.2f;
         WallClimbTimeDelta = WallClimbGracePeriod;
-        ReGrabGracePeriod = 0.5f;
         ReGrabTimeDelta = ReGrabGracePeriod;
-        MovingColliderGracePeriod = 0.1f;
         MovingColliderTimeDelta = MovingColliderGracePeriod;
-        MovingPlatformGracePeriod = 0.1f;
         MovingPlatformTimeDelta = MovingPlatformGracePeriod;
-        StuckGracePeriod = 0.2f;
         StuckTimeDelta = StuckGracePeriod;
 
         // Initial state
@@ -186,11 +175,26 @@ public class PlayerController : MonoBehaviour {
         WallRunJumpUpSpeed = 12f;
         WallRunImpulse = 0.0f;
         WallRunSpeed = 15.0f;
+        // Toggles
         conserveUpwardMomentum = true;
         wallJumpEnabled = true;
         wallRunEnabled = true;
         wallClimbEnabled = true;
+        // Delegates
         accelerate = AccelerateCPM;
+        // Timings
+        JumpMeterSize = 0.3f;
+        JumpMeterThreshold = JumpMeterSize / 3;
+        jumpGracePeriod = 0.1f;
+        BufferJumpGracePeriod = 0.1f;
+        SlideGracePeriod = 0.2f;
+        WallJumpGracePeriod = 0.2f;
+        WallRunGracePeriod = 0.2f;
+        WallClimbGracePeriod = 0.2f;
+        ReGrabGracePeriod = 0.5f;
+        MovingColliderGracePeriod = 0.1f;
+        MovingPlatformGracePeriod = 0.1f;
+        StuckGracePeriod = 0.2f;
     }
 
     private void SetThirdPersonActionVars()
@@ -216,11 +220,26 @@ public class PlayerController : MonoBehaviour {
         WallRunJumpUpSpeed = 12f;
         WallRunImpulse = 0.0f;
         WallRunSpeed = 15f;
+        // Toggles
         conserveUpwardMomentum = false;
         wallJumpEnabled = true;
         wallRunEnabled = false;
         wallClimbEnabled = true;
+        // Delegates
         accelerate = AccelerateStandard;
+        // Timings
+        JumpMeterSize = 0.3f;
+        JumpMeterThreshold = JumpMeterSize / 3;
+        jumpGracePeriod = 0.1f;
+        BufferJumpGracePeriod = 0.1f;
+        SlideGracePeriod = 0.2f;
+        WallJumpGracePeriod = 0.1f;
+        WallRunGracePeriod = 0.2f;
+        WallClimbGracePeriod = 0.2f;
+        ReGrabGracePeriod = 0.5f;
+        MovingColliderGracePeriod = 0.1f;
+        MovingPlatformGracePeriod = 0.1f;
+        StuckGracePeriod = 0.2f;
     }
 
     // Fixed Update is called once per physics tick
@@ -339,6 +358,7 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
+    // TODO: Make a class/struct/macro for all of these
     private void IncrementCounters()
     {
         JumpMeter = Mathf.Clamp(JumpMeter + Time.deltaTime, 0, JumpMeterSize);
