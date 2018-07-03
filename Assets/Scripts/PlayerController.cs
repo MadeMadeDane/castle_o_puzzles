@@ -75,6 +75,9 @@ public class PlayerController : MonoBehaviour {
     private float LedgeClimbOffset;
     private float LedgeClimbBoost;
     private float WallDistanceThreshold;
+    private bool wallRunEnabled;
+    private bool wallJumpEnabled;
+    private bool wallClimbEnabled;
 
     // Physics state variables
     private AccelerationFunction accelerate;
@@ -100,8 +103,8 @@ public class PlayerController : MonoBehaviour {
     // Use this for initialization
     private void Start () {
         // Movement values
-        SetThirdPersonActionVars();
-        //SetShooterVars();
+        //SetThirdPersonActionVars();
+        SetShooterVars();
 
         isJumping = false;
         isFalling = false;
@@ -184,6 +187,9 @@ public class PlayerController : MonoBehaviour {
         WallRunImpulse = 0.0f;
         WallRunSpeed = 15.0f;
         conserveUpwardMomentum = true;
+        wallJumpEnabled = true;
+        wallRunEnabled = true;
+        wallClimbEnabled = true;
         accelerate = AccelerateCPM;
     }
 
@@ -211,6 +217,9 @@ public class PlayerController : MonoBehaviour {
         WallRunImpulse = 0.0f;
         WallRunSpeed = 15f;
         conserveUpwardMomentum = false;
+        wallJumpEnabled = true;
+        wallRunEnabled = false;
+        wallClimbEnabled = true;
         accelerate = AccelerateStandard;
     }
 
@@ -447,7 +456,6 @@ public class PlayerController : MonoBehaviour {
                     // Buffer a jump
                     willJump = true;
                 }
-                //PreviousWallJumpNormal = wall_normal;
             }
         }
         WallAxis = Vector3.Cross(wall_normal, Physics.gravity).normalized;
@@ -481,6 +489,10 @@ public class PlayerController : MonoBehaviour {
 
     private bool CanWallRun(Vector3 old_wall_pos, Vector3 old_wall_normal, Vector3 new_wall_pos, Vector3 new_wall_normal)
     {
+        if (!wallRunEnabled)
+        {
+            return false;
+        }
         bool wall_normal_check = Vector3.Dot(old_wall_normal, new_wall_normal) < 0.94f;
         if (old_wall_pos == Vector3.positiveInfinity)
         {
@@ -632,7 +644,7 @@ public class PlayerController : MonoBehaviour {
         // We are either in the air, buffering a jump, or sliding (recent contact with ground). Use air accel.
         else
         {
-            // Handle wall movement and return early
+            // Handle wall movement
             if (IsWallRunning())
             {
                 float away_from_wall_speed = Vector3.Dot(current_velocity, PreviousWallNormal);
@@ -760,22 +772,22 @@ public class PlayerController : MonoBehaviour {
 
     private bool IsWallRunning()
     {
-        return (WallRunTimeDelta < WallRunGracePeriod);
+        return wallRunEnabled && (WallRunTimeDelta < WallRunGracePeriod);
     }
 
     private bool IsWallClimbing()
     {
-        return (WallClimbTimeDelta < WallClimbGracePeriod);
+        return wallClimbEnabled && (WallClimbTimeDelta < WallClimbGracePeriod);
     }
 
     private bool CanGrabLedge()
     {
-        return (ReGrabTimeDelta >= ReGrabGracePeriod);
+        return wallClimbEnabled && (ReGrabTimeDelta >= ReGrabGracePeriod);
     }
 
     private bool CanWallJump()
     {
-        return (WallJumpTimeDelta < WallJumpGracePeriod);
+        return wallJumpEnabled && (WallJumpTimeDelta < WallJumpGracePeriod);
     }
 
     private bool InMovingCollision()
