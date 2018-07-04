@@ -31,20 +31,34 @@ public class CameraController : MonoBehaviour {
             throw new Exception("Failed initializing camera.");
         }
         // Move pivot to target
-        MovePivotToTarget(home);
-
-        // Attach the camera to the pivot and set the default distance/angles
-        transform.parent = pivot.transform;
-        transform.localPosition = target_follow_distance;
-        transform.localRotation = Quaternion.Euler(target_follow_angle);
+        SetShooterVars(player_home);
+        //SetThirdPersonActionVars(player_home);
 
         // TODO: Move this mouse hiding logic somewhere else
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
-	
-	// LateUpdate is called after update. Ensures we are operating on the latest transform changes.
-	void LateUpdate () {
+
+    private void SetShooterVars(PlayerController home)
+    {
+        target_follow_angle = Vector3.zero;
+        target_follow_distance = new Vector3(0, (home.cc.height / 2) - home.cc.radius, 0);
+
+        MovePivotToTarget(home.gameObject);
+
+        // Attach the camera to the pivot and set the default distance/angles
+        transform.parent = pivot.transform;
+        transform.localPosition = target_follow_distance;
+        transform.localRotation = Quaternion.Euler(target_follow_angle);
+    }
+
+    private void SetThirdPersonActionVars(PlayerController home)
+    {
+
+    }
+
+    // LateUpdate is called after update. Ensures we are operating on the latest transform changes.
+    void LateUpdate () {
         UpdateCameraAngles();
 	}
 
