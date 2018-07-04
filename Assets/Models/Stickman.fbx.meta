@@ -79,6 +79,14 @@ ModelImporter:
     7400006: Armature|PoseLib.001
     7400008: Armature|Walk
     7400010: Armature|Wave
+    7400012: Armature|Jog
+    7400014: Armature|Sprint
+    7400016: Armature|JumpAir
+    7400018: Armature|JumpLand
+    7400020: Armature|JumpStart
+    7400022: Armature|DumbSlide
+    7400024: Armature|SlideStart
+    7400026: Armature|Sliding
     9500000: //RootNode
     13700000: Cylinder
   externalObjects: {}
