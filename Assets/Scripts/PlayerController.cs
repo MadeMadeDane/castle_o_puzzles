@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour {
     public CharacterController cc;
     public Collider WallRunCollider;
     [HideInInspector]
-    public Camera player_camera;
+    public CameraController player_camera;
     [Header("Movement constants")]
     public float RunSpeed;
     public float AirSpeed;
@@ -36,6 +36,8 @@ public class PlayerController : MonoBehaviour {
     public bool wallJumpEnabled;
     public bool wallClimbEnabled;
     public bool conserveUpwardMomentum;
+    [HideInInspector]
+    public Vector3 current_velocity;
 
     // Jumping state variables
     private float JumpMeterSize;
@@ -83,7 +85,6 @@ public class PlayerController : MonoBehaviour {
     // Physics state variables
     private AccelerationFunction accelerate;
     private Vector3 moving_frame_velocity;
-    private Vector3 current_velocity;
     private Vector3 accel;
     private ControllerColliderHit lastHit;
     private MovingGeneric lastMovingPlatform;
@@ -104,9 +105,10 @@ public class PlayerController : MonoBehaviour {
     // Use this for initialization
     private void Start () {
         // Movement values
-        SetThirdPersonActionVars();
         //SetShooterVars();
+        SetThirdPersonActionVars();
 
+        player_camera = null;
         isJumping = false;
         isFalling = false;
         willJump = false;
@@ -244,6 +246,11 @@ public class PlayerController : MonoBehaviour {
 
     // Fixed Update is called once per physics tick
     private void FixedUpdate () {
+        // If the player does not have a camera, do nothing
+        if (player_camera == null)
+        {
+            return;
+        }
         // Get starting values
         GravityMult = 1;
         accel = Vector3.zero;
@@ -637,8 +644,8 @@ public class PlayerController : MonoBehaviour {
         }
 
         Vector3 planevelocity;
-        Vector3 movVec = (input_manager.GetMoveVertical() * transform.forward +
-                          input_manager.GetMoveHorizontal() * transform.right);
+        Vector3 movVec = (input_manager.GetMoveVertical() * player_camera.yaw_pivot.transform.forward +
+                          input_manager.GetMoveHorizontal() * player_camera.yaw_pivot.transform.right);
         float movmag = movVec.magnitude < 0.8f ? movVec.magnitude : 1f;
         // Do this first so we cancel out incremented time from update before checking it
         if (!OnGround())
@@ -785,44 +792,49 @@ public class PlayerController : MonoBehaviour {
     }
 
     // Double check if on ground using a separate test
-    private bool OnGround()
+    public bool OnGround()
     {
         return (LandingTimeDelta < jumpGracePeriod);
     }
 
-    private bool IsWallRunning()
+    public bool IsWallRunning()
     {
         return wallRunEnabled && (WallRunTimeDelta < WallRunGracePeriod);
     }
 
-    private bool IsWallClimbing()
+    public bool IsWallClimbing()
     {
         return wallClimbEnabled && (WallClimbTimeDelta < WallClimbGracePeriod);
     }
 
-    private bool CanGrabLedge()
+    public bool CanGrabLedge()
     {
         return wallClimbEnabled && (ReGrabTimeDelta >= ReGrabGracePeriod);
     }
 
-    private bool CanWallJump()
+    public bool CanWallJump()
     {
         return wallJumpEnabled && (WallJumpTimeDelta < WallJumpGracePeriod);
     }
 
-    private bool InMovingCollision()
+    public bool InMovingCollision()
     {
         return (MovingColliderTimeDelta < MovingColliderGracePeriod);
     }
 
-    private bool OnMovingPlatform()
+    public bool OnMovingPlatform()
     {
         return (MovingPlatformTimeDelta < MovingPlatformGracePeriod);
     }
 
-    private bool IsStuck()
+    public bool IsStuck()
     {
         return (StuckTimeDelta < StuckGracePeriod);
+    }
+
+    public Vector3 GetLastWallNormal()
+    {
+        return PreviousWallNormal;
     }
 
     private bool WallDistanceCheck()
