@@ -78,7 +78,6 @@ public class CameraController : MonoBehaviour {
         {
             current_player.player_camera = null;
         }
-        target.transform.parent = yaw_pivot.transform;
         target.player_camera = this;
         current_player = target;
 
