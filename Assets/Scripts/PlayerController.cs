@@ -108,7 +108,6 @@ public class PlayerController : MonoBehaviour {
         //SetShooterVars();
         SetThirdPersonActionVars();
 
-        player_camera = null;
         isJumping = false;
         isFalling = false;
         willJump = false;
