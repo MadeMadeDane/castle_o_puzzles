@@ -122,6 +122,8 @@ public class CameraController : MonoBehaviour {
 
     private void ThirdPersonCameraMove()
     {
+        mouseAccumlator.x = mouseAccumlator.x % 360;
+        mouseAccumlator.y = Mathf.Clamp(mouseAccumlator.y, -65, 75);
         // Set camera pitch
         pitch_pivot.transform.localRotation = Quaternion.AngleAxis(
             -mouseAccumlator.y, Vector3.right);
