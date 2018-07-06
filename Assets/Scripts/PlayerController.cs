@@ -193,7 +193,7 @@ public class PlayerController : MonoBehaviour {
         WallRunGracePeriod = 0.2f;
         WallClimbGracePeriod = 0.2f;
         ReGrabGracePeriod = 0.5f;
-        MovingColliderGracePeriod = 0.1f;
+        MovingColliderGracePeriod = 0.01f;
         MovingPlatformGracePeriod = 0.1f;
         StuckGracePeriod = 0.2f;
     }
@@ -238,7 +238,7 @@ public class PlayerController : MonoBehaviour {
         WallRunGracePeriod = 0.2f;
         WallClimbGracePeriod = 0.2f;
         ReGrabGracePeriod = 0.5f;
-        MovingColliderGracePeriod = 0.1f;
+        MovingColliderGracePeriod = 0.01f;
         MovingPlatformGracePeriod = 0.1f;
         StuckGracePeriod = 0.2f;
     }
@@ -330,7 +330,7 @@ public class PlayerController : MonoBehaviour {
 
         // If we have a large number of errors in a row, we are probably stuck.
         // Try to resolve this in a series of stages.
-        if (error_bucket >= error_threshold)
+        if (error_bucket >= error_threshold && !IsStuck())
         {
             Debug.Log("Lots of error!");
             Debug.Log("Previous position: " + previous_position.ToString());
@@ -665,7 +665,7 @@ public class PlayerController : MonoBehaviour {
             // Use character controller grounded check to be certain we are actually on the ground
             movVec = Vector3.ProjectOnPlane(movVec, currentHit.normal);
             accelerate(movVec, RunSpeed*movmag, GroundAcceleration);
-            accel += -(current_velocity + moving_frame_velocity) * SpeedDamp;
+            accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, Physics.gravity) * SpeedDamp;
         }
         // We are either in the air, buffering a jump, or sliding (recent contact with ground). Use air accel.
         else
@@ -693,7 +693,7 @@ public class PlayerController : MonoBehaviour {
             {
                 accelerate(movVec, AirSpeed * movmag, AirAcceleration);
             }
-            accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, transform.up) * AirSpeedDamp;
+            accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, Physics.gravity) * AirSpeedDamp;
         }
     }
 
@@ -934,10 +934,21 @@ public class PlayerController : MonoBehaviour {
 
     public void Recover(Collider other)
     {
-        Debug.Log("Attempting to recover from stuck collision");
         StuckTimeDelta = 0;
         isHanging = false;
-        if (position_history.Count > 0)
+
+        Vector3 closest_point = other.ClosestPointOnBounds(transform.position);
+        Vector3 path_to_point = closest_point - transform.position;
+        RaycastHit hit;
+        if (Physics.Raycast(transform.position, path_to_point, out hit, path_to_point.magnitude * 1.5f))
+        {
+            Teleport(transform.position + hit.normal * cc.radius);
+        }
+        else if (Physics.Raycast(transform.position + 2*path_to_point, -path_to_point, out hit, path_to_point.magnitude * 1.5f))
+        {
+            Teleport(transform.position + hit.normal * cc.radius);
+        }
+        else if (position_history.Count > 0)
         {
             Teleport(position_history.First.Value);
             position_history.RemoveFirst();
