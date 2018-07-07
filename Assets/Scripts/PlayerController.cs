@@ -101,6 +101,7 @@ public class PlayerController : MonoBehaviour {
     private int error_stage;
     private int position_history_size;
     private LinkedList<Vector3> position_history;
+    private static HashSet<Action> jump_callback_table = new HashSet<Action>();
 
     // Use this for initialization
     private void Start () {
@@ -150,6 +151,8 @@ public class PlayerController : MonoBehaviour {
         currentHit = new ControllerColliderHit();
         StartPos = transform.position;
 
+        // TODO: Test below
+        //cc.enableOverlapRecovery = false;
         Physics.IgnoreCollision(WallRunCollider, cc);
     }
 
@@ -645,7 +648,7 @@ public class PlayerController : MonoBehaviour {
         Vector3 planevelocity;
         Vector3 movVec = (input_manager.GetMoveVertical() * player_camera.yaw_pivot.transform.forward +
                           input_manager.GetMoveHorizontal() * player_camera.yaw_pivot.transform.right);
-        float movmag = movVec.magnitude < 0.8f ? movVec.magnitude : 1f;
+        float movmag = movVec.magnitude < 0.8f ? movVec.magnitude < 0.2f ? 0f : movVec.magnitude : 1f;
         // Do this first so we cancel out incremented time from update before checking it
         if (!OnGround())
         {
@@ -665,7 +668,7 @@ public class PlayerController : MonoBehaviour {
             // Use character controller grounded check to be certain we are actually on the ground
             movVec = Vector3.ProjectOnPlane(movVec, currentHit.normal);
             accelerate(movVec, RunSpeed*movmag, GroundAcceleration);
-            accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, Physics.gravity) * SpeedDamp;
+            accel += -(current_velocity + moving_frame_velocity) * SpeedDamp;
         }
         // We are either in the air, buffering a jump, or sliding (recent contact with ground). Use air accel.
         else
@@ -740,7 +743,8 @@ public class PlayerController : MonoBehaviour {
     // Regular acceleration
     private void AccelerateStandard(Vector3 direction, float desiredSpeed, float acceleration)
     {
-        Vector3 deltaVel = direction.normalized * acceleration * Time.deltaTime;
+        direction.Normalize();
+        Vector3 deltaVel = direction * acceleration * Time.deltaTime;
         // Accelerate if we aren't at the desired speed
         if (Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity).magnitude <= desiredSpeed)
         {
@@ -885,6 +889,10 @@ public class PlayerController : MonoBehaviour {
                     current_velocity.y = Math.Max(current_velocity.y, JumpVelocity * JumpMeterComputed);
                 }
             }
+            foreach (Action callback in jump_callback_table)
+            {
+                callback();
+            }
         }
         else if (isHanging)
         {
@@ -903,6 +911,11 @@ public class PlayerController : MonoBehaviour {
         LandingTimeDelta = jumpGracePeriod;
         MovingPlatformTimeDelta = MovingPlatformGracePeriod;
         WallJumpReflect = Vector3.zero;
+    }
+
+    public void RegisterJumpCallback(Action callback)
+    {
+        jump_callback_table.Add(callback);
     }
 
     private void OnTriggerStay(Collider other)
