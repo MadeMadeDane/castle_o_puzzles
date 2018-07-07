@@ -80,11 +80,20 @@ public class CameraController : MonoBehaviour {
         }
         target.player_camera = this;
         current_player = target;
+        current_player.RegisterJumpCallback(ThirdPersonJumpCallback);
 
         // Attach the camera to the yaw_pivot and set the default distance/angles
         transform.parent = pitch_pivot.transform;
         transform.localPosition = target_follow_distance;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
+    }
+
+    public void ThirdPersonJumpCallback()
+    {
+        if (current_player.IsWallRunning() || current_player.CanWallJump())
+        {
+            current_player.transform.forward = Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity).normalized;
+        }
     }
 
     // LateUpdate is called after update. Ensures we are operating on the latest transform changes.
@@ -117,7 +126,7 @@ public class CameraController : MonoBehaviour {
             -mouseAccumlator.y, Vector3.right);
         // Set player yaw (and camera with it)
         yaw_pivot.transform.parent.transform.localRotation = Quaternion.AngleAxis(
-            mouseAccumlator.x, yaw_pivot.transform.parent.transform.up);
+            mouseAccumlator.x, Vector3.up);
     }
 
     private void ThirdPersonCameraMove()
@@ -129,7 +138,7 @@ public class CameraController : MonoBehaviour {
             -mouseAccumlator.y, Vector3.right);
         // Set player yaw (and camera with it)
         yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
-            mouseAccumlator.x, yaw_pivot.transform.up);
+            mouseAccumlator.x, Vector3.up);
     }
 
     private void ThirdPersonShooterCameraMove()
@@ -139,7 +148,7 @@ public class CameraController : MonoBehaviour {
             -mouseAccumlator.y, Vector3.right);
         // Set player yaw (and camera with it)
         yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
-            mouseAccumlator.x, yaw_pivot.transform.up);
+            mouseAccumlator.x, Vector3.up);
         // Set the players yaw to match our velocity
         current_player.transform.rotation = Quaternion.Slerp(current_player.transform.rotation, yaw_pivot.transform.rotation, Mathf.Clamp(current_player.cc.velocity.magnitude / current_player.RunSpeed, 0, 1));
         yaw_pivot.transform.position = current_player.transform.position;
@@ -160,22 +169,29 @@ public class CameraController : MonoBehaviour {
 
         Vector3 desired_move = Vector3.zero;
         float interp_multiplier = 1f;
-        if (ground_velocity.magnitude < current_player.RunSpeed / 2)
+        if (current_player.OnGround())
         {
-            //Debug.Log("Controller move");
-            desired_move = move_vector.normalized;
-            interp_multiplier = 0.5f;
+            if (ground_velocity.magnitude < current_player.RunSpeed / 3)
+            {
+                //Debug.Log("Controller move");
+                desired_move = move_vector.normalized;
+                interp_multiplier = 0.5f;
+            }
+            /*else if (current_player.IsWallClimbing() && current_player.CanGrabLedge())
+            {
+                //Debug.Log("Wall move");
+                desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
+            }*/
+            else
+            {
+                //Debug.Log("Velocity move");
+                //Vector3 new_forward = Vector3.RotateTowards(current_player.transform.forward, ground_velocity.normalized, 0.1f * current_player.cc.velocity.magnitude / current_player.RunSpeed, 1f).normalized;
+                desired_move = Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity).normalized;
+            }
         }
         else if (current_player.IsWallClimbing() && current_player.CanGrabLedge())
         {
-            //Debug.Log("Wall move");
             desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
-        }
-        else
-        {
-            //Debug.Log("Velocity move");
-            Vector3 new_forward = Vector3.RotateTowards(current_player.transform.forward, ground_velocity.normalized, 0.1f * current_player.cc.velocity.magnitude / current_player.RunSpeed, 1f).normalized;
-            desired_move = new_forward;
         }
         if (desired_move != Vector3.zero)
         {
