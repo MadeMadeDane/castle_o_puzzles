@@ -195,7 +195,7 @@ public class CameraController : MonoBehaviour {
         {
             current_player.transform.forward = Vector3.RotateTowards(current_player.transform.forward, desired_move, 0.1f * interp_multiplier, 1f);
         }
-        yaw_pivot.transform.position = current_player.transform.position;
+        yaw_pivot.transform.position = Vector3.Lerp(yaw_pivot.transform.position, current_player.transform.position, 0.025f);
     }
 
 

@@ -23,7 +23,6 @@ public class PlayerController : MonoBehaviour {
     public float AirSpeedDamp;
     public float SlideSpeed;
     public float DownGravityAdd;
-    public float ShortHopGravityAdd;
     public float JumpVelocity;
     public float WallJumpThreshold;
     public float WallJumpBoost;
@@ -37,6 +36,7 @@ public class PlayerController : MonoBehaviour {
     public bool wallJumpEnabled;
     public bool wallClimbEnabled;
     public bool conserveUpwardMomentum;
+    public bool ShortHopEnabled;
     [HideInInspector]
     public Vector3 current_velocity;
 
@@ -209,7 +209,6 @@ public class PlayerController : MonoBehaviour {
         SlideSpeed = 18f;
         // Gravity modifiers
         DownGravityAdd = 0;
-        ShortHopGravityAdd = 0;
         // Jump/Wall modifiers
         JumpVelocity = 12f;
         WallJumpThreshold = 8f;
@@ -226,6 +225,7 @@ public class PlayerController : MonoBehaviour {
         wallJumpEnabled = true;
         wallRunEnabled = true;
         wallClimbEnabled = true;
+        ShortHopEnabled = false;
         // Delegates
         accelerate = AccelerateCPM;
         // Timings
@@ -255,7 +255,6 @@ public class PlayerController : MonoBehaviour {
         SlideSpeed = 18f;
         // Gravity modifiers
         DownGravityAdd = 0;
-        ShortHopGravityAdd = 0;
         // Jump/Wall modifiers
         JumpVelocity = 16f;
         WallJumpThreshold = 8f;
@@ -272,6 +271,7 @@ public class PlayerController : MonoBehaviour {
         wallJumpEnabled = true;
         wallRunEnabled = false;
         wallClimbEnabled = true;
+        ShortHopEnabled = true;
         // Delegates
         accelerate = AccelerateStandard;
         // Timings
@@ -882,9 +882,12 @@ public class PlayerController : MonoBehaviour {
             }
         }
         // Fall fast when we let go of jump (optional)
-        if (isFalling || isJumping && !input_manager.GetJumpHold())
+        if (!isFalling && isJumping && !input_manager.GetJumpHold())
         {
-            GravityMult += ShortHopGravityAdd;
+            if (ShortHopEnabled && Vector3.Dot(current_velocity, Physics.gravity.normalized) < 0)
+            {
+                current_velocity -= Vector3.Project(current_velocity, Physics.gravity.normalized)/2;
+            }
             isFalling = true;
         }
     }
@@ -1000,6 +1003,7 @@ public class PlayerController : MonoBehaviour {
         }
         ReGrabTimeDelta = 0;
         isJumping = true;
+        isFalling = false;
         willJump = false;
         isHanging = false;
 
