@@ -163,33 +163,31 @@ public class CameraController : MonoBehaviour {
     {
         // Set the players yaw to match our velocity
         Vector3 move_vector = input_manager.GetMoveVertical() * yaw_pivot.transform.forward + input_manager.GetMoveHorizontal() * yaw_pivot.transform.right;
-        float movmag = move_vector.magnitude < 0.8f ? move_vector.magnitude : 1f;
-        move_vector = movmag * move_vector.normalized;
         Vector3 ground_velocity = Vector3.ProjectOnPlane(current_player.cc.velocity, Physics.gravity);
 
         Vector3 desired_move = Vector3.zero;
         float interp_multiplier = 1f;
-        if (current_player.OnGround())
+        //if (current_player.OnGround())
+        //{
+        if (ground_velocity.magnitude < current_player.RunSpeed / 3)
         {
-            if (ground_velocity.magnitude < current_player.RunSpeed / 3)
-            {
-                //Debug.Log("Controller move");
-                desired_move = move_vector.normalized;
-                interp_multiplier = 0.5f;
-            }
-            /*else if (current_player.IsWallClimbing() && current_player.CanGrabLedge())
-            {
-                //Debug.Log("Wall move");
-                desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
-            }*/
-            else
-            {
-                //Debug.Log("Velocity move");
-                //Vector3 new_forward = Vector3.RotateTowards(current_player.transform.forward, ground_velocity.normalized, 0.1f * current_player.cc.velocity.magnitude / current_player.RunSpeed, 1f).normalized;
-                desired_move = Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity).normalized;
-            }
+            //Debug.Log("Controller move");
+            desired_move = move_vector.normalized;
+            interp_multiplier = 0.5f;
         }
-        else if (current_player.IsWallClimbing() && current_player.CanGrabLedge())
+        /*else if (current_player.IsWallClimbing() && current_player.CanGrabLedge())
+        {
+            //Debug.Log("Wall move");
+            desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
+        }*/
+        else
+        {
+            //Debug.Log("Velocity move");
+            //Vector3 new_forward = Vector3.RotateTowards(current_player.transform.forward, ground_velocity.normalized, 0.1f * current_player.cc.velocity.magnitude / current_player.RunSpeed, 1f).normalized;
+            desired_move = Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity).normalized;
+        }
+        //}
+        if (current_player.IsWallClimbing() && current_player.CanGrabLedge())
         {
             desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
         }

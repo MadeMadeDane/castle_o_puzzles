@@ -3,8 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.UI;
 
-delegate void AccelerationFunction(Vector3 direction, float desiredSpeed, float acceleration);
+delegate void AccelerationFunction(Vector3 direction, float desiredSpeed, float acceleration, bool grounded);
 
 public class PlayerController : MonoBehaviour {
     [Header("Linked Components")]
@@ -78,6 +79,7 @@ public class PlayerController : MonoBehaviour {
     private Vector3 UpWallVel;
     private float WallRunImpulse;
     private float WallRunSpeed;
+    private float WallRunClimbCosAngle;
     private float LedgeClimbOffset;
     private float LedgeClimbBoost;
     private float WallDistanceThreshold;
@@ -102,9 +104,13 @@ public class PlayerController : MonoBehaviour {
     private int position_history_size;
     private LinkedList<Vector3> position_history;
     private static HashSet<Action> jump_callback_table = new HashSet<Action>();
+    private GameObject debugcanvas;
+    private Dictionary<string, Text> debugtext;
+
 
     // Use this for initialization
     private void Start () {
+        //EnableDebug();
         // Movement values
         //SetShooterVars();
         SetThirdPersonActionVars();
@@ -156,6 +162,41 @@ public class PlayerController : MonoBehaviour {
         Physics.IgnoreCollision(WallRunCollider, cc);
     }
 
+    private void EnableDebug()
+    {
+        debugcanvas = new GameObject("Canvas", typeof(Canvas));
+        debugcanvas.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+        debugcanvas.AddComponent<CanvasScaler>();
+        debugcanvas.AddComponent<GraphicRaycaster>();
+        debugtext = new Dictionary<string, Text>()
+        {
+            {"JumpMeter", new GameObject().AddComponent<Text>() },
+            {"LandingTimeDelta", new GameObject().AddComponent<Text>() },
+            {"BufferJumpTimeDelta", new GameObject().AddComponent<Text>() },
+            {"SlideTimeDelta", new GameObject().AddComponent<Text>() },
+            {"WallJumpTimeDelta", new GameObject().AddComponent<Text>() },
+            {"WallRunTimeDelta", new GameObject().AddComponent<Text>() },
+            {"WallClimbTimeDelta", new GameObject().AddComponent<Text>() },
+            {"ReGrabTimeDelta", new GameObject().AddComponent<Text>() },
+            {"MovingColliderTimeDelta", new GameObject().AddComponent<Text>() },
+            {"MovingPlatformTimeDelta", new GameObject().AddComponent<Text>() },
+            {"StuckTimeDelta", new GameObject().AddComponent<Text>() },
+            {"Current Velocity", new GameObject().AddComponent<Text>() }
+        };
+        int idx = 0;
+        Font ArialFont = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
+        foreach (KeyValuePair<string, Text> item in debugtext)
+        {
+            item.Value.gameObject.name = item.Key;
+            RectTransform rect = item.Value.gameObject.GetComponent<RectTransform>();
+            rect.SetParent(debugcanvas.transform);
+            rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 220f);
+            rect.anchoredPosition3D = new Vector3(-250f, -15f * idx, 0);
+            item.Value.font = ArialFont;
+            idx++;
+        }
+    }
+
     private void SetShooterVars()
     {
         // Movement modifiers
@@ -179,6 +220,7 @@ public class PlayerController : MonoBehaviour {
         WallRunJumpUpSpeed = 12f;
         WallRunImpulse = 0.0f;
         WallRunSpeed = 15.0f;
+        WallRunClimbCosAngle = Mathf.Cos(Mathf.Deg2Rad*30f);
         // Toggles
         conserveUpwardMomentum = true;
         wallJumpEnabled = true;
@@ -206,9 +248,9 @@ public class PlayerController : MonoBehaviour {
         // Movement modifiers
         RunSpeed = 15f;
         AirSpeed = 15f;
-        GroundAcceleration = 100;
-        AirAcceleration = 20;
-        SpeedDamp = 5f;
+        GroundAcceleration = 300f;
+        AirAcceleration = 30f;
+        SpeedDamp = 10f;
         AirSpeedDamp = 0.01f;
         SlideSpeed = 18f;
         // Gravity modifiers
@@ -224,6 +266,7 @@ public class PlayerController : MonoBehaviour {
         WallRunJumpUpSpeed = 12f;
         WallRunImpulse = 0.0f;
         WallRunSpeed = 15f;
+        WallRunClimbCosAngle = Mathf.Cos(Mathf.Deg2Rad*30f);
         // Toggles
         conserveUpwardMomentum = false;
         wallJumpEnabled = true;
@@ -381,6 +424,22 @@ public class PlayerController : MonoBehaviour {
         MovingColliderTimeDelta = Mathf.Clamp(MovingColliderTimeDelta + Time.deltaTime, 0, 2 * MovingColliderGracePeriod);
         MovingPlatformTimeDelta = Mathf.Clamp(MovingPlatformTimeDelta + Time.deltaTime, 0, 2 * MovingPlatformGracePeriod);
         StuckTimeDelta = Mathf.Clamp(StuckTimeDelta + Time.deltaTime, 0, 2 * StuckGracePeriod);
+        if (debugcanvas != null)
+        {
+            debugtext["JumpMeter"].text = "JumpMeter: " + JumpMeter.ToString("0.0000");
+            debugtext["LandingTimeDelta"].text = "LandingTimeDelta: " + LandingTimeDelta.ToString("0.0000");
+            debugtext["SlideTimeDelta"].text = "SlideTimeDelta: " + SlideTimeDelta.ToString("0.0000");
+            debugtext["BufferJumpTimeDelta"].text = "BufferJumpTimeDelta: " + BufferJumpTimeDelta.ToString("0.0000");
+            debugtext["WallJumpTimeDelta"].text = "WallJumpTimeDelta: " + WallJumpTimeDelta.ToString("0.0000");
+            debugtext["WallRunTimeDelta"].text = "WallRunTimeDelta: " + WallRunTimeDelta.ToString("0.0000");
+            debugtext["WallClimbTimeDelta"].text = "WallClimbTimeDelta: " + WallClimbTimeDelta.ToString("0.0000");
+            debugtext["ReGrabTimeDelta"].text = "ReGrabTimeDelta: " + ReGrabTimeDelta.ToString("0.0000");
+            debugtext["MovingColliderTimeDelta"].text = "MovingColliderTimeDelta: " + MovingColliderTimeDelta.ToString("0.0000");
+            debugtext["MovingPlatformTimeDelta"].text = "MovingPlatformTimeDelta: " + MovingPlatformTimeDelta.ToString("0.0000");
+            debugtext["StuckTimeDelta"].text = "StuckTimeDelta: " + StuckTimeDelta.ToString("0.0000");
+            debugtext["Current Velocity"].text = "Current Velocity: " + current_velocity.ToString("0.00");
+
+        }
     }
 
     private void ProcessTriggers()
@@ -480,7 +539,7 @@ public class PlayerController : MonoBehaviour {
             {
                 WallJumpTimeDelta = 0;
                 WallJumpReflect = Vector3.Reflect(current_velocity, wall_normal);
-                if (BufferJumpTimeDelta < BufferJumpGracePeriod)
+                if (JumpBuffered())
                 {
                     // Buffer a jump
                     willJump = true;
@@ -492,7 +551,7 @@ public class PlayerController : MonoBehaviour {
         AlongWallVel = Vector3.Dot(cc.velocity, WallAxis) * WallAxis;
         UpWallVel = current_velocity - (Vector3.Dot(current_velocity, WallAxis) * WallAxis);
         // First attempt a wall run if we pass the limit and are looking along the wall
-        if (AlongWallVel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(wall_normal, transform.forward)) < 0.866f && Vector3.Dot(AlongWallVel, transform.forward) > 0)
+        if (AlongWallVel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(wall_normal, transform.forward)) < WallRunClimbCosAngle && Vector3.Dot(AlongWallVel, transform.forward) > 0)
         {
             if (IsWallRunning() || CanWallRun(PreviousWallJumpPos, PreviousWallNormal, transform.position, wall_normal))
             {
@@ -509,7 +568,7 @@ public class PlayerController : MonoBehaviour {
             }
         }
         // If we fail the wall run try to wall climb instead if we are looking at the wall
-        else if (isHanging || Vector3.Dot(transform.forward, -wall_normal) >= 0.866f)
+        else if (isHanging || Vector3.Dot(transform.forward, -wall_normal) >= WallRunClimbCosAngle)
         {
             WallClimbTimeDelta = 0;
         }
@@ -580,7 +639,7 @@ public class PlayerController : MonoBehaviour {
         LandingTimeDelta = 0;
 
         // Handle buffered jumps
-        if (BufferJumpTimeDelta < BufferJumpGracePeriod)
+        if (JumpBuffered())
         {
             // Buffer a jump
             willJump = true;
@@ -645,30 +704,25 @@ public class PlayerController : MonoBehaviour {
             return;
         }
 
-        Vector3 planevelocity;
+        Vector3 planevelocity = Vector3.ProjectOnPlane(current_velocity, currentHit.normal);
         Vector3 movVec = (input_manager.GetMoveVertical() * player_camera.yaw_pivot.transform.forward +
                           input_manager.GetMoveHorizontal() * player_camera.yaw_pivot.transform.right);
         float movmag = movVec.magnitude < 0.8f ? movVec.magnitude < 0.2f ? 0f : movVec.magnitude : 1f;
+        movmag = Mathf.Pow(movmag, 2f);
         // Do this first so we cancel out incremented time from update before checking it
         if (!OnGround())
         {
             // We are in the air (for atleast LandingGracePeriod). We will slide on landing if moving fast enough.
             SlideTimeDelta = 0;
-            planevelocity = current_velocity;
-        }
-        else
-        {
-            planevelocity = Vector3.ProjectOnPlane(current_velocity, currentHit.normal);
         }
         // Normal ground behavior
         if (OnGround() && !willJump && (SlideTimeDelta >= SlideGracePeriod || planevelocity.magnitude < SlideSpeed))
         {
             // If we weren't fast enough we aren't going to slide
             SlideTimeDelta = SlideGracePeriod;
-            // Use character controller grounded check to be certain we are actually on the ground
             movVec = Vector3.ProjectOnPlane(movVec, currentHit.normal);
-            accelerate(movVec, RunSpeed*movmag, GroundAcceleration);
-            accel += -(current_velocity + moving_frame_velocity) * SpeedDamp;
+            //Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), movVec, Color.green, Time.fixedDeltaTime);
+            accelerate(movVec, RunSpeed*movmag, GroundAcceleration, true);
         }
         // We are either in the air, buffering a jump, or sliding (recent contact with ground). Use air accel.
         else
@@ -692,11 +746,7 @@ public class PlayerController : MonoBehaviour {
                     GravityMult = 0.25f;
                 }
             }
-            else
-            {
-                accelerate(movVec, AirSpeed * movmag, AirAcceleration);
-            }
-            accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, Physics.gravity) * AirSpeedDamp;
+            accelerate(movVec, AirSpeed * movmag, AirAcceleration, false);
         }
     }
 
@@ -724,8 +774,12 @@ public class PlayerController : MonoBehaviour {
     }
 
     // Try to accelerate to the desired speed in the direction specified
-    private void AccelerateCPM(Vector3 direction, float desiredSpeed, float acceleration)
+    private void AccelerateCPM(Vector3 direction, float desiredSpeed, float acceleration, bool grounded)
     {
+        if (!grounded && IsWallRunning())
+        {
+            return;
+        }
         direction.Normalize();
         float moveAxisSpeed = Vector3.Dot(current_velocity, direction);
         float deltaSpeed = desiredSpeed - moveAxisSpeed;
@@ -738,12 +792,31 @@ public class PlayerController : MonoBehaviour {
         // Scale acceleration by speed because we want to go fast
         deltaSpeed = Mathf.Clamp(acceleration * Time.deltaTime * desiredSpeed, 0, deltaSpeed);
         current_velocity += deltaSpeed * direction;
+
+        if (grounded)
+        {
+            accel += -(current_velocity + moving_frame_velocity) * SpeedDamp;
+        }
+        else
+        {
+            accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, Physics.gravity) * AirSpeedDamp;
+        }
+
     }
 
     // Regular acceleration
-    private void AccelerateStandard(Vector3 direction, float desiredSpeed, float acceleration)
+    private void AccelerateStandard(Vector3 direction, float desiredSpeed, float acceleration, bool grounded)
     {
+        if (!grounded && IsWallRunning())
+        {
+            return;
+        }
         direction.Normalize();
+        /*float turn_constant = 1f;
+        if (grounded)
+        {
+            turn_constant = 0.55f + Mathf.Sign(Vector3.Dot(current_velocity.normalized, direction))*Mathf.Pow(Vector3.Dot(current_velocity.normalized, direction), 2f) * 0.45f;
+        }*/
         Vector3 deltaVel = direction * acceleration * Time.deltaTime;
         // Accelerate if we aren't at the desired speed
         if (Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity).magnitude <= desiredSpeed)
@@ -753,8 +826,27 @@ public class PlayerController : MonoBehaviour {
         // If we are past the desired speed, subtract the deltaVel off and add it back in the direction we want
         else
         {
-            current_velocity = current_velocity - (deltaVel.magnitude * Vector3.ProjectOnPlane(current_velocity, Physics.gravity).normalized) + deltaVel;
+            /*if (grounded)
+            {
+                current_velocity += direction * desiredSpeed - Vector3.Project(current_velocity, direction);
+            }*/
+            if (!grounded)
+            {
+                current_velocity = current_velocity - (deltaVel.magnitude * Vector3.ProjectOnPlane(current_velocity, Physics.gravity).normalized) + deltaVel;
+            }
         }
+
+        if (grounded)
+        {
+            accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, currentHit.normal) * SpeedDamp;
+        }
+        else
+        {
+            accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, Physics.gravity) * AirSpeedDamp;
+        }
+        //Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), deltaVel, Color.cyan, Time.fixedDeltaTime);
+        //Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), current_velocity, Color.red, Time.fixedDeltaTime);
+        //Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), accel, Color.blue, Time.fixedDeltaTime);
     }
 
     // Handle jumping
@@ -774,17 +866,20 @@ public class PlayerController : MonoBehaviour {
         }
 
         // Handle jumping and falling
-        if (input_manager.GetJump())
+        if (willJump)
         {
-            BufferJumpTimeDelta = 0;
+            DoJump();
+        }
+        else if (input_manager.GetJump())
+        {
             if (OnGround() || CanWallJump() || IsWallRunning() || isHanging)
             {
                 DoJump();
             }
-        }
-        if (willJump)
-        {
-            DoJump();
+            else
+            {
+                BufferJumpTimeDelta = 0;
+            }
         }
         // Fall fast when we let go of jump (optional)
         if (isFalling || isJumping && !input_manager.GetJumpHold())
@@ -798,6 +893,11 @@ public class PlayerController : MonoBehaviour {
     public bool OnGround()
     {
         return (LandingTimeDelta < jumpGracePeriod);
+    }
+
+    public bool JumpBuffered()
+    {
+        return (BufferJumpTimeDelta < BufferJumpGracePeriod);
     }
 
     public bool IsWallRunning()
@@ -904,12 +1004,12 @@ public class PlayerController : MonoBehaviour {
         isHanging = false;
 
         // Intentionally set the timers over the limit
-        BufferJumpTimeDelta = BufferJumpGracePeriod;
-        WallJumpTimeDelta = WallJumpGracePeriod;
-        WallRunTimeDelta = WallRunGracePeriod;
-        WallClimbTimeDelta = WallClimbGracePeriod;
-        LandingTimeDelta = jumpGracePeriod;
-        MovingPlatformTimeDelta = MovingPlatformGracePeriod;
+        BufferJumpTimeDelta = 2*BufferJumpGracePeriod;
+        WallJumpTimeDelta = 2*WallJumpGracePeriod;
+        WallRunTimeDelta = 2*WallRunGracePeriod;
+        WallClimbTimeDelta = 2*WallClimbGracePeriod;
+        LandingTimeDelta = 2*jumpGracePeriod;
+        MovingPlatformTimeDelta = 2*MovingPlatformGracePeriod;
         WallJumpReflect = Vector3.zero;
     }
 
