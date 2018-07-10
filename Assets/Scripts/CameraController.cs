@@ -162,7 +162,7 @@ public class CameraController : MonoBehaviour {
     private void ThirdPersonPlayerRotate()
     {
         // Set the players yaw to match our velocity
-        Vector3 move_vector = input_manager.GetMoveVertical() * yaw_pivot.transform.forward + input_manager.GetMoveHorizontal() * yaw_pivot.transform.right;
+        Vector3 move_vector = current_player.GetMoveVector();
         Vector3 ground_velocity = Vector3.ProjectOnPlane(current_player.cc.velocity, Physics.gravity);
 
         Vector3 desired_move = Vector3.zero;
