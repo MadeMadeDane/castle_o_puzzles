@@ -90,7 +90,7 @@ public class CameraController : MonoBehaviour {
 
     public void ThirdPersonJumpCallback()
     {
-        if (current_player.IsWallRunning() || current_player.CanWallJump())
+        if ((current_player.IsWallRunning() || current_player.CanWallJump()) && !input_manager.GetCenterCameraHold())
         {
             current_player.transform.forward = Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity).normalized;
         }
@@ -131,7 +131,10 @@ public class CameraController : MonoBehaviour {
 
     private void ThirdPersonCameraMove()
     {
-        mouseAccumlator.x = mouseAccumlator.x % 360;
+        if (mouseAccumlator.x < 0)
+        {
+            mouseAccumlator.x = 360 + mouseAccumlator.x;
+        }
         mouseAccumlator.y = Mathf.Clamp(mouseAccumlator.y, -65, 75);
         // Set camera pitch
         pitch_pivot.transform.localRotation = Quaternion.AngleAxis(
@@ -139,6 +142,15 @@ public class CameraController : MonoBehaviour {
         // Set player yaw (and camera with it)
         yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
             mouseAccumlator.x, Vector3.up);
+
+        if (input_manager.GetCenterCameraHold())
+        {
+            float pitch = current_player.transform.localEulerAngles.x;
+            float yaw = current_player.transform.localEulerAngles.y;
+            float adjusted_pitch = 360 - pitch < pitch ? 360 - pitch : -pitch;
+            mouseAccumlator.x = Mathf.LerpAngle(mouseAccumlator.x, yaw, 0.1f);
+            mouseAccumlator.y = Mathf.LerpAngle(mouseAccumlator.y, adjusted_pitch, 0.1f);
+        }
     }
 
     private void ThirdPersonShooterCameraMove()
@@ -191,7 +203,7 @@ public class CameraController : MonoBehaviour {
         {
             desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
         }
-        if (desired_move != Vector3.zero)
+        if (desired_move != Vector3.zero && !input_manager.GetCenterCameraHold())
         {
             current_player.transform.forward = Vector3.RotateTowards(current_player.transform.forward, desired_move, 0.1f * interp_multiplier, 1f);
         }
