@@ -55,6 +55,7 @@ GameObject:
   - component: {fileID: 54020058925232790}
   - component: {fileID: 136947463090228844}
   - component: {fileID: 114947268212099000}
+  - component: {fileID: 114025229175559238}
   m_Layer: 2
   m_Name: StickPlayer
   m_TagString: Untagged
@@ -427,6 +428,22 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!1 &1759396677224510
+GameObject:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 5
+  m_Component:
+  - component: {fileID: 4743168226036878}
+  - component: {fileID: 114853635505283590}
+  m_Layer: 0
+  m_Name: InputManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
 --- !u!1 &1765411947895592
 GameObject:
   m_ObjectHideFlags: 1
@@ -640,13 +657,14 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1066341514495280}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 60.5, z: 0.75}
+  m_LocalPosition: {x: 0, y: 38.75, z: -4.428795}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4452096838960350}
   - {fileID: 4297846808310244}
   - {fileID: 4054032409326384}
   - {fileID: 4675710282655976}
+  - {fileID: 4743168226036878}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -931,6 +949,19 @@ Transform:
   m_Father: {fileID: 4847855621985876}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &4743168226036878
+Transform:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1759396677224510}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -38.75, z: 4.428795}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 4103845349848876}
+  m_RootOrder: 4
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &4752641424388800
 Transform:
   m_ObjectHideFlags: 1
@@ -1163,6 +1194,17 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &114025229175559238
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1066341514495280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 09fc66f38057a054e84c4f25bfe45039, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &114710611674587026
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1174,7 +1216,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 201216f4a772d4e93bc570e90d32466e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  input_manager: {fileID: 0}
+  input_manager: {fileID: 114853635505283590}
   cc: {fileID: 143490867400911512}
   WallRunCollider: {fileID: 136947463090228844}
   player_camera: {fileID: 0}
@@ -1223,13 +1265,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d9d1cad135e74f57b73de887463ce3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  input_manager: {fileID: 0}
+  input_manager: {fileID: 114853635505283590}
   controlled_camera: {fileID: 20277521880671826}
   home: {fileID: 1066341514495280}
   target_follow_distance: {x: 0, y: 2.5, z: 0}
   target_follow_angle: {x: 0, y: 0, z: 0}
   yaw_pivot: {fileID: 0}
   pitch_pivot: {fileID: 0}
+--- !u!114 &114853635505283590
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1759396677224510}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 938f4225365e47f4f80dfcb1a245b4ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mouse_sensitivity: {x: 0, y: 0}
+  controller_sensitivity: {x: 0, y: 0}
 --- !u!114 &114947268212099000
 MonoBehaviour:
   m_ObjectHideFlags: 1
