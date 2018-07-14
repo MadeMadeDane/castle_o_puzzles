@@ -25,6 +25,10 @@ public class CameraController : MonoBehaviour {
     private CameraMovementFunction handleCameraMove;
     private CameraMovementFunction handlePlayerRotate;
 
+    // Timers
+    private float WallHitTimeDelta;
+    private float WallHitGracePeriod;
+
     // Use this for initialization
     void Start () {
         //QualitySettings.vSyncCount = 0;
@@ -86,6 +90,10 @@ public class CameraController : MonoBehaviour {
         transform.parent = pitch_pivot.transform;
         transform.localPosition = target_follow_distance;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
+
+        // Set timers
+        WallHitGracePeriod = 0.0f;
+        WallHitTimeDelta = WallHitGracePeriod;
     }
 
     public void ThirdPersonJumpCallback()
@@ -99,13 +107,20 @@ public class CameraController : MonoBehaviour {
     // LateUpdate is called after update. Ensures we are operating on the latest transform changes.
     void LateUpdate () {
         UpdateCameraAngles();
-	}
+    }
 
     private void FixedUpdate()
     {
         handlePlayerRotate();
+        IncrementCounters();
     }
 
+    // TODO: Make a class for these
+    private void IncrementCounters()
+    {
+        WallHitTimeDelta = Mathf.Clamp(WallHitTimeDelta + Time.deltaTime, 0, 2 * WallHitGracePeriod);
+    }
+    
     // Rotate the camera
     private void UpdateCameraAngles()
     {
@@ -151,6 +166,28 @@ public class CameraController : MonoBehaviour {
             mouseAccumlator.x = Mathf.LerpAngle(mouseAccumlator.x, yaw, 0.1f);
             mouseAccumlator.y = Mathf.LerpAngle(mouseAccumlator.y, adjusted_pitch, 0.1f);
         }
+        AvoidWalls();
+    }
+
+    private void AvoidWalls()
+    {
+        RaycastHit hit;
+        Vector3 startpos = yaw_pivot.transform.position;
+        Vector3 path = transform.position - startpos;
+        if (Physics.Raycast(startpos, path.normalized, out hit, target_follow_distance.magnitude))
+        {
+            WallHitTimeDelta = 0;
+            transform.localPosition = target_follow_distance.normalized * (hit.distance - 1f);
+        }
+        else if (!InWallCollision())
+        {
+            transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
+        }
+    }
+
+    private bool InWallCollision()
+    {
+        return (WallHitTimeDelta < WallHitGracePeriod);
     }
 
     private void ThirdPersonShooterCameraMove()
