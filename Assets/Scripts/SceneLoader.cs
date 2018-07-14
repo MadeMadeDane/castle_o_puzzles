@@ -23,7 +23,7 @@ public class SceneLoader : MonoBehaviour {
             }
             newScene = SceneManager.GetSceneByName(scene);
         }
-        GameObject [] playerObjects = GameObject.FindGameObjectsWithTag("Player");
+        GameObject[] playerObjects = GameObject.FindGameObjectsWithTag("Player");
         foreach (GameObject player in playerObjects) {
             // Move the GameObject (you attach this in the Inspector) to the newly loaded Scene
             SceneManager.MoveGameObjectToScene(player, newScene);
