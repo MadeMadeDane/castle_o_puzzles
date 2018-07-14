@@ -23,20 +23,26 @@ public class PlayerController : MonoBehaviour {
     public float AirSpeedDamp;
     public float SlideSpeed;
     public float DownGravityAdd;
-    public float ShortHopGravityAdd;
     public float JumpVelocity;
     public float WallJumpThreshold;
     public float WallJumpBoost;
     public float WallRunLimit;
     public float WallJumpSpeed;
+    public float WallRunJumpBoostSpeed;
+    public float WallRunJumpBoostAdd;
     public float WallRunJumpSpeed;
     public float WallRunJumpUpSpeed;
+    public float JumpBoostSpeed;
+    public float JumpBoostRequiredSpeed;
+    public float JumpBoostAdd;
     public Vector3 StartPos;
     [Header("Movement toggles")]
     public bool wallRunEnabled;
     public bool wallJumpEnabled;
     public bool wallClimbEnabled;
     public bool conserveUpwardMomentum;
+    public bool ShortHopEnabled;
+    public bool JumpBoostEnabled;
     [HideInInspector]
     public Vector3 current_velocity;
 
@@ -209,13 +215,17 @@ public class PlayerController : MonoBehaviour {
         SlideSpeed = 18f;
         // Gravity modifiers
         DownGravityAdd = 0;
-        ShortHopGravityAdd = 0;
         // Jump/Wall modifiers
         JumpVelocity = 12f;
+        JumpBoostSpeed = 12f;
+        JumpBoostRequiredSpeed = 12f;
+        JumpBoostAdd = 0f;
         WallJumpThreshold = 8f;
         WallJumpBoost = 1.0f;
         WallJumpSpeed = 12f;
         WallRunLimit = 8f;
+        WallRunJumpBoostSpeed = 12f;
+        WallRunJumpBoostAdd = 0f;
         WallRunJumpSpeed = 15f;
         WallRunJumpUpSpeed = 12f;
         WallRunImpulse = 0.0f;
@@ -226,6 +236,8 @@ public class PlayerController : MonoBehaviour {
         wallJumpEnabled = true;
         wallRunEnabled = true;
         wallClimbEnabled = true;
+        ShortHopEnabled = false;
+        JumpBoostEnabled = false;
         // Delegates
         accelerate = AccelerateCPM;
         // Timings
@@ -252,16 +264,20 @@ public class PlayerController : MonoBehaviour {
         AirAcceleration = 30f;
         SpeedDamp = 10f;
         AirSpeedDamp = 0.01f;
-        SlideSpeed = 18f;
+        SlideSpeed = 22f;
         // Gravity modifiers
         DownGravityAdd = 0;
-        ShortHopGravityAdd = 0;
         // Jump/Wall modifiers
         JumpVelocity = 16f;
+        JumpBoostSpeed = 18f;
+        JumpBoostRequiredSpeed = 12f;
+        JumpBoostAdd = 10f;
         WallJumpThreshold = 8f;
         WallJumpBoost = 1.0f;
         WallJumpSpeed = 12f;
         WallRunLimit = 8f;
+        WallRunJumpBoostSpeed = 20f;
+        WallRunJumpBoostAdd = 10f;
         WallRunJumpSpeed = 12f;
         WallRunJumpUpSpeed = 12f;
         WallRunImpulse = 0.0f;
@@ -272,6 +288,8 @@ public class PlayerController : MonoBehaviour {
         wallJumpEnabled = true;
         wallRunEnabled = false;
         wallClimbEnabled = true;
+        ShortHopEnabled = true;
+        JumpBoostEnabled = true;
         // Delegates
         accelerate = AccelerateStandard;
         // Timings
@@ -532,7 +550,7 @@ public class PlayerController : MonoBehaviour {
 
     private void UpdateWallConditions(Vector3 wall_normal)
     {
-        if (Vector3.Dot(Vector3.ProjectOnPlane(current_velocity, Physics.gravity), wall_normal) < -WallJumpThreshold)
+        if (Vector3.Dot(GetGroundVelocity(), wall_normal) < -WallJumpThreshold)
         {
             // Are we jumping in a new direction (atleast 20 degrees difference)
             if (Vector3.Dot(PreviousWallJumpNormal, wall_normal) < 0.94f)
@@ -591,6 +609,12 @@ public class PlayerController : MonoBehaviour {
         {
             return wall_normal_check || (WallDistanceCheck() && Mathf.Abs(Vector3.Dot((new_wall_pos - old_wall_pos).normalized, old_wall_normal)) > 0.34f);
         }
+    }
+
+    private bool WallDistanceCheck()
+    {
+        float horizontal_distance_sqr = Vector3.ProjectOnPlane(PreviousWallJumpPos - transform.position, Physics.gravity).sqrMagnitude;
+        return float.IsNaN(horizontal_distance_sqr) || horizontal_distance_sqr > WallDistanceThreshold;
     }
 
     private void ProcessHits()
@@ -705,8 +729,7 @@ public class PlayerController : MonoBehaviour {
         }
 
         Vector3 planevelocity = Vector3.ProjectOnPlane(current_velocity, currentHit.normal);
-        Vector3 movVec = (input_manager.GetMoveVertical() * player_camera.yaw_pivot.transform.forward +
-                          input_manager.GetMoveHorizontal() * player_camera.yaw_pivot.transform.right);
+        Vector3 movVec = GetMoveVector();
         float movmag = movVec.magnitude < 0.8f ? movVec.magnitude < 0.2f ? 0f : movVec.magnitude : 1f;
         movmag = Mathf.Pow(movmag, 2f);
         // Do this first so we cancel out incremented time from update before checking it
@@ -832,7 +855,7 @@ public class PlayerController : MonoBehaviour {
             }*/
             if (!grounded)
             {
-                current_velocity = current_velocity - (deltaVel.magnitude * Vector3.ProjectOnPlane(current_velocity, Physics.gravity).normalized) + deltaVel;
+                current_velocity = current_velocity - (deltaVel.magnitude * GetGroundVelocity().normalized) + deltaVel;
             }
         }
 
@@ -849,44 +872,10 @@ public class PlayerController : MonoBehaviour {
         //Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), accel, Color.blue, Time.fixedDeltaTime);
     }
 
-    // Handle jumping
-    private void HandleJumping()
+    public Vector3 GetMoveVector()
     {
-        // Ground detection for friction and jump state
-        if (OnGround())
-        {
-            isJumping = false;
-            isFalling = false;
-        }
-
-        // Add additional gravity when going down (optional)
-        if (current_velocity.y < 0)
-        {
-            GravityMult += DownGravityAdd;
-        }
-
-        // Handle jumping and falling
-        if (willJump)
-        {
-            DoJump();
-        }
-        else if (input_manager.GetJump())
-        {
-            if (OnGround() || CanWallJump() || IsWallRunning() || isHanging)
-            {
-                DoJump();
-            }
-            else
-            {
-                BufferJumpTimeDelta = 0;
-            }
-        }
-        // Fall fast when we let go of jump (optional)
-        if (isFalling || isJumping && !input_manager.GetJumpHold())
-        {
-            GravityMult += ShortHopGravityAdd;
-            isFalling = true;
-        }
+        return (input_manager.GetMoveVertical() * player_camera.yaw_pivot.transform.forward +
+                input_manager.GetMoveHorizontal() * player_camera.yaw_pivot.transform.right);
     }
 
     // Double check if on ground using a separate test
@@ -940,10 +929,69 @@ public class PlayerController : MonoBehaviour {
         return PreviousWallNormal;
     }
 
-    private bool WallDistanceCheck()
+    public Vector3 GetGroundVelocity()
     {
-        float horizontal_distance_sqr = Vector3.ProjectOnPlane(PreviousWallJumpPos - transform.position, Physics.gravity).sqrMagnitude;
-        return float.IsNaN(horizontal_distance_sqr) || horizontal_distance_sqr > WallDistanceThreshold;
+        return Vector3.ProjectOnPlane(current_velocity, Physics.gravity);
+    }
+
+    public bool CanJumpBoost()
+    {
+        bool can_jump_boost = true;
+        // Ground behavior
+        if (OnGround() || (JumpBuffered() && !CanWallJump()))
+        {
+            Vector3 ground_vel = GetGroundVelocity();
+            can_jump_boost &= (ground_vel.magnitude > JumpBoostRequiredSpeed);
+            can_jump_boost &= (Vector3.Dot(GetMoveVector(), ground_vel.normalized) > 0.7f);
+        }
+        else
+        {
+            can_jump_boost = false;
+        }
+        return can_jump_boost;
+    }
+
+    // Handle jumping
+    private void HandleJumping()
+    {
+        // Ground detection for friction and jump state
+        if (OnGround())
+        {
+            isJumping = false;
+            isFalling = false;
+        }
+
+        // Add additional gravity when going down (optional)
+        if (current_velocity.y < 0)
+        {
+            GravityMult += DownGravityAdd;
+        }
+
+        // Handle jumping and falling
+        if (willJump)
+        {
+            DoJump();
+        }
+        else if (input_manager.GetJump())
+        {
+            if (OnGround() || CanWallJump() || IsWallRunning() || isHanging)
+            {
+                DoJump();
+            }
+            else
+            {
+                BufferJumpTimeDelta = 0;
+            }
+        }
+        // Fall fast when we let go of jump (optional)
+        if (!isFalling && isJumping && !input_manager.GetJumpHold())
+        {
+            if (ShortHopEnabled && Vector3.Dot(current_velocity, Physics.gravity.normalized) < 0)
+            {
+                current_velocity -= Vector3.Project(current_velocity, Physics.gravity.normalized) / 2;
+            }
+            isFalling = true;
+        }
     }
 
     // Set the player to a jumping state
@@ -974,6 +1022,9 @@ public class PlayerController : MonoBehaviour {
             {
                 //Debug.Log("Wall Run Jump");
                 current_velocity += PreviousWallNormal * WallRunJumpSpeed * JumpMeterComputed;
+                float pathvel = Vector3.Dot(current_velocity, transform.forward);
+                float newspeed = Mathf.Clamp(pathvel + (WallRunJumpBoostAdd * JumpMeterComputed), 0f, WallRunJumpBoostSpeed);
+                current_velocity += transform.forward * (newspeed - pathvel);
                 current_velocity.y = Math.Max(current_velocity.y, WallRunJumpUpSpeed * JumpMeterComputed);
                 JumpMeter = 0;
             }
@@ -989,6 +1040,13 @@ public class PlayerController : MonoBehaviour {
                     current_velocity.y = Math.Max(current_velocity.y, JumpVelocity * JumpMeterComputed);
                 }
             }
+            if (JumpBoostEnabled && CanJumpBoost())
+            {
+                Vector3 movvec = GetMoveVector().normalized;
+                float pathvel = Vector3.Dot(current_velocity, movvec);
+                float newspeed = Mathf.Clamp(pathvel + JumpBoostAdd, 0f, JumpBoostSpeed);
+                current_velocity += (Mathf.Max(newspeed, pathvel) - pathvel) * movvec;
+            }
             foreach (Action callback in jump_callback_table)
             {
                 callback();
@@ -1000,6 +1058,7 @@ public class PlayerController : MonoBehaviour {
         }
         ReGrabTimeDelta = 0;
         isJumping = true;
+        isFalling = false;
         willJump = false;
         isHanging = false;
 
