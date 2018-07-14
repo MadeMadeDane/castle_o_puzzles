@@ -177,7 +177,14 @@ public class CameraController : MonoBehaviour {
         if (Physics.Raycast(startpos, path.normalized, out hit, target_follow_distance.magnitude))
         {
             WallHitTimeDelta = 0;
-            transform.localPosition = target_follow_distance.normalized * (hit.distance - 1f);
+            if (hit.distance < 1f)
+            {
+                transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance.normalized*0.5f, 0.1f);
+            }
+            else
+            {
+                transform.localPosition = target_follow_distance.normalized * (hit.distance - 1f);
+            }
         }
         else if (!InWallCollision())
         {
