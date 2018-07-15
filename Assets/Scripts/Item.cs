@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class NewBehaviourScript : MonoBehaviour {
-
+public class Item : MonoBehaviour {
+    public delegate void PerformAction(string Button);
+    public Dictionary<string, PerformAction> ActionList;
 	// Use this for initialization
 	void Start () {
 		
