@@ -909,6 +909,11 @@ public class PlayerController : MonoBehaviour {
         return wallJumpEnabled && (WallJumpTimeDelta < WallJumpGracePeriod);
     }
 
+    public bool IsHanging()
+    {
+        return isHanging;
+    }
+
     public bool InMovingCollision()
     {
         return (MovingColliderTimeDelta < MovingColliderGracePeriod);
@@ -1055,6 +1060,9 @@ public class PlayerController : MonoBehaviour {
         else if (isHanging)
         {
             current_velocity.y = LedgeClimbBoost;
+            PreviousWallNormal = Vector3.zero;
+            PreviousWallJumpNormal = Vector3.zero;
+            PreviousWallJumpPos = Vector3.positiveInfinity;
         }
         ReGrabTimeDelta = 0;
         isJumping = true;
