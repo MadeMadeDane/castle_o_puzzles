@@ -34,6 +34,7 @@ public class CameraController : MonoBehaviour {
         //QualitySettings.vSyncCount = 0;
         //Application.targetFrameRate = 45;
         yaw_pivot = new GameObject("yaw_pivot");
+        yaw_pivot.tag = "Player";
         pitch_pivot = new GameObject("pitch_pivot");
         pitch_pivot.transform.parent = yaw_pivot.transform;
         PlayerController player_home = home.GetComponent<PlayerController>();
