@@ -13,6 +13,7 @@ public class Button
     {
         _active = true;
         _button_names = new string[] { button_name };
+        Console.WriteLine("Created button with " + button_name);
     }
 
     public Button(string[] button_names)
