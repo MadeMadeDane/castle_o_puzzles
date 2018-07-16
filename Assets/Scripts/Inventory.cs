@@ -8,12 +8,13 @@ public class Inventory : MonoBehaviour
 
     public Dictionary<string, Item> contents;
     public uint numItems;
-    public uint numSlots;
+    public uint numSlots = 1;
 
     // Use this for initialization
     void Start()
     {
-
+        contents = new Dictionary<string, Item>();
+        numItems = 0;
     }
 
     // Update is called once per frame
