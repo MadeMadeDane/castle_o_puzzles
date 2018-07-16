@@ -15,7 +15,8 @@ public class ItemActionHandler : MonoBehaviour {
 	}
 	
 	// Update is called once per frame
-	void Update () {
+	void Update ()
+    {
 
         // Bit shift the index of the layer (8) to get a bit mask
         int layerMask = 0 << 2;
@@ -34,6 +35,15 @@ public class ItemActionHandler : MonoBehaviour {
                 Debug.Log("Did Hit");
             }
         }
+        if (pc.lastHit != null) {
+            targetItem = pc.lastHit.collider.gameObject.GetComponent<Item>();
+            if (targetItem != null) {
+                if (!actionSlots.contents.ContainsKey("useItem")) {
+                    Debug.Log("Picked Up");
+                    actionSlots.AddItem("useItem", targetItem);
+                }
+            }
+        }
         if(im.GetPickUp() && targetItem != null) {
             actionSlots.AddItem("useItem", targetItem);
         }
@@ -42,7 +52,7 @@ public class ItemActionHandler : MonoBehaviour {
         }
         if (im.GetUseItem() && actionSlots.contents.ContainsKey("useItem")) {
             Debug.Log("Item Used");
-                actionSlots.contents["useItem"].ActionList["use"]("jump");
+            actionSlots.contents["useItem"].ActionList["use"]("jump");
         }
-	}
+    }
 }
