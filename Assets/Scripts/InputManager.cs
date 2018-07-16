@@ -82,6 +82,9 @@ public class InputManager : MonoBehaviour {
         _button_map = new Dictionary<string, Button>() {
             { "jump_button",  new Button("Jump") },
             { "center_camera_button",  new Button("Center Camera") },
+            { "use_item_button", new Button("Use Item") },
+            { "pick_up_button", new Button("Pick Up") },
+            { "drop_item_button", new Button("Drop Item") },
         };
     }
 
@@ -166,5 +169,35 @@ public class InputManager : MonoBehaviour {
     public bool GetCenterCameraHold()
     {
         return _button_map["center_camera_button"].pressed();
+    }
+
+    public bool GetUseItem()
+    {
+        return _button_map["use_item_button"].down();
+    }
+
+    public bool GetUseItemHold()
+    {
+        return _button_map["use_item_button"].pressed();
+    }
+
+    public bool GetPickUp()
+    {
+        return _button_map["pick_up_button"].down();
+    }
+
+    public bool GetPickUpHold()
+    {
+        return _button_map["pick_up_button"].pressed();
+    }
+
+    public bool GetDropItem()
+    {
+        return _button_map["drop_item_button"].down();
+    }
+
+    public bool GetDropItemHold()
+    {
+        return _button_map["drop_item_button"].pressed();
     }
 }
