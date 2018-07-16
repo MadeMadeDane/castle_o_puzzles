@@ -3,11 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 delegate void AccelerationFunction(Vector3 direction, float desiredSpeed, float acceleration, bool grounded);
 
-public class PlayerController : MonoBehaviour {
+public class PlayerController : NetworkBehaviour {
     [Header("Linked Components")]
     public InputManager input_manager;
     public CharacterController cc;
@@ -161,7 +162,16 @@ public class PlayerController : MonoBehaviour {
         moving_frame_velocity = Vector3.zero;
         current_velocity = Vector3.zero;
         currentHit = new ControllerColliderHit();
-        StartPos = transform.position;
+
+        NetworkStartPosition[] startPositions = FindObjectsOfType(typeof(NetworkStartPosition)) as NetworkStartPosition[];
+        //this.get.GetComponentsInParent<NetworkStartPosition>(false, startPositions);
+
+        Debug.Log("Number of start positions: " + startPositions.Length);
+        System.Random random = new System.Random();
+        StartPos = startPositions[random.Next(0, startPositions.Length-1)].transform.position;
+        Debug.Log("Set start position to "+  StartPos);
+
+        //StartPos = transform.position;
 
         // TODO: Test below
         //cc.enableOverlapRecovery = false;
