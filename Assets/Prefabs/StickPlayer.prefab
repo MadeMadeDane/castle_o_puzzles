@@ -57,6 +57,7 @@ GameObject:
   - component: {fileID: 114947268212099000}
   - component: {fileID: 114025229175559238}
   - component: {fileID: 114008097248420692}
+  - component: {fileID: 114573935552663502}
   m_Layer: 2
   m_Name: StickPlayer
   m_TagString: Player
@@ -658,7 +659,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1066341514495280}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 39, z: -4.428795}
+  m_LocalPosition: {x: 0, y: 60.5, z: 0.75}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4452096838960350}
@@ -1217,6 +1218,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09fc66f38057a054e84c4f25bfe45039, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &114573935552663502
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1066341514495280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2782ae44d5f821241b1dd7f19c0c169d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pc: {fileID: 114710611674587026}
+  im: {fileID: 114853635505283590}
+  cam: {fileID: 20277521880671826}
+  actionSlots: {fileID: 0}
 --- !u!114 &114710611674587026
 MonoBehaviour:
   m_ObjectHideFlags: 1

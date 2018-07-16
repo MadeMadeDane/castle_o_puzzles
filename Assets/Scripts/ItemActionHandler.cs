@@ -37,10 +37,11 @@ public class ItemActionHandler : MonoBehaviour {
         if(im.GetPickUp() && targetItem != null) {
             actionSlots.AddItem("useItem", targetItem);
         }
-        if(im.GetDropItem()) {
+        if(im.GetDropItem() && actionSlots.contents.ContainsKey("useItem")) {
             actionSlots.RemoveItem("useItem");
         }
-        if (im.GetUseItem() && actionSlots.contents["useItem"] != null) {
+        if (im.GetUseItem() && actionSlots.contents.ContainsKey("useItem")) {
+            Debug.Log("Item Used");
                 actionSlots.contents["useItem"].ActionList["use"]("jump");
         }
 	}
