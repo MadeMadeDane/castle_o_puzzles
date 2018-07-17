@@ -31,12 +31,20 @@ public class CameraController : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
+        //if (!this.GetComponentInParent<PlayerController>().isLocalPlayer)
+        //    return;
         //QualitySettings.vSyncCount = 0;
         //Application.targetFrameRate = 45;
         yaw_pivot = new GameObject("yaw_pivot");
         pitch_pivot = new GameObject("pitch_pivot");
         pitch_pivot.transform.parent = yaw_pivot.transform;
-        PlayerController player_home = home.GetComponent<PlayerController>();
+        PlayerController player_home = home.GetComponentInParent<PlayerController>();
+        if (!player_home.isLocalPlayer)
+        {
+            Debug.Log("This is not the local player");
+            this.GetComponent<AudioListener>().enabled = false;
+        }
+
         if (player_home == null)
         {
             throw new Exception("Failed initializing camera.");

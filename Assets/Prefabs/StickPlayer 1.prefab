@@ -116,6 +116,8 @@ GameObject:
   - component: {fileID: 136517109663141386}
   - component: {fileID: 114897936868596348}
   - component: {fileID: 114456340718187440}
+  - component: {fileID: 114648048557961580}
+  - component: {fileID: 114652603320437642}
   m_Layer: 2
   m_Name: StickPlayer 1
   m_TagString: Untagged
@@ -1239,7 +1241,7 @@ MonoBehaviour:
     i14: 126
     i15: 162
   m_ServerOnly: 0
-  m_LocalPlayerAuthority: 0
+  m_LocalPlayerAuthority: 1
 --- !u!114 &114539029165308200
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1314,6 +1316,46 @@ MonoBehaviour:
   ShortHopEnabled: 0
   JumpBoostEnabled: 0
   current_velocity: {x: 0, y: 0, z: 0}
+--- !u!114 &114648048557961580
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1207553705137718}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: -1768714887, guid: dc443db3e92b4983b9738c1131f555cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_TransformSyncMode: 4
+  m_SendInterval: 0.04761905
+  m_SyncRotationAxis: 7
+  m_RotationSyncCompression: 0
+  m_SyncSpin: 0
+  m_MovementTheshold: 0.001
+  m_VelocityThreshold: 0.0001
+  m_SnapThreshold: 5
+  m_InterpolateRotation: 1
+  m_InterpolateMovement: 1
+--- !u!114 &114652603320437642
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1207553705137718}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1590678366, guid: dc443db3e92b4983b9738c1131f555cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Animator: {fileID: 95898237946619598}
+  m_ParameterSendBits: 31
+  param0: 
+  param1: 
+  param2: 
+  param3: 
+  param4: 
+  param5: 
 --- !u!114 &114768967896136702
 MonoBehaviour:
   m_ObjectHideFlags: 1

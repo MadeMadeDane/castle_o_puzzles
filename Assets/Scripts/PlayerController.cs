@@ -169,6 +169,7 @@ public class PlayerController : NetworkBehaviour {
         Debug.Log("Number of start positions: " + startPositions.Length);
         System.Random random = new System.Random();
         StartPos = startPositions[random.Next(0, startPositions.Length-1)].transform.position;
+        this.transform.position = StartPos;
         Debug.Log("Set start position to "+  StartPos);
 
         //StartPos = transform.position;
@@ -324,6 +325,11 @@ public class PlayerController : NetworkBehaviour {
         {
             return;
         }
+        if (!isLocalPlayer)
+        {
+            player_camera.enabled = false;
+            return;
+        }
         // Get starting values
         GravityMult = 1;
         accel = Vector3.zero;
@@ -338,8 +344,11 @@ public class PlayerController : NetworkBehaviour {
 
         ProcessHits();
         ProcessTriggers();
-        HandleMovement();
-        HandleJumping();
+        if (isLocalPlayer)
+        {
+            HandleMovement();
+            HandleJumping();
+        }
         UpdatePlayerState();
         IncrementCounters();
     }
