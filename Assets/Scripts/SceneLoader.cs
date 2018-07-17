@@ -25,8 +25,11 @@ public class SceneLoader : MonoBehaviour {
         }
         GameObject[] playerObjects = GameObject.FindGameObjectsWithTag("Player");
         foreach (GameObject player in playerObjects) {
-            // Move the GameObject (you attach this in the Inspector) to the newly loaded Scene
-            SceneManager.MoveGameObjectToScene(player, newScene);
+            if ( player == gameObject || player.transform.root != transform) {
+                transform.parent = null;
+                // Move the GameObject (you attach this in the Inspector) to the newly loaded Scene
+                SceneManager.MoveGameObjectToScene(player, newScene);
+            }
         }
         // Set the current Scene to be able to unload it later
         SceneManager.SetActiveScene(newScene);

@@ -7,10 +7,16 @@ using UnityEngine;
 public delegate void CameraMovementFunction();
 
 public class CameraController : MonoBehaviour {
+    enum ViewMode
+    {
+        Shooter,
+        Third_Person
+    }
     [Header("Linked Components")]
     public InputManager input_manager;
     public Camera controlled_camera;
     public GameObject home;
+    public GameObject home_model;
     [Header("Camera Settings")]
     public Vector3 target_follow_distance;
     public Vector3 target_follow_angle;
@@ -19,6 +25,7 @@ public class CameraController : MonoBehaviour {
     public GameObject pitch_pivot;
 
     // Camera state
+    private ViewMode view_mode;
     private PlayerController current_player;
 
     private Vector2 mouseAccumlator = Vector2.zero;
@@ -29,10 +36,14 @@ public class CameraController : MonoBehaviour {
     private float WallHitTimeDelta;
     private float WallHitGracePeriod;
 
+    // Other Settings
+    private float transparency_divider;
+
     // Use this for initialization
     void Start () {
         //QualitySettings.vSyncCount = 0;
         //Application.targetFrameRate = 45;
+        transparency_divider = 4;
         yaw_pivot = new GameObject("yaw_pivot");
         yaw_pivot.tag = "Player";
         pitch_pivot = new GameObject("pitch_pivot");
@@ -52,6 +63,7 @@ public class CameraController : MonoBehaviour {
 
     private void SetShooterVars(PlayerController target)
     {
+        view_mode = ViewMode.Shooter;
         handleCameraMove = FirstPersonCameraMove;
         handlePlayerRotate = FirstPersonPlayerRotate;
         target_follow_angle = Vector3.zero;
@@ -67,6 +79,7 @@ public class CameraController : MonoBehaviour {
         current_player = target;
 
         // Attach the camera to the yaw_pivot and set the default distance/angles
+        yaw_pivot.transform.rotation = new Quaternion(0,0,0,0);
         transform.parent = yaw_pivot.transform;
         transform.localPosition = target_follow_distance;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
@@ -74,6 +87,7 @@ public class CameraController : MonoBehaviour {
 
     private void SetThirdPersonActionVars(PlayerController target)
     {
+        view_mode = ViewMode.Third_Person;
         handleCameraMove = ThirdPersonCameraMove;
         handlePlayerRotate = ThirdPersonPlayerRotate;
         target_follow_angle = new Vector3(14f, 0, 0);
@@ -88,6 +102,7 @@ public class CameraController : MonoBehaviour {
         current_player.RegisterJumpCallback(ThirdPersonJumpCallback);
 
         // Attach the camera to the yaw_pivot and set the default distance/angles
+        yaw_pivot.transform.parent = null;
         transform.parent = pitch_pivot.transform;
         transform.localPosition = target_follow_distance;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
@@ -106,14 +121,34 @@ public class CameraController : MonoBehaviour {
     }
 
     // LateUpdate is called after update. Ensures we are operating on the latest transform changes.
-    void LateUpdate () {
+    void LateUpdate ()
+    {
         UpdateCameraAngles();
     }
 
     private void FixedUpdate()
     {
+        if (input_manager.GetToggleView()) {
+            if (view_mode == ViewMode.Shooter) {
+                SetThirdPersonActionVars(current_player);
+            } else if (view_mode == ViewMode.Third_Person) {
+                SetShooterVars(current_player);
+            }
+        }
+        hideHome();
         handlePlayerRotate();
         IncrementCounters();
+    }
+
+    private void hideHome()
+    {
+        if (home_model != null) {
+            Renderer render = home_model.GetComponent<Renderer>();
+            Color textureColor = render.material.color;
+            float distance_to_head = (current_player.transform.up * (current_player.cc.height / 2 - current_player.cc.radius) + current_player.transform.position - transform.position).magnitude;
+            textureColor.a = distance_to_head > transparency_divider ? 1 : distance_to_head < 1 ? 0 : distance_to_head / transparency_divider;
+            render.material.color = textureColor;
+        }
     }
 
     // TODO: Make a class for these
