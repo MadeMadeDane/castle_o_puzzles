@@ -173,22 +173,52 @@ public class CameraController : MonoBehaviour {
     private void AvoidWalls()
     {
         RaycastHit hit;
-        Vector3 startpos = yaw_pivot.transform.position;
-        Vector3 path = transform.position - startpos;
-        if (Physics.Raycast(startpos, path.normalized, out hit, target_follow_distance.magnitude))
+        Vector3 startpos = current_player.transform.position;
+        Vector3 world_target_vec = transform.TransformVector(Quaternion.Inverse(transform.localRotation) * target_follow_distance);
+        Vector3 path = (yaw_pivot.transform.position + world_target_vec - startpos);
+        //Debug.DrawRay(startpos, path.normalized*(path.magnitude+1f), Color.green);
+        
+        if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude+1f))
         {
             WallHitTimeDelta = 0;
-            if (hit.distance < 1f)
+            Vector3 pivot_hit = (hit.point - yaw_pivot.transform.position);
+            // Ignore hits that are too far away
+            if (pivot_hit.magnitude > target_follow_distance.magnitude+1f)
             {
-                transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance.normalized*0.5f, 0.1f);
+                //Debug.Log("Too far hit");
+                transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
             }
+            // Very close hits should move the camera to a predefined location
+            else if (hit.distance < 1f)
+            {
+                //Debug.Log("Too close hit");
+                if (pitch_pivot.transform.localRotation.x < 0)
+                {
+                    transform.localPosition = Vector3.Lerp(transform.localPosition, (Quaternion.Inverse(pitch_pivot.transform.localRotation) * Vector3.up * target_follow_distance.y), 0.1f);
+                }
+                else
+                {
+                    transform.localPosition = Vector3.Lerp(transform.localPosition, (Vector3.up * target_follow_distance.y), 0.1f);
+                }
+            }
+            // Otherwise move the camrea to where the hit is, minus an offset
             else
             {
-                transform.localPosition = target_follow_distance.normalized * (hit.distance - 1f);
+                //Debug.Log("Wall hit");
+                float horizontal_displacement = Vector3.Dot(pivot_hit, pitch_pivot.transform.forward);
+                if (pitch_pivot.transform.localRotation.x < 0)
+                {
+                    transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - 1f) * Vector3.forward) + (Quaternion.Inverse(pitch_pivot.transform.localRotation) * Vector3.up * target_follow_distance.y);
+                }
+                else
+                {
+                    transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - 1f) * Vector3.forward) + (Vector3.up * target_follow_distance.y);
+                }
             }
         }
         else if (!InWallCollision())
         {
+            //Debug.Log("No hit");
             transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
         }
     }
