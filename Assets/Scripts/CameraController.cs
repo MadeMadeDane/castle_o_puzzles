@@ -38,12 +38,17 @@ public class CameraController : MonoBehaviour {
 
     // Other Settings
     private float transparency_divider;
+    private float fully_translucent_threshold;
+    private bool fade_texture_in_use;
+    public Material opaque_material;
+    public Material fade_material;
 
     // Use this for initialization
     void Start () {
         //QualitySettings.vSyncCount = 0;
         //Application.targetFrameRate = 45;
         transparency_divider = 4;
+        fully_translucent_threshold = 1;
         yaw_pivot = new GameObject("yaw_pivot");
         yaw_pivot.tag = "Player";
         pitch_pivot = new GameObject("pitch_pivot");
@@ -142,12 +147,25 @@ public class CameraController : MonoBehaviour {
 
     private void hideHome()
     {
+        Color textureColor;
+        Renderer render;
         if (home_model != null) {
-            Renderer render = home_model.GetComponent<Renderer>();
-            Color textureColor = render.material.color;
+            render = home_model.GetComponent<Renderer>();
             float distance_to_head = (current_player.transform.up * (current_player.cc.height / 2 - current_player.cc.radius) + current_player.transform.position - transform.position).magnitude;
-            textureColor.a = distance_to_head > transparency_divider ? 1 : distance_to_head < 1 ? 0 : distance_to_head / transparency_divider;
-            render.material.color = textureColor;
+            if(distance_to_head < transparency_divider) {
+                if(!fade_texture_in_use) {
+                    fade_texture_in_use = true;
+                    render.material = fade_material;
+                }
+                textureColor = render.material.color;
+                textureColor.a = distance_to_head < fully_translucent_threshold ? 0 : distance_to_head / transparency_divider;
+                render.material.color = textureColor;
+            } else {
+                if (fade_texture_in_use) {
+                    fade_texture_in_use = false;
+                    render.material = opaque_material;
+                }
+            }
         }
     }
 
