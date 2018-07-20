@@ -27,7 +27,7 @@ public class CameraController : MonoBehaviour {
     private ViewMode view_mode;
     private PlayerController current_player;
 
-    private Vector2 mouseAccumlator = Vector2.zero;
+    private Vector2 mouseAccumulator = Vector2.zero;
     private CameraMovementFunction handleCameraMove;
     private CameraMovementFunction handlePlayerRotate;
 
@@ -178,9 +178,9 @@ public class CameraController : MonoBehaviour {
     private void UpdateCameraAngles()
     {
         // Accumulate the angle changes and ensure x revolves in (-360, 360) and y is clamped in (-90,90)
-        mouseAccumlator += input_manager.GetMouseMotion();
-        mouseAccumlator.x = mouseAccumlator.x % 360;
-        mouseAccumlator.y = Mathf.Clamp(mouseAccumlator.y, -90, 90);
+        mouseAccumulator += input_manager.GetMouseMotion();
+        mouseAccumulator.x = mouseAccumulator.x % 360;
+        mouseAccumulator.y = Mathf.Clamp(mouseAccumulator.y, -90, 90);
         if (current_player != null)
         {
             handleCameraMove();
@@ -191,35 +191,41 @@ public class CameraController : MonoBehaviour {
     {
         // Set camera pitch
         transform.localRotation = Quaternion.AngleAxis(
-            -mouseAccumlator.y, Vector3.right);
+            -mouseAccumulator.y, Vector3.right);
         // Set player yaw (and camera with it)
         yaw_pivot.transform.parent.transform.localRotation = Quaternion.AngleAxis(
-            mouseAccumlator.x, Vector3.up);
+            mouseAccumulator.x, Vector3.up);
     }
 
     private void ThirdPersonCameraMove()
     {
-        if (mouseAccumlator.x < 0)
+        if (mouseAccumulator.x < 0)
         {
-            mouseAccumlator.x = 360 + mouseAccumlator.x;
+            mouseAccumulator.x = 360 + mouseAccumulator.x;
         }
-        mouseAccumlator.y = Mathf.Clamp(mouseAccumlator.y, -65, 75);
-        // Set camera pitch
+        mouseAccumulator.y = Mathf.Clamp(mouseAccumulator.y, -65, 75);
+        // set the pitch pivots pitch
         pitch_pivot.transform.localRotation = Quaternion.AngleAxis(
-            -mouseAccumlator.y, Vector3.right);
-        // Set player yaw (and camera with it)
+            -mouseAccumulator.y, Vector3.right);
+        // set the yaw pivots yaw
         yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
-            mouseAccumlator.x, Vector3.up);
+            mouseAccumulator.x, Vector3.up);
 
         if (input_manager.GetCenterCameraHold())
         {
-            float pitch = current_player.transform.localEulerAngles.x;
-            float yaw = current_player.transform.localEulerAngles.y;
-            float adjusted_pitch = 360 - pitch < pitch ? 360 - pitch : -pitch;
-            mouseAccumlator.x = Mathf.LerpAngle(mouseAccumlator.x, yaw, 0.1f);
-            mouseAccumlator.y = Mathf.LerpAngle(mouseAccumlator.y, adjusted_pitch, 0.1f);
+            Vector2 orientation = EulerToMouseAccum(current_player.transform.localEulerAngles);
+            mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, orientation.x, 0.1f);
+            mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, orientation.y, 0.1f);
         }
         AvoidWalls();
+    }
+
+    private Vector2 EulerToMouseAccum(Vector3 euler_angle)
+    {
+        float pitch = euler_angle.x;
+        float yaw = euler_angle.y;
+        float adjusted_pitch = 360 - pitch < pitch ? 360 - pitch : -pitch;
+        return new Vector2(yaw, adjusted_pitch);
     }
 
     private void AvoidWalls()
@@ -230,12 +236,12 @@ public class CameraController : MonoBehaviour {
         Vector3 path = (yaw_pivot.transform.position + world_target_vec - startpos);
         //Debug.DrawRay(startpos, path.normalized*(path.magnitude+1f), Color.green);
         
-        if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude+1f))
+        if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude + 1f))
         {
             WallHitTimeDelta = 0;
             Vector3 pivot_hit = (hit.point - yaw_pivot.transform.position);
             // Ignore hits that are too far away
-            if (pivot_hit.magnitude > target_follow_distance.magnitude+1f)
+            if (pivot_hit.magnitude > target_follow_distance.magnitude + 1f)
             {
                 //Debug.Log("Too far hit");
                 transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
@@ -266,9 +272,10 @@ public class CameraController : MonoBehaviour {
                 {
                     transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - 1f) * Vector3.forward) + (Vector3.up * target_follow_distance.y);
                 }
+                transform.localPosition += transform.InverseTransformDirection(hit.normal) * controlled_camera.rect.width / 2;
             }
         }
-        else if (!InWallCollision())
+        else
         {
             //Debug.Log("No hit");
             transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
@@ -284,10 +291,10 @@ public class CameraController : MonoBehaviour {
     {
         // Set camera pitch
         pitch_pivot.transform.localRotation = Quaternion.AngleAxis(
-            -mouseAccumlator.y, Vector3.right);
+            -mouseAccumulator.y, Vector3.right);
         // Set player yaw (and camera with it)
         yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
-            mouseAccumlator.x, Vector3.up);
+            mouseAccumulator.x, Vector3.up);
         // Set the players yaw to match our velocity
         current_player.transform.rotation = Quaternion.Slerp(current_player.transform.rotation, yaw_pivot.transform.rotation, Mathf.Clamp(current_player.cc.velocity.magnitude / current_player.RunSpeed, 0, 1));
         yaw_pivot.transform.position = current_player.transform.position;
@@ -335,6 +342,7 @@ public class CameraController : MonoBehaviour {
             current_player.transform.forward = Vector3.RotateTowards(current_player.transform.forward, desired_move, 0.1f * interp_multiplier, 1f);
         }
         yaw_pivot.transform.position = Vector3.Lerp(yaw_pivot.transform.position, current_player.transform.position, 0.025f);
+        AvoidWalls();
     }
 
 
