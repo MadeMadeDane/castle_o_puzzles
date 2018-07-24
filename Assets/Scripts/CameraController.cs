@@ -148,8 +148,8 @@ public class CameraController : MonoBehaviour {
     private void hideHome()
     {
         Color textureColor;
-        SkinnedMeshRenderer render = home.GetComponentInChildren<SkinnedMeshRenderer>();
-        if (render != null) {
+        SkinnedMeshRenderer []renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
+         foreach (SkinnedMeshRenderer render in renderers) {
             float distance_to_head = (current_player.transform.up * (current_player.cc.height / 2 - current_player.cc.radius) + current_player.transform.position - transform.position).magnitude;
             if(distance_to_head < transparency_divider) {
                 if(!fade_texture_in_use) {
