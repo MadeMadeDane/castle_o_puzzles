@@ -16,7 +16,6 @@ public class CameraController : MonoBehaviour {
     public InputManager input_manager;
     public Camera controlled_camera;
     public GameObject home;
-    public GameObject home_model;
     [Header("Camera Settings")]
     public Vector3 target_follow_distance;
     public Vector3 target_follow_angle;
@@ -40,7 +39,7 @@ public class CameraController : MonoBehaviour {
     private float transparency_divider;
     private float fully_translucent_threshold;
     private bool fade_texture_in_use;
-    public Material opaque_material;
+    private Material opaque_material;
     public Material fade_material;
 
     // Use this for initialization
@@ -60,7 +59,8 @@ public class CameraController : MonoBehaviour {
         }
         //SetShooterVars(player_home);
         SetThirdPersonActionVars(player_home);
-
+        Debug.Log(home.GetComponentInChildren<SkinnedMeshRenderer>());
+        opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().material;
         // TODO: Move this mouse hiding logic somewhere else
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -84,7 +84,7 @@ public class CameraController : MonoBehaviour {
         current_player = target;
 
         // Attach the camera to the yaw_pivot and set the default distance/angles
-        yaw_pivot.transform.rotation = new Quaternion(0,0,0,0);
+        yaw_pivot.transform.rotation = Quaternion.identity;
         transform.parent = yaw_pivot.transform;
         transform.localPosition = target_follow_distance;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
@@ -148,9 +148,8 @@ public class CameraController : MonoBehaviour {
     private void hideHome()
     {
         Color textureColor;
-        Renderer render;
-        if (home_model != null) {
-            render = home_model.GetComponent<Renderer>();
+        SkinnedMeshRenderer render = home.GetComponentInChildren<SkinnedMeshRenderer>();
+        if (render != null) {
             float distance_to_head = (current_player.transform.up * (current_player.cc.height / 2 - current_player.cc.radius) + current_player.transform.position - transform.position).magnitude;
             if(distance_to_head < transparency_divider) {
                 if(!fade_texture_in_use) {
