@@ -7,6 +7,11 @@ using UnityEngine;
 public delegate void CameraMovementFunction();
 
 public class CameraController : MonoBehaviour {
+    enum ViewMode
+    {
+        Shooter,
+        Third_Person
+    }
     [Header("Linked Components")]
     public InputManager input_manager;
     public Camera controlled_camera;
@@ -19,6 +24,7 @@ public class CameraController : MonoBehaviour {
     public GameObject pitch_pivot;
 
     // Camera state
+    private ViewMode view_mode;
     private PlayerController current_player;
 
     private Vector2 mouseAccumlator = Vector2.zero;
@@ -29,10 +35,19 @@ public class CameraController : MonoBehaviour {
     private float WallHitTimeDelta;
     private float WallHitGracePeriod;
 
+    // Other Settings
+    private float transparency_divider;
+    private float fully_translucent_threshold;
+    private bool fade_texture_in_use;
+    private Material opaque_material;
+    public Material fade_material;
+
     // Use this for initialization
     void Start () {
         //QualitySettings.vSyncCount = 0;
         //Application.targetFrameRate = 45;
+        transparency_divider = 4;
+        fully_translucent_threshold = 1;
         yaw_pivot = new GameObject("yaw_pivot");
         yaw_pivot.tag = "Player";
         pitch_pivot = new GameObject("pitch_pivot");
@@ -44,7 +59,8 @@ public class CameraController : MonoBehaviour {
         }
         //SetShooterVars(player_home);
         SetThirdPersonActionVars(player_home);
-
+        Debug.Log(home.GetComponentInChildren<SkinnedMeshRenderer>());
+        opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().material;
         // TODO: Move this mouse hiding logic somewhere else
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -52,6 +68,7 @@ public class CameraController : MonoBehaviour {
 
     private void SetShooterVars(PlayerController target)
     {
+        view_mode = ViewMode.Shooter;
         handleCameraMove = FirstPersonCameraMove;
         handlePlayerRotate = FirstPersonPlayerRotate;
         target_follow_angle = Vector3.zero;
@@ -67,6 +84,7 @@ public class CameraController : MonoBehaviour {
         current_player = target;
 
         // Attach the camera to the yaw_pivot and set the default distance/angles
+        yaw_pivot.transform.rotation = Quaternion.identity;
         transform.parent = yaw_pivot.transform;
         transform.localPosition = target_follow_distance;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
@@ -74,6 +92,7 @@ public class CameraController : MonoBehaviour {
 
     private void SetThirdPersonActionVars(PlayerController target)
     {
+        view_mode = ViewMode.Third_Person;
         handleCameraMove = ThirdPersonCameraMove;
         handlePlayerRotate = ThirdPersonPlayerRotate;
         target_follow_angle = new Vector3(14f, 0, 0);
@@ -88,6 +107,7 @@ public class CameraController : MonoBehaviour {
         current_player.RegisterJumpCallback(ThirdPersonJumpCallback);
 
         // Attach the camera to the yaw_pivot and set the default distance/angles
+        yaw_pivot.transform.parent = null;
         transform.parent = pitch_pivot.transform;
         transform.localPosition = target_follow_distance;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
@@ -106,14 +126,46 @@ public class CameraController : MonoBehaviour {
     }
 
     // LateUpdate is called after update. Ensures we are operating on the latest transform changes.
-    void LateUpdate () {
+    void LateUpdate ()
+    {
         UpdateCameraAngles();
     }
 
     private void FixedUpdate()
     {
+        if (input_manager.GetToggleView()) {
+            if (view_mode == ViewMode.Shooter) {
+                SetThirdPersonActionVars(current_player);
+            } else if (view_mode == ViewMode.Third_Person) {
+                SetShooterVars(current_player);
+            }
+        }
+        hideHome();
         handlePlayerRotate();
         IncrementCounters();
+    }
+
+    private void hideHome()
+    {
+        Color textureColor;
+        SkinnedMeshRenderer []renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
+         foreach (SkinnedMeshRenderer render in renderers) {
+            float distance_to_head = (current_player.transform.up * (current_player.cc.height / 2 - current_player.cc.radius) + current_player.transform.position - transform.position).magnitude;
+            if(distance_to_head < transparency_divider) {
+                if(!fade_texture_in_use) {
+                    fade_texture_in_use = true;
+                    render.material = fade_material;
+                }
+                textureColor = render.material.color;
+                textureColor.a = distance_to_head < fully_translucent_threshold ? 0 : distance_to_head / transparency_divider;
+                render.material.color = textureColor;
+            } else {
+                if (fade_texture_in_use) {
+                    fade_texture_in_use = false;
+                    render.material = opaque_material;
+                }
+            }
+        }
     }
 
     // TODO: Make a class for these

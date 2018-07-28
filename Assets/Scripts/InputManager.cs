@@ -82,6 +82,7 @@ public class InputManager : MonoBehaviour {
         _button_map = new Dictionary<string, Button>() {
             { "jump_button",  new Button("Jump") },
             { "center_camera_button",  new Button("Center Camera") },
+            { "toggle_view_button",  new Button("Toggle View") },
         };
     }
 
@@ -166,5 +167,15 @@ public class InputManager : MonoBehaviour {
     public bool GetCenterCameraHold()
     {
         return _button_map["center_camera_button"].pressed();
+    }
+
+    public bool GetToggleView()
+    {
+        return _button_map["toggle_view_button"].down();
+    }
+
+    public bool GetToggleViewHold()
+    {
+        return _button_map["toggle_view_button"].pressed();
     }
 }
