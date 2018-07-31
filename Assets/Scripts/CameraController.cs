@@ -4,9 +4,13 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+
 public delegate void CameraMovementFunction();
 
 public class CameraController : MonoBehaviour {
+    private static string ZOOM_TIMER = "CameraZoom";
+
     enum ViewMode
     {
         Shooter,
@@ -30,6 +34,9 @@ public class CameraController : MonoBehaviour {
     private Vector2 mouseAccumulator = Vector2.zero;
     private CameraMovementFunction handleCameraMove;
     private CameraMovementFunction handlePlayerRotate;
+
+    // Utils
+    private Utilities utils;
 
     // Timers
     private float WallHitTimeDelta;
@@ -57,9 +64,14 @@ public class CameraController : MonoBehaviour {
         {
             throw new Exception("Failed initializing camera.");
         }
+        utils = home.GetComponent<Utilities>();
+        if (utils == null)
+        {
+            throw new Exception("Failed getting utilities.");
+        }
+        utils.CreateTimer(ZOOM_TIMER, 0.5f);
         //SetShooterVars(player_home);
         SetThirdPersonActionVars(player_home);
-        Debug.Log(home.GetComponentInChildren<SkinnedMeshRenderer>());
         opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().material;
         // TODO: Move this mouse hiding logic somewhere else
         Cursor.lockState = CursorLockMode.Locked;
@@ -84,9 +96,8 @@ public class CameraController : MonoBehaviour {
         current_player = target;
 
         // Attach the camera to the yaw_pivot and set the default distance/angles
-        yaw_pivot.transform.rotation = Quaternion.identity;
+        yaw_pivot.transform.localRotation = Quaternion.identity;
         transform.parent = yaw_pivot.transform;
-        transform.localPosition = target_follow_distance;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
     }
 
@@ -109,7 +120,6 @@ public class CameraController : MonoBehaviour {
         // Attach the camera to the yaw_pivot and set the default distance/angles
         yaw_pivot.transform.parent = null;
         transform.parent = pitch_pivot.transform;
-        transform.localPosition = target_follow_distance;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
 
         // Set timers
@@ -134,9 +144,13 @@ public class CameraController : MonoBehaviour {
     private void FixedUpdate()
     {
         if (input_manager.GetToggleView()) {
-            if (view_mode == ViewMode.Shooter) {
+            utils.ResetTimer(ZOOM_TIMER);
+            if (view_mode == ViewMode.Shooter)
+            {
                 SetThirdPersonActionVars(current_player);
-            } else if (view_mode == ViewMode.Third_Person) {
+            }
+            else if (view_mode == ViewMode.Third_Person)
+            {
                 SetShooterVars(current_player);
             }
         }
@@ -302,7 +316,14 @@ public class CameraController : MonoBehaviour {
 
     private void FirstPersonPlayerRotate()
     {
-        return;
+        if (!utils.CheckTimer(ZOOM_TIMER))
+        {
+            transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, utils.GetTimerPercent(ZOOM_TIMER));
+        }
+        else
+        {
+            transform.localPosition = target_follow_distance;
+        }
     }
 
     private void ThirdPersonPlayerRotate()
