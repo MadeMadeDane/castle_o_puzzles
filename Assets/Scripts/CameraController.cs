@@ -10,6 +10,7 @@ public delegate void CameraMovementFunction();
 
 public class CameraController : MonoBehaviour {
     private static string ZOOM_TIMER = "CameraZoom";
+    private static string IDLE_TIMER = "CameraIdle";
 
     enum ViewMode
     {
@@ -32,6 +33,7 @@ public class CameraController : MonoBehaviour {
     private PlayerController current_player;
 
     private Vector2 mouseAccumulator = Vector2.zero;
+    private Vector2 idleOrientation = Vector2.zero;
     private CameraMovementFunction handleCameraMove;
     private CameraMovementFunction handlePlayerRotate;
 
@@ -51,8 +53,8 @@ public class CameraController : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        //QualitySettings.vSyncCount = 0;
-        //Application.targetFrameRate = 45;
+        QualitySettings.vSyncCount = 0;
+        // Application.targetFrameRate = 45;
         transparency_divider = 4;
         fully_translucent_threshold = 1;
         yaw_pivot = new GameObject("yaw_pivot");
@@ -70,6 +72,7 @@ public class CameraController : MonoBehaviour {
             throw new Exception("Failed getting utilities.");
         }
         utils.CreateTimer(ZOOM_TIMER, 0.5f);
+        utils.CreateTimer(IDLE_TIMER, 1.0f);
         //SetShooterVars(player_home);
         SetThirdPersonActionVars(player_home);
         opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().material;
@@ -192,7 +195,13 @@ public class CameraController : MonoBehaviour {
     private void UpdateCameraAngles()
     {
         // Accumulate the angle changes and ensure x revolves in (-360, 360) and y is clamped in (-90,90)
-        mouseAccumulator += input_manager.GetMouseMotion();
+        Vector2 mouse_input = input_manager.GetMouseMotion();
+        if (mouse_input != Vector2.zero)
+        {
+            utils.ResetTimer(IDLE_TIMER);
+            idleOrientation = mouseAccumulator;
+        }
+        mouseAccumulator += mouse_input;
         mouseAccumulator.x = mouseAccumulator.x % 360;
         mouseAccumulator.y = Mathf.Clamp(mouseAccumulator.y, -90, 90);
         if (current_player != null)
@@ -227,11 +236,29 @@ public class CameraController : MonoBehaviour {
 
         if (input_manager.GetCenterCameraHold())
         {
-            Vector2 orientation = EulerToMouseAccum(current_player.transform.localEulerAngles);
+            utils.ResetTimer(IDLE_TIMER);
+            Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
             mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, orientation.x, 0.1f);
             mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, orientation.y, 0.1f);
         }
+        else if (input_manager.GetCenterCameraRelease())
+        {
+            utils.SetTimerFinished(IDLE_TIMER);
+            idleOrientation = EulerToMouseAccum(current_player.transform.eulerAngles);
+        }
+
+        FollowPlayerVelocity();
         AvoidWalls();
+    }
+
+    private void FollowPlayerVelocity()
+    {
+        Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
+        if (player_ground_vel.normalized != Vector3.zero)
+        {
+            Quaternion velocity_angle = Quaternion.LookRotation(player_ground_vel.normalized, current_player.transform.up);
+            idleOrientation = EulerToMouseAccum(velocity_angle.eulerAngles);
+        }
     }
 
     private Vector2 EulerToMouseAccum(Vector3 euler_angle)
@@ -364,7 +391,18 @@ public class CameraController : MonoBehaviour {
         }
         yaw_pivot.transform.position = Vector3.Lerp(yaw_pivot.transform.position, current_player.transform.position, 0.025f);
         AvoidWalls();
+        if (utils.CheckTimer(IDLE_TIMER))
+        {
+            RotateTowardIdleOrientation();
+        }
     }
 
+    private void RotateTowardIdleOrientation()
+    {
+        Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
+        float lerp_factor = Mathf.Max(player_ground_vel.magnitude / current_player.RunSpeed, 0.2f);
+        mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, idleOrientation.x, 0.005f * lerp_factor);
+        mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, idleOrientation.y, 0.005f * lerp_factor);
+    }
 
 }

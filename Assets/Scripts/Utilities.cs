@@ -58,6 +58,14 @@ public class Utilities : MonoBehaviour
         }
     }
 
+    public void SetTimerFinished(string name)
+    {
+        if (Timers.ContainsKey(name))
+        {
+            Timers[name].setFinished();
+        }
+    }
+
     private void IncrementTimers()
     {
         foreach (Timer timer in Timers.Values)
@@ -107,5 +115,10 @@ public class Timer
     public void reset()
     {
         time = 0f;
+    }
+
+    public void setFinished()
+    {
+        time = period;
     }
 }

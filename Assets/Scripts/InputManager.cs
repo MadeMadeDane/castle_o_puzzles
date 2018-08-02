@@ -6,26 +6,29 @@ using UnityEngine;
 
 public class Button
 {
-    private bool _active;
+    private bool _active_down;
+    private bool _active_up;
     private string[] _button_names;
 
     public Button(string button_name)
     {
-        _active = true;
+        _active_down = true;
+        _active_up = true;
         _button_names = new string[] { button_name };
     }
 
     public Button(string[] button_names)
     {
-        _active = true;
+        _active_down = true;
+        _active_up = true;
         _button_names = button_names;
     }
 
     public bool down()
     {
-        if (_active)
+        if (_active_down)
         {
-            _active = false;
+            _active_down = false;
             return _button_names.Any(name => Input.GetButtonDown(name));
         }
         return false;
@@ -36,14 +39,25 @@ public class Button
         return _button_names.Any(name => Input.GetButton(name));
     }
 
+    public bool up()
+    {
+        if (_active_up)
+        {
+            _active_up = false;
+            return _button_names.Any(name => Input.GetButtonUp(name));
+        }
+        return false;
+    }
+
     public bool is_active()
     {
-        return _active;
+        return _active_down;
     }
 
     public void refresh()
     {
-        _active = true;
+        _active_down = true;
+        _active_up = true;
     }
 }
 
@@ -70,10 +84,10 @@ public class InputManager : MonoBehaviour {
         // Initial state
         mouseQueue = new Queue<Vector2>(Enumerable.Repeat<Vector2>(Vector2.zero, mouseQueueCount));
 
-        mouse_multiplier = 100;
-        controller_multiplier = 50;
-        mouse_sensitivity = 2f * Vector2.one;
-        controller_sensitivity = new Vector2(6, 3);
+        mouse_multiplier = 1f;
+        controller_multiplier = 0.3f;
+        mouse_sensitivity = 1.45f * Vector2.one;
+        controller_sensitivity = new Vector2(4, 2);
 
         _input_vertical_axis = 0f;
         _input_horizontal_axis = 0f;
@@ -114,10 +128,10 @@ public class InputManager : MonoBehaviour {
         // Handle both mouse and gamepad at the same time
         Vector2 rotVecM = new Vector2(
             Input.GetAxis("Mouse X"),
-            Input.GetAxis("Mouse Y")) * mouse_sensitivity * mouse_multiplier * Time.deltaTime;
+            Input.GetAxis("Mouse Y")) * mouse_sensitivity * mouse_multiplier;
         Vector2 rotVecC = new Vector2(
             Input.GetAxisRaw("Joy X"),
-            Input.GetAxisRaw("Joy Y")) * controller_sensitivity * controller_multiplier * Time.deltaTime;
+            Input.GetAxisRaw("Joy Y")) * controller_sensitivity * controller_multiplier;
         Vector2 rotVec = rotVecM + rotVecC;
 
         // Use rolling average for mouse smoothing (unity sucks at mouse input)
@@ -167,6 +181,11 @@ public class InputManager : MonoBehaviour {
     public bool GetCenterCameraHold()
     {
         return _button_map["center_camera_button"].pressed();
+    }
+
+    public bool GetCenterCameraRelease()
+    {
+        return _button_map["center_camera_button"].up();
     }
 
     public bool GetToggleView()
