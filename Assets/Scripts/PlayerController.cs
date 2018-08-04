@@ -378,6 +378,7 @@ public class PlayerController : MonoBehaviour {
         // edges will cause the character to teleport extreme distances, sometimes crashing the game.
         if (error > 100.0f || failed_move)
         {
+            Debug.Log("Unity error: " + error.ToString());
             cc.SimpleMove(-cc.velocity);
             Teleport(previous_position);
             error_bucket++;
@@ -745,7 +746,10 @@ public class PlayerController : MonoBehaviour {
             SlideTimeDelta = SlideGracePeriod;
             // dot(new_movVec, normal) = 0 --> dot(movVec, normal) + dot(up, normal)*k = 0 --> k = -dot(movVec, normal)/dot(up, normal)
             float slope_correction = -Vector3.Dot(movVec, currentHit.normal) / Vector3.Dot(transform.up, currentHit.normal);
-            movVec += slope_correction * transform.up;
+            if (slope_correction < 0f)
+            {
+                movVec += slope_correction * transform.up;
+            }
             // Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), movVec, Color.green);
             accelerate(movVec, RunSpeed*movmag, GroundAcceleration, true);
         }

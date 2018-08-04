@@ -240,11 +240,16 @@ public class CameraController : MonoBehaviour {
             Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
             mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, orientation.x, 0.1f);
             mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, orientation.y, 0.1f);
+            idleOrientation = mouseAccumulator;
         }
         else if (input_manager.GetCenterCameraRelease())
         {
             utils.SetTimerFinished(IDLE_TIMER);
-            idleOrientation = EulerToMouseAccum(current_player.transform.eulerAngles);
+            Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
+            if (Mathf.Abs(Mathf.DeltaAngle(orientation.x, mouseAccumulator.x)) > 15f)
+            {
+                idleOrientation = mouseAccumulator = EulerToMouseAccum(current_player.transform.eulerAngles);
+            }
         }
 
         FollowPlayerVelocity();
@@ -399,10 +404,17 @@ public class CameraController : MonoBehaviour {
 
     private void RotateTowardIdleOrientation()
     {
-        Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
-        float lerp_factor = Mathf.Max(player_ground_vel.magnitude / current_player.RunSpeed, 0.2f);
-        mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, idleOrientation.x, 0.005f * lerp_factor);
-        mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, idleOrientation.y, 0.005f * lerp_factor);
+        if (!current_player.IsHanging())
+        {
+            Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
+            float lerp_factor = Mathf.Max(player_ground_vel.magnitude / current_player.RunSpeed, 0.2f);
+            mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, idleOrientation.x, 0.005f * lerp_factor);
+            mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, idleOrientation.y, 0.005f * lerp_factor);
+        }
+        else
+        {
+            idleOrientation = mouseAccumulator;
+        }
     }
 
 }
