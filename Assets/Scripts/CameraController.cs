@@ -24,8 +24,10 @@ public class CameraController : MonoBehaviour {
     [Header("Camera Settings")]
     public Vector3 target_follow_distance;
     public Vector3 target_follow_angle;
+    public bool ManualCamera;
     [HideInInspector]
     public GameObject yaw_pivot;
+    [HideInInspector]
     public GameObject pitch_pivot;
 
     // Camera state
@@ -404,6 +406,10 @@ public class CameraController : MonoBehaviour {
 
     private void RotateTowardIdleOrientation()
     {
+        if (ManualCamera)
+        {
+            return;
+        }
         if (!current_player.IsHanging())
         {
             Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
