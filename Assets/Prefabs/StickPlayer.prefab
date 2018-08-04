@@ -56,6 +56,7 @@ GameObject:
   - component: {fileID: 136947463090228844}
   - component: {fileID: 114947268212099000}
   - component: {fileID: 114025229175559238}
+  - component: {fileID: 114008097248420692}
   m_Layer: 2
   m_Name: StickPlayer
   m_TagString: Player
@@ -657,7 +658,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1066341514495280}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 4, z: 0}
+  m_LocalPosition: {x: 0, y: 39, z: -4.428795}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4452096838960350}
@@ -759,7 +760,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1604547154538408}
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071067}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 9, z: 0}
   m_LocalScale: {x: 19.999998, y: 19.999998, z: 100}
   m_Children: []
   m_Father: {fileID: 4103845349848876}
@@ -1194,6 +1195,17 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
+--- !u!114 &114008097248420692
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1066341514495280}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c6b14f1ee8036074c80d1f4f83139354, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &114025229175559238
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1216,7 +1228,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 201216f4a772d4e93bc570e90d32466e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  input_manager: {fileID: 114853635505283590}
+  input_manager: {fileID: 0}
   cc: {fileID: 143490867400911512}
   WallRunCollider: {fileID: 136947463090228844}
   player_camera: {fileID: 0}
@@ -1271,15 +1283,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d9d1cad135e74f57b73de887463ce3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  input_manager: {fileID: 114853635505283590}
+  input_manager: {fileID: 0}
   controlled_camera: {fileID: 20277521880671826}
   home: {fileID: 1066341514495280}
-  home_model: {fileID: 1604547154538408}
   target_follow_distance: {x: 0, y: 2.5, z: 0}
   target_follow_angle: {x: 0, y: 0, z: 0}
+  ManualCamera: 0
   yaw_pivot: {fileID: 0}
   pitch_pivot: {fileID: 0}
-  opaque_material: {fileID: 2100000, guid: a9f0478299418f74ea18f42d9e8e5d10, type: 2}
   fade_material: {fileID: 2100000, guid: 3d8f1ff643c3bd244b72d81775824e31, type: 2}
 --- !u!114 &114853635505283590
 MonoBehaviour:
