@@ -54,7 +54,6 @@ public class CameraController : MonoBehaviour {
     public Material fade_material;
     private Mesh original_model;
     public Mesh headless_model;
-    public Vector3 head_position;
     public bool show_model_in_inspection;
 
     // Use this for initialization
@@ -94,7 +93,7 @@ public class CameraController : MonoBehaviour {
         handleCameraMove = FirstPersonCameraMove;
         handlePlayerRotate = FirstPersonPlayerRotate;
         target_follow_angle = Vector3.zero;
-        target_follow_distance = head_position;
+        target_follow_distance = new Vector3(0, target.GetHeadHeight(), 0);
 
         if (current_player != null)
         {
@@ -117,7 +116,7 @@ public class CameraController : MonoBehaviour {
         handleCameraMove = ThirdPersonCameraMove;
         handlePlayerRotate = ThirdPersonPlayerRotate;
         target_follow_angle = new Vector3(14f, 0, 0);
-        target_follow_distance = new Vector3(0, head_position.y, -target.cc.height*1.5f);
+        target_follow_distance = new Vector3(0, target.GetHeadHeight(), -target.cc.height*1.5f);
 
         if (current_player != null)
         {
@@ -189,7 +188,7 @@ public class CameraController : MonoBehaviour {
         SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
         foreach (SkinnedMeshRenderer render in renderers) {
             if (view_mode == ViewMode.Third_Person || !show_model_in_inspection) {
-                float distance_to_head = (head_position + current_player.transform.position - transform.position).magnitude;
+                float distance_to_head = (current_player.GetHeadHeight()*current_player.transform.up + current_player.transform.position - transform.position).magnitude;
                 if (distance_to_head < transparency_divider) {
                     if (!fade_texture_in_use) {
                         fade_texture_in_use = true;
