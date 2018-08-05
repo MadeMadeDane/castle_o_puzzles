@@ -153,20 +153,25 @@ public class CameraController : MonoBehaviour {
 
     private void FixedUpdate()
     {
+        handleViewToggle();
+        hideHome();
+        handlePlayerRotate();
+        IncrementCounters();
+    }
+
+    private void handleViewToggle()
+    {
         if (input_manager.GetToggleView()) {
             utils.ResetTimer(ZOOM_TIMER);
-            if (view_mode == ViewMode.Shooter)
-            {
+            if (view_mode == ViewMode.Shooter) {
                 SetThirdPersonActionVars(current_player);
-                if (headless_model && show_model_in_inspection) {
+                if (original_model && show_model_in_inspection) {
                     SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
-                        foreach (SkinnedMeshRenderer render in renderers) {
-                            render.sharedMesh = original_model;
-                        }
+                    foreach (SkinnedMeshRenderer render in renderers) {
+                        render.sharedMesh = original_model;
+                    }
                 }
-            }
-            else if (view_mode == ViewMode.Third_Person)
-            {
+            } else if (view_mode == ViewMode.Third_Person) {
                 SetShooterVars(current_player);
                 if (headless_model && show_model_in_inspection) {
                     SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
@@ -176,9 +181,6 @@ public class CameraController : MonoBehaviour {
                 }
             }
         }
-        hideHome();
-        handlePlayerRotate();
-        IncrementCounters();
     }
 
     private void hideHome()
