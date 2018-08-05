@@ -52,6 +52,10 @@ public class CameraController : MonoBehaviour {
     private bool fade_texture_in_use;
     private Material opaque_material;
     public Material fade_material;
+    private Mesh original_model;
+    public Mesh headless_model;
+    public Vector3 head_position;
+    public bool show_model_in_inspection;
 
     // Use this for initialization
     void Start () {
@@ -78,6 +82,7 @@ public class CameraController : MonoBehaviour {
         //SetShooterVars(player_home);
         SetThirdPersonActionVars(player_home);
         opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().material;
+        original_model = home.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
         // TODO: Move this mouse hiding logic somewhere else
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -89,7 +94,7 @@ public class CameraController : MonoBehaviour {
         handleCameraMove = FirstPersonCameraMove;
         handlePlayerRotate = FirstPersonPlayerRotate;
         target_follow_angle = Vector3.zero;
-        target_follow_distance = new Vector3(0, (target.cc.height / 2) - target.cc.radius, 0);
+        target_follow_distance = head_position;
 
         if (current_player != null)
         {
@@ -112,7 +117,7 @@ public class CameraController : MonoBehaviour {
         handleCameraMove = ThirdPersonCameraMove;
         handlePlayerRotate = ThirdPersonPlayerRotate;
         target_follow_angle = new Vector3(14f, 0, 0);
-        target_follow_distance = new Vector3(0, (target.cc.height / 2), -target.cc.height*1.5f);
+        target_follow_distance = new Vector3(0, head_position.y, -target.cc.height*1.5f);
 
         if (current_player != null)
         {
@@ -148,41 +153,60 @@ public class CameraController : MonoBehaviour {
 
     private void FixedUpdate()
     {
-        if (input_manager.GetToggleView()) {
-            utils.ResetTimer(ZOOM_TIMER);
-            if (view_mode == ViewMode.Shooter)
-            {
-                SetThirdPersonActionVars(current_player);
-            }
-            else if (view_mode == ViewMode.Third_Person)
-            {
-                SetShooterVars(current_player);
-            }
-        }
+        handleViewToggle();
         hideHome();
         handlePlayerRotate();
         IncrementCounters();
     }
 
+    private void handleViewToggle()
+    {
+        if (input_manager.GetToggleView()) {
+            utils.ResetTimer(ZOOM_TIMER);
+            if (view_mode == ViewMode.Shooter) {
+                SetThirdPersonActionVars(current_player);
+                if (original_model && show_model_in_inspection) {
+                    SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
+                    foreach (SkinnedMeshRenderer render in renderers) {
+                        render.sharedMesh = original_model;
+                    }
+                }
+            } else if (view_mode == ViewMode.Third_Person) {
+                SetShooterVars(current_player);
+                if (headless_model && show_model_in_inspection) {
+                    SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
+                    foreach (SkinnedMeshRenderer render in renderers) {
+                        render.sharedMesh = headless_model;
+                    }
+                }
+            }
+        }
+    }
+
     private void hideHome()
     {
         Color textureColor;
-        SkinnedMeshRenderer []renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
-         foreach (SkinnedMeshRenderer render in renderers) {
-            float distance_to_head = (current_player.transform.up * (current_player.cc.height / 2 - current_player.cc.radius) + current_player.transform.position - transform.position).magnitude;
-            if(distance_to_head < transparency_divider) {
-                if(!fade_texture_in_use) {
-                    fade_texture_in_use = true;
-                    render.material = fade_material;
+        SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
+        foreach (SkinnedMeshRenderer render in renderers) {
+            if (view_mode == ViewMode.Third_Person || !show_model_in_inspection) {
+                float distance_to_head = (head_position + current_player.transform.position - transform.position).magnitude;
+                if (distance_to_head < transparency_divider) {
+                    if (!fade_texture_in_use) {
+                        fade_texture_in_use = true;
+                        render.material = fade_material;
+                    }
+                    textureColor = render.material.color;
+                    textureColor.a = distance_to_head < fully_translucent_threshold ? 0 : distance_to_head / transparency_divider;
+                    render.material.color = textureColor;
+                } else {
+                    if (fade_texture_in_use) {
+                        fade_texture_in_use = false;
+                        render.material = opaque_material;
+                    }
                 }
-                textureColor = render.material.color;
-                textureColor.a = distance_to_head < fully_translucent_threshold ? 0 : distance_to_head / transparency_divider;
-                render.material.color = textureColor;
             } else {
-                if (fade_texture_in_use) {
-                    fade_texture_in_use = false;
-                    render.material = opaque_material;
-                }
+                fade_texture_in_use = false;
+                render.material = opaque_material;
             }
         }
     }

@@ -1,26 +1,42 @@
 fileFormatVersion: 2
-guid: bde71b1aa092ad0438508e29718fcf1c
+guid: 9253aa1771446284395432c4250dc239
 ModelImporter:
   serializedVersion: 22
   fileIDToRecycleName:
-    100000: //RootNode
-    100002: Cylinder
-    100004: Plane
-    100006: Cylinder_001
-    400000: //RootNode
-    400002: Cylinder
-    400004: Plane
-    400006: Cylinder_001
-    2100000: unnamed
+    100000: Cylinder
+    100002: Cylinder_001
+    100004: Cylinder_002
+    100006: Cylinder_003
+    100008: Cylinder_004
+    100010: //RootNode
+    100012: Cylinder_000
+    400000: Cylinder
+    400002: Cylinder_001
+    400004: Cylinder_002
+    400006: Cylinder_003
+    400008: Cylinder_004
+    400010: //RootNode
+    400012: Cylinder_000
+    2100000: Material_001__40f3fc555a545028ba354c5efcb65c63_jpg
+    2100002: unnamed
     2300000: Cylinder
-    2300002: Plane
-    2300004: Cylinder_001
+    2300002: Cylinder_001
+    2300004: Cylinder_002
+    2300006: Cylinder_003
+    2300008: Cylinder_004
+    2300010: Cylinder_000
     3300000: Cylinder
-    3300002: Plane
-    3300004: Cylinder_001
+    3300002: Cylinder_001
+    3300004: Cylinder_002
+    3300006: Cylinder_003
+    3300008: Cylinder_004
+    3300010: Cylinder_000
     4300000: Cylinder
-    4300002: Plane
-    4300004: Cylinder_001
+    4300002: Cylinder_001
+    4300004: Cylinder_002
+    4300006: Cylinder_004
+    4300008: Cylinder_003
+    4300010: Cylinder_000
     7400000: Default Take
     9500000: //RootNode
   externalObjects: {}
