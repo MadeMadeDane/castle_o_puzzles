@@ -4,9 +4,14 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
+
+
 public delegate void CameraMovementFunction();
 
 public class CameraController : MonoBehaviour {
+    private static string ZOOM_TIMER = "CameraZoom";
+    private static string IDLE_TIMER = "CameraIdle";
+
     enum ViewMode
     {
         Shooter,
@@ -19,17 +24,23 @@ public class CameraController : MonoBehaviour {
     [Header("Camera Settings")]
     public Vector3 target_follow_distance;
     public Vector3 target_follow_angle;
+    public bool ManualCamera;
     [HideInInspector]
     public GameObject yaw_pivot;
+    [HideInInspector]
     public GameObject pitch_pivot;
 
     // Camera state
     private ViewMode view_mode;
     private PlayerController current_player;
 
-    private Vector2 mouseAccumlator = Vector2.zero;
+    private Vector2 mouseAccumulator = Vector2.zero;
+    private Vector2 idleOrientation = Vector2.zero;
     private CameraMovementFunction handleCameraMove;
     private CameraMovementFunction handlePlayerRotate;
+
+    // Utils
+    private Utilities utils;
 
     // Timers
     private float WallHitTimeDelta;
@@ -44,8 +55,8 @@ public class CameraController : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        //QualitySettings.vSyncCount = 0;
-        //Application.targetFrameRate = 45;
+        QualitySettings.vSyncCount = 0;
+        // Application.targetFrameRate = 45;
         transparency_divider = 4;
         fully_translucent_threshold = 1;
         yaw_pivot = new GameObject("yaw_pivot");
@@ -57,9 +68,15 @@ public class CameraController : MonoBehaviour {
         {
             throw new Exception("Failed initializing camera.");
         }
+        utils = home.GetComponent<Utilities>();
+        if (utils == null)
+        {
+            throw new Exception("Failed getting utilities.");
+        }
+        utils.CreateTimer(ZOOM_TIMER, 0.5f);
+        utils.CreateTimer(IDLE_TIMER, 1.0f);
         //SetShooterVars(player_home);
         SetThirdPersonActionVars(player_home);
-        Debug.Log(home.GetComponentInChildren<SkinnedMeshRenderer>());
         opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().material;
         // TODO: Move this mouse hiding logic somewhere else
         Cursor.lockState = CursorLockMode.Locked;
@@ -84,9 +101,8 @@ public class CameraController : MonoBehaviour {
         current_player = target;
 
         // Attach the camera to the yaw_pivot and set the default distance/angles
-        yaw_pivot.transform.rotation = Quaternion.identity;
+        yaw_pivot.transform.localRotation = Quaternion.identity;
         transform.parent = yaw_pivot.transform;
-        transform.localPosition = target_follow_distance;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
     }
 
@@ -109,7 +125,6 @@ public class CameraController : MonoBehaviour {
         // Attach the camera to the yaw_pivot and set the default distance/angles
         yaw_pivot.transform.parent = null;
         transform.parent = pitch_pivot.transform;
-        transform.localPosition = target_follow_distance;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
 
         // Set timers
@@ -134,9 +149,13 @@ public class CameraController : MonoBehaviour {
     private void FixedUpdate()
     {
         if (input_manager.GetToggleView()) {
-            if (view_mode == ViewMode.Shooter) {
+            utils.ResetTimer(ZOOM_TIMER);
+            if (view_mode == ViewMode.Shooter)
+            {
                 SetThirdPersonActionVars(current_player);
-            } else if (view_mode == ViewMode.Third_Person) {
+            }
+            else if (view_mode == ViewMode.Third_Person)
+            {
                 SetShooterVars(current_player);
             }
         }
@@ -178,9 +197,15 @@ public class CameraController : MonoBehaviour {
     private void UpdateCameraAngles()
     {
         // Accumulate the angle changes and ensure x revolves in (-360, 360) and y is clamped in (-90,90)
-        mouseAccumlator += input_manager.GetMouseMotion();
-        mouseAccumlator.x = mouseAccumlator.x % 360;
-        mouseAccumlator.y = Mathf.Clamp(mouseAccumlator.y, -90, 90);
+        Vector2 mouse_input = input_manager.GetMouseMotion();
+        if (mouse_input != Vector2.zero)
+        {
+            utils.ResetTimer(IDLE_TIMER);
+            idleOrientation = mouseAccumulator;
+        }
+        mouseAccumulator += mouse_input;
+        mouseAccumulator.x = mouseAccumulator.x % 360;
+        mouseAccumulator.y = Mathf.Clamp(mouseAccumulator.y, -90, 90);
         if (current_player != null)
         {
             handleCameraMove();
@@ -191,35 +216,64 @@ public class CameraController : MonoBehaviour {
     {
         // Set camera pitch
         transform.localRotation = Quaternion.AngleAxis(
-            -mouseAccumlator.y, Vector3.right);
+            -mouseAccumulator.y, Vector3.right);
         // Set player yaw (and camera with it)
         yaw_pivot.transform.parent.transform.localRotation = Quaternion.AngleAxis(
-            mouseAccumlator.x, Vector3.up);
+            mouseAccumulator.x, Vector3.up);
     }
 
     private void ThirdPersonCameraMove()
     {
-        if (mouseAccumlator.x < 0)
+        if (mouseAccumulator.x < 0)
         {
-            mouseAccumlator.x = 360 + mouseAccumlator.x;
+            mouseAccumulator.x = 360 + mouseAccumulator.x;
         }
-        mouseAccumlator.y = Mathf.Clamp(mouseAccumlator.y, -65, 75);
-        // Set camera pitch
+        mouseAccumulator.y = Mathf.Clamp(mouseAccumulator.y, -65, 75);
+        // set the pitch pivots pitch
         pitch_pivot.transform.localRotation = Quaternion.AngleAxis(
-            -mouseAccumlator.y, Vector3.right);
-        // Set player yaw (and camera with it)
+            -mouseAccumulator.y, Vector3.right);
+        // set the yaw pivots yaw
         yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
-            mouseAccumlator.x, Vector3.up);
+            mouseAccumulator.x, Vector3.up);
 
         if (input_manager.GetCenterCameraHold())
         {
-            float pitch = current_player.transform.localEulerAngles.x;
-            float yaw = current_player.transform.localEulerAngles.y;
-            float adjusted_pitch = 360 - pitch < pitch ? 360 - pitch : -pitch;
-            mouseAccumlator.x = Mathf.LerpAngle(mouseAccumlator.x, yaw, 0.1f);
-            mouseAccumlator.y = Mathf.LerpAngle(mouseAccumlator.y, adjusted_pitch, 0.1f);
+            utils.ResetTimer(IDLE_TIMER);
+            Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
+            mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, orientation.x, 0.1f);
+            mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, orientation.y, 0.1f);
+            idleOrientation = mouseAccumulator;
         }
+        else if (input_manager.GetCenterCameraRelease())
+        {
+            utils.SetTimerFinished(IDLE_TIMER);
+            Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
+            if (Mathf.Abs(Mathf.DeltaAngle(orientation.x, mouseAccumulator.x)) > 15f)
+            {
+                idleOrientation = mouseAccumulator = EulerToMouseAccum(current_player.transform.eulerAngles);
+            }
+        }
+
+        FollowPlayerVelocity();
         AvoidWalls();
+    }
+
+    private void FollowPlayerVelocity()
+    {
+        Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
+        if (player_ground_vel.normalized != Vector3.zero)
+        {
+            Quaternion velocity_angle = Quaternion.LookRotation(player_ground_vel.normalized, current_player.transform.up);
+            idleOrientation = EulerToMouseAccum(velocity_angle.eulerAngles);
+        }
+    }
+
+    private Vector2 EulerToMouseAccum(Vector3 euler_angle)
+    {
+        float pitch = euler_angle.x;
+        float yaw = euler_angle.y;
+        float adjusted_pitch = 360 - pitch < pitch ? 360 - pitch : -pitch;
+        return new Vector2(yaw, adjusted_pitch);
     }
 
     private void AvoidWalls()
@@ -230,12 +284,12 @@ public class CameraController : MonoBehaviour {
         Vector3 path = (yaw_pivot.transform.position + world_target_vec - startpos);
         //Debug.DrawRay(startpos, path.normalized*(path.magnitude+1f), Color.green);
         
-        if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude+1f))
+        if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude + 1f))
         {
             WallHitTimeDelta = 0;
             Vector3 pivot_hit = (hit.point - yaw_pivot.transform.position);
             // Ignore hits that are too far away
-            if (pivot_hit.magnitude > target_follow_distance.magnitude+1f)
+            if (pivot_hit.magnitude > target_follow_distance.magnitude + 1f)
             {
                 //Debug.Log("Too far hit");
                 transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
@@ -266,9 +320,10 @@ public class CameraController : MonoBehaviour {
                 {
                     transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - 1f) * Vector3.forward) + (Vector3.up * target_follow_distance.y);
                 }
+                transform.localPosition += transform.InverseTransformDirection(hit.normal) * controlled_camera.rect.width / 2;
             }
         }
-        else if (!InWallCollision())
+        else
         {
             //Debug.Log("No hit");
             transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
@@ -284,10 +339,10 @@ public class CameraController : MonoBehaviour {
     {
         // Set camera pitch
         pitch_pivot.transform.localRotation = Quaternion.AngleAxis(
-            -mouseAccumlator.y, Vector3.right);
+            -mouseAccumulator.y, Vector3.right);
         // Set player yaw (and camera with it)
         yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
-            mouseAccumlator.x, Vector3.up);
+            mouseAccumulator.x, Vector3.up);
         // Set the players yaw to match our velocity
         current_player.transform.rotation = Quaternion.Slerp(current_player.transform.rotation, yaw_pivot.transform.rotation, Mathf.Clamp(current_player.cc.velocity.magnitude / current_player.RunSpeed, 0, 1));
         yaw_pivot.transform.position = current_player.transform.position;
@@ -295,7 +350,14 @@ public class CameraController : MonoBehaviour {
 
     private void FirstPersonPlayerRotate()
     {
-        return;
+        if (!utils.CheckTimer(ZOOM_TIMER))
+        {
+            transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, utils.GetTimerPercent(ZOOM_TIMER));
+        }
+        else
+        {
+            transform.localPosition = target_follow_distance;
+        }
     }
 
     private void ThirdPersonPlayerRotate()
@@ -335,7 +397,30 @@ public class CameraController : MonoBehaviour {
             current_player.transform.forward = Vector3.RotateTowards(current_player.transform.forward, desired_move, 0.1f * interp_multiplier, 1f);
         }
         yaw_pivot.transform.position = Vector3.Lerp(yaw_pivot.transform.position, current_player.transform.position, 0.025f);
+        AvoidWalls();
+        if (utils.CheckTimer(IDLE_TIMER))
+        {
+            RotateTowardIdleOrientation();
+        }
     }
 
+    private void RotateTowardIdleOrientation()
+    {
+        if (ManualCamera)
+        {
+            return;
+        }
+        if (!current_player.IsHanging())
+        {
+            Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
+            float lerp_factor = Mathf.Max(player_ground_vel.magnitude / current_player.RunSpeed, 0.2f);
+            mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, idleOrientation.x, 0.005f * lerp_factor);
+            mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, idleOrientation.y, 0.005f * lerp_factor);
+        }
+        else
+        {
+            idleOrientation = mouseAccumulator;
+        }
+    }
 
 }
