@@ -45,35 +45,31 @@ public class PlayerController : MonoBehaviour {
     public bool JumpBoostEnabled;
     [HideInInspector]
     public Vector3 current_velocity;
+    public bool debug_mode = false;
+
+    // Utils
+    private Utilities utils;
+
+    // Timers
+    private string JUMP_METER = "JumpMeter";
+    private string LANDING_TIMER = "Landing";
+    private string BUFFER_JUMP_TIMER = "BufferJump";
+    private string SLIDE_TIMER = "Slide";
+    private string WALL_JUMP_TIMER = "WallJump";
+    private string WALL_RUN_TIMER = "WallRun";
+    private string WALL_CLIMB_TIMER = "WallClimb";
+    private string REGRAB_TIMER = "ReGrab";
+    private string MOVING_COLLIDER_TIMER = "MovingCollider";
+    private string MOVING_PLATFORM_TIMER = "MovingPlatform";
+    private string STUCK_TIMER = "Stuck";
 
     // Jumping state variables
-    private float JumpMeterSize;
     private float JumpMeterThreshold;
-    private float JumpMeter;
-    private float SlideGracePeriod;
-    private float SlideTimeDelta;
+    private float JumpMeterComputed;
     private bool isHanging;
     private bool isJumping;
     private bool isFalling;
     private bool willJump;
-    private float LandingTimeDelta;
-    private float jumpGracePeriod;
-    private float BufferJumpTimeDelta;
-    private float BufferJumpGracePeriod;
-    private float WallJumpTimeDelta;
-    private float WallJumpGracePeriod;
-    private float WallRunTimeDelta;
-    private float WallRunGracePeriod;
-    private float WallClimbTimeDelta;
-    private float WallClimbGracePeriod;
-    private float ReGrabTimeDelta;
-    private float ReGrabGracePeriod;
-    private float MovingColliderTimeDelta;
-    private float MovingColliderGracePeriod;
-    private float MovingPlatformTimeDelta;
-    private float MovingPlatformGracePeriod;
-    private float StuckTimeDelta;
-    private float StuckGracePeriod;
 
     // Wall related variables
     private Vector3 WallJumpReflect;
@@ -100,7 +96,8 @@ public class PlayerController : MonoBehaviour {
     private Collider lastTrigger;
     private ControllerColliderHit currentHit;
     private float GravityMult;
-    private float JumpMeterComputed;
+
+    // Other variables
     private Queue<float> error_accum;
     private float total_error;
     private int error_accum_size;
@@ -110,13 +107,21 @@ public class PlayerController : MonoBehaviour {
     private int position_history_size;
     private LinkedList<Vector3> position_history;
     private static HashSet<Action> jump_callback_table = new HashSet<Action>();
+
     private GameObject debugcanvas;
     private Dictionary<string, Text> debugtext;
 
-
     // Use this for initialization
     private void Start () {
-        //EnableDebug();
+        utils = GetComponent<Utilities>();
+        if (utils == null)
+        {
+            throw new Exception("Failed getting utilities.");
+        }
+        if (debug_mode)
+        {
+            EnableDebug();
+        }
         // Movement values
         //SetShooterVars();
         SetThirdPersonActionVars();
@@ -135,19 +140,21 @@ public class PlayerController : MonoBehaviour {
         LedgeClimbOffset = 1.0f;
         LedgeClimbBoost = Mathf.Sqrt(2 * cc.height * 1.1f * Physics.gravity.magnitude);
         WallDistanceThreshold = 14f;
+
         // Timers
-        JumpMeter = JumpMeterSize;
-        JumpMeterComputed = JumpMeter / JumpMeterSize;
-        LandingTimeDelta = jumpGracePeriod;
-        BufferJumpTimeDelta = BufferJumpGracePeriod;
-        SlideTimeDelta = SlideGracePeriod;
-        WallJumpTimeDelta = WallJumpGracePeriod;
-        WallRunTimeDelta = WallRunGracePeriod;
-        WallClimbTimeDelta = WallClimbGracePeriod;
-        ReGrabTimeDelta = ReGrabGracePeriod;
-        MovingColliderTimeDelta = MovingColliderGracePeriod;
-        MovingPlatformTimeDelta = MovingPlatformGracePeriod;
-        StuckTimeDelta = StuckGracePeriod;
+        utils.CreateTimer(JUMP_METER, 0.3f);
+        JumpMeterThreshold = utils.GetTimerPeriod(JUMP_METER) / 3;
+        JumpMeterComputed = utils.GetTimerPercent(JUMP_METER);
+        utils.CreateTimer(LANDING_TIMER, 0.1f).setFinished();
+        utils.CreateTimer(BUFFER_JUMP_TIMER, 0.1f).setFinished();
+        utils.CreateTimer(SLIDE_TIMER, 0.2f).setFinished();
+        utils.CreateTimer(WALL_JUMP_TIMER, 0.2f).setFinished();
+        utils.CreateTimer(WALL_RUN_TIMER, 0.2f).setFinished();
+        utils.CreateTimer(WALL_CLIMB_TIMER, 0.2f).setFinished();
+        utils.CreateTimer(REGRAB_TIMER, 0.5f).setFinished();
+        utils.CreateTimer(MOVING_COLLIDER_TIMER, 0.01f).setFinished();
+        utils.CreateTimer(MOVING_PLATFORM_TIMER, 0.1f).setFinished();
+        utils.CreateTimer(STUCK_TIMER, 0.2f).setFinished();
 
         // Initial state
         position_history_size = 50;
@@ -240,19 +247,6 @@ public class PlayerController : MonoBehaviour {
         JumpBoostEnabled = false;
         // Delegates
         accelerate = AccelerateCPM;
-        // Timings
-        JumpMeterSize = 0.3f;
-        JumpMeterThreshold = JumpMeterSize / 3;
-        jumpGracePeriod = 0.1f;
-        BufferJumpGracePeriod = 0.1f;
-        SlideGracePeriod = 0.2f;
-        WallJumpGracePeriod = 0.2f;
-        WallRunGracePeriod = 0.2f;
-        WallClimbGracePeriod = 0.2f;
-        ReGrabGracePeriod = 0.5f;
-        MovingColliderGracePeriod = 0.01f;
-        MovingPlatformGracePeriod = 0.1f;
-        StuckGracePeriod = 0.2f;
     }
 
     private void SetThirdPersonActionVars()
@@ -292,19 +286,6 @@ public class PlayerController : MonoBehaviour {
         JumpBoostEnabled = true;
         // Delegates
         accelerate = AccelerateStandard;
-        // Timings
-        JumpMeterSize = 0.3f;
-        JumpMeterThreshold = JumpMeterSize / 3;
-        jumpGracePeriod = 0.1f;
-        BufferJumpGracePeriod = 0.1f;
-        SlideGracePeriod = 0.2f;
-        WallJumpGracePeriod = 0.1f;
-        WallRunGracePeriod = 0.2f;
-        WallClimbGracePeriod = 0.2f;
-        ReGrabGracePeriod = 0.5f;
-        MovingColliderGracePeriod = 0.01f;
-        MovingPlatformGracePeriod = 0.1f;
-        StuckGracePeriod = 0.2f;
     }
 
     // Fixed Update is called once per physics tick
@@ -319,7 +300,7 @@ public class PlayerController : MonoBehaviour {
         accel = Vector3.zero;
         if (WallDistanceCheck())
         {
-            JumpMeterComputed = JumpMeter / JumpMeterSize;
+            JumpMeterComputed = utils.GetTimerPercent(JUMP_METER);
         }
         else
         {
@@ -331,7 +312,10 @@ public class PlayerController : MonoBehaviour {
         HandleMovement();
         HandleJumping();
         UpdatePlayerState();
-        IncrementCounters();
+        if (debug_mode)
+        {
+            IncrementCounters();
+        }
     }
 
     private void UpdatePlayerState()
@@ -428,34 +412,22 @@ public class PlayerController : MonoBehaviour {
             position_history.AddFirst(transform.position);
         }
     }
-
-    // TODO: Make a class/struct/macro for all of these
+    
     private void IncrementCounters()
     {
-        JumpMeter = Mathf.Clamp(JumpMeter + Time.deltaTime, 0, JumpMeterSize);
-        LandingTimeDelta = Mathf.Clamp(LandingTimeDelta + Time.deltaTime, 0, 2 * jumpGracePeriod);
-        SlideTimeDelta = Mathf.Clamp(SlideTimeDelta + Time.deltaTime, 0, 2 * SlideGracePeriod);
-        BufferJumpTimeDelta = Mathf.Clamp(BufferJumpTimeDelta + Time.deltaTime, 0, 2 * BufferJumpGracePeriod);
-        WallJumpTimeDelta = Mathf.Clamp(WallJumpTimeDelta + Time.deltaTime, 0, 2 * WallJumpGracePeriod);
-        WallRunTimeDelta = Mathf.Clamp(WallRunTimeDelta + Time.deltaTime, 0, 2 * WallRunGracePeriod);
-        WallClimbTimeDelta = Mathf.Clamp(WallClimbTimeDelta + Time.deltaTime, 0, 2 * WallClimbGracePeriod);
-        ReGrabTimeDelta = Mathf.Clamp(ReGrabTimeDelta + Time.deltaTime, 0, 2 * ReGrabGracePeriod);
-        MovingColliderTimeDelta = Mathf.Clamp(MovingColliderTimeDelta + Time.deltaTime, 0, 2 * MovingColliderGracePeriod);
-        MovingPlatformTimeDelta = Mathf.Clamp(MovingPlatformTimeDelta + Time.deltaTime, 0, 2 * MovingPlatformGracePeriod);
-        StuckTimeDelta = Mathf.Clamp(StuckTimeDelta + Time.deltaTime, 0, 2 * StuckGracePeriod);
         if (debugcanvas != null)
         {
-            debugtext["JumpMeter"].text = "JumpMeter: " + JumpMeter.ToString("0.0000");
-            debugtext["LandingTimeDelta"].text = "LandingTimeDelta: " + LandingTimeDelta.ToString("0.0000");
-            debugtext["SlideTimeDelta"].text = "SlideTimeDelta: " + SlideTimeDelta.ToString("0.0000");
-            debugtext["BufferJumpTimeDelta"].text = "BufferJumpTimeDelta: " + BufferJumpTimeDelta.ToString("0.0000");
-            debugtext["WallJumpTimeDelta"].text = "WallJumpTimeDelta: " + WallJumpTimeDelta.ToString("0.0000");
-            debugtext["WallRunTimeDelta"].text = "WallRunTimeDelta: " + WallRunTimeDelta.ToString("0.0000");
-            debugtext["WallClimbTimeDelta"].text = "WallClimbTimeDelta: " + WallClimbTimeDelta.ToString("0.0000");
-            debugtext["ReGrabTimeDelta"].text = "ReGrabTimeDelta: " + ReGrabTimeDelta.ToString("0.0000");
-            debugtext["MovingColliderTimeDelta"].text = "MovingColliderTimeDelta: " + MovingColliderTimeDelta.ToString("0.0000");
-            debugtext["MovingPlatformTimeDelta"].text = "MovingPlatformTimeDelta: " + MovingPlatformTimeDelta.ToString("0.0000");
-            debugtext["StuckTimeDelta"].text = "StuckTimeDelta: " + StuckTimeDelta.ToString("0.0000");
+            debugtext["JumpMeter"].text = "JumpMeter: " + utils.GetTimerTime(JUMP_METER).ToString("0.0000");
+            debugtext["LandingTimeDelta"].text = "LandingTimeDelta: " + utils.GetTimerTime(LANDING_TIMER).ToString("0.0000");
+            debugtext["BufferJumpTimeDelta"].text = "BufferJumpTimeDelta: " + utils.GetTimerTime(BUFFER_JUMP_TIMER).ToString("0.0000");
+            debugtext["SlideTimeDelta"].text = "SlideTimeDelta: " + utils.GetTimerTime(SLIDE_TIMER).ToString("0.0000");
+            debugtext["WallJumpTimeDelta"].text = "WallJumpTimeDelta: " + utils.GetTimerTime(WALL_JUMP_TIMER).ToString("0.0000");
+            debugtext["WallRunTimeDelta"].text = "WallRunTimeDelta: " + utils.GetTimerTime(WALL_RUN_TIMER).ToString("0.0000");
+            debugtext["WallClimbTimeDelta"].text = "WallClimbTimeDelta: " + utils.GetTimerTime(WALL_CLIMB_TIMER).ToString("0.0000");
+            debugtext["ReGrabTimeDelta"].text = "ReGrabTimeDelta: " + utils.GetTimerTime(REGRAB_TIMER).ToString("0.0000");
+            debugtext["MovingColliderTimeDelta"].text = "MovingColliderTimeDelta: " + utils.GetTimerTime(MOVING_COLLIDER_TIMER).ToString("0.0000");
+            debugtext["MovingPlatformTimeDelta"].text = "MovingPlatformTimeDelta: " + utils.GetTimerTime(MOVING_PLATFORM_TIMER).ToString("0.0000");
+            debugtext["StuckTimeDelta"].text = "StuckTimeDelta: " + utils.GetTimerTime(STUCK_TIMER).ToString("0.0000");
             debugtext["Current Velocity"].text = "Current Velocity: " + current_velocity.ToString("0.00");
 
         }
@@ -478,7 +450,7 @@ public class PlayerController : MonoBehaviour {
                 current_velocity -= moving_obj.velocity;
             }
             lastMovingPlatform = moving_obj;
-            MovingColliderTimeDelta = 0;
+            utils.ResetTimer(MOVING_COLLIDER_TIMER);
         }
 
         if (!OnGround())
@@ -556,7 +528,7 @@ public class PlayerController : MonoBehaviour {
             // Are we jumping in a new direction (atleast 20 degrees difference)
             if (Vector3.Dot(PreviousWallJumpNormal, wall_normal) < 0.94f)
             {
-                WallJumpTimeDelta = 0;
+                utils.ResetTimer(WALL_JUMP_TIMER);
                 WallJumpReflect = Vector3.Reflect(current_velocity, wall_normal);
                 if (JumpBuffered())
                 {
@@ -583,13 +555,13 @@ public class PlayerController : MonoBehaviour {
                     }
                     current_velocity.y = Math.Max(current_velocity.y + WallRunImpulse, WallRunImpulse);
                 }
-                WallRunTimeDelta = 0;
+                utils.ResetTimer(WALL_RUN_TIMER);
             }
         }
         // If we fail the wall run try to wall climb instead if we are looking at the wall
         else if (isHanging || Vector3.Dot(transform.forward, -wall_normal) >= WallRunClimbCosAngle)
         {
-            WallClimbTimeDelta = 0;
+            utils.ResetTimer(WALL_CLIMB_TIMER);
         }
         PreviousWallNormal = wall_normal;
     }
@@ -661,7 +633,7 @@ public class PlayerController : MonoBehaviour {
     private void ProcessFloorHit()
     {
         // On the ground
-        LandingTimeDelta = 0;
+        utils.ResetTimer(LANDING_TIMER);
 
         // Handle buffered jumps
         if (JumpBuffered())
@@ -679,7 +651,7 @@ public class PlayerController : MonoBehaviour {
                 current_velocity -= moving_platform.velocity;
             }
             lastMovingPlatform = moving_platform;
-            MovingPlatformTimeDelta = 0;
+            utils.ResetTimer(MOVING_PLATFORM_TIMER);
         }
         PreviousWallNormal = Vector3.zero;
         PreviousWallJumpNormal = Vector3.zero;
@@ -737,13 +709,13 @@ public class PlayerController : MonoBehaviour {
         if (!OnGround())
         {
             // We are in the air (for atleast LandingGracePeriod). We will slide on landing if moving fast enough.
-            SlideTimeDelta = 0;
+            utils.ResetTimer(SLIDE_TIMER);
         }
         // Normal ground behavior
-        if (OnGround() && !willJump && (SlideTimeDelta >= SlideGracePeriod || planevelocity.magnitude < SlideSpeed))
+        if (OnGround() && !willJump && (!IsSliding() || planevelocity.magnitude < SlideSpeed))
         {
             // If we weren't fast enough we aren't going to slide
-            SlideTimeDelta = SlideGracePeriod;
+            utils.SetTimerFinished(SLIDE_TIMER);
             // dot(new_movVec, normal) = 0 --> dot(movVec, normal) + dot(up, normal)*k = 0 --> k = -dot(movVec, normal)/dot(up, normal)
             float slope_correction = -Vector3.Dot(movVec, currentHit.normal) / Vector3.Dot(transform.up, currentHit.normal);
             if (slope_correction < 0f)
@@ -887,32 +859,37 @@ public class PlayerController : MonoBehaviour {
     // Double check if on ground using a separate test
     public bool OnGround()
     {
-        return (LandingTimeDelta < jumpGracePeriod);
+        return !utils.CheckTimer(LANDING_TIMER);
     }
 
     public bool JumpBuffered()
     {
-        return (BufferJumpTimeDelta < BufferJumpGracePeriod);
+        return !utils.CheckTimer(BUFFER_JUMP_TIMER);
     }
 
-    public bool IsWallRunning()
+    public bool IsSliding()
     {
-        return wallRunEnabled && (WallRunTimeDelta < WallRunGracePeriod);
-    }
-
-    public bool IsWallClimbing()
-    {
-        return wallClimbEnabled && (WallClimbTimeDelta < WallClimbGracePeriod);
-    }
-
-    public bool CanGrabLedge()
-    {
-        return wallClimbEnabled && (ReGrabTimeDelta >= ReGrabGracePeriod);
+        return !utils.CheckTimer(SLIDE_TIMER);
     }
 
     public bool CanWallJump()
     {
-        return wallJumpEnabled && (WallJumpTimeDelta < WallJumpGracePeriod);
+        return wallJumpEnabled && !utils.CheckTimer(WALL_JUMP_TIMER);
+    }
+
+    public bool IsWallRunning()
+    {
+        return wallRunEnabled && !utils.CheckTimer(WALL_RUN_TIMER);
+    }
+
+    public bool IsWallClimbing()
+    {
+        return wallClimbEnabled && !utils.CheckTimer(WALL_CLIMB_TIMER);
+    }
+
+    public bool CanGrabLedge()
+    {
+        return wallClimbEnabled && utils.CheckTimer(REGRAB_TIMER);
     }
 
     public bool IsHanging()
@@ -922,17 +899,17 @@ public class PlayerController : MonoBehaviour {
 
     public bool InMovingCollision()
     {
-        return (MovingColliderTimeDelta < MovingColliderGracePeriod);
+        return !utils.CheckTimer(MOVING_COLLIDER_TIMER);
     }
 
     public bool OnMovingPlatform()
     {
-        return (MovingPlatformTimeDelta < MovingPlatformGracePeriod);
+        return !utils.CheckTimer(MOVING_PLATFORM_TIMER);
     }
 
     public bool IsStuck()
     {
-        return (StuckTimeDelta < StuckGracePeriod);
+        return !utils.CheckTimer(STUCK_TIMER);
     }
 
     public Vector3 GetLastWallNormal()
@@ -996,7 +973,7 @@ public class PlayerController : MonoBehaviour {
             }
             else
             {
-                BufferJumpTimeDelta = 0;
+                utils.ResetTimer(BUFFER_JUMP_TIMER);
             }
         }
         // Fall fast when we let go of jump (optional)
@@ -1018,7 +995,7 @@ public class PlayerController : MonoBehaviour {
             PreviousWallJumpPos = transform.position;
             PreviousWallJumpNormal = PreviousWallNormal;
         }
-        if (!isHanging && JumpMeter > JumpMeterThreshold)
+        if (!isHanging && utils.GetTimerTime(JUMP_METER) > JumpMeterThreshold)
         {
             if (CanWallJump() && WallJumpReflect.magnitude > 0)
             {
@@ -1032,7 +1009,7 @@ public class PlayerController : MonoBehaviour {
                 {
                     current_velocity.y = Math.Max(current_velocity.y, WallJumpSpeed * JumpMeterComputed);
                 }
-                JumpMeter = 0;
+                utils.ResetTimer(JUMP_METER);
             }
             else if (IsWallRunning())
             {
@@ -1042,7 +1019,7 @@ public class PlayerController : MonoBehaviour {
                 float newspeed = Mathf.Clamp(pathvel + (WallRunJumpBoostAdd * JumpMeterComputed), 0f, WallRunJumpBoostSpeed);
                 current_velocity += transform.forward * (newspeed - pathvel);
                 current_velocity.y = Math.Max(current_velocity.y, WallRunJumpUpSpeed * JumpMeterComputed);
-                JumpMeter = 0;
+                utils.ResetTimer(JUMP_METER);
             }
             else if (OnGround())
             {
@@ -1075,19 +1052,20 @@ public class PlayerController : MonoBehaviour {
             PreviousWallJumpNormal = Vector3.zero;
             PreviousWallJumpPos = Vector3.positiveInfinity;
         }
-        ReGrabTimeDelta = 0;
+        utils.ResetTimer(REGRAB_TIMER);
         isJumping = true;
         isFalling = false;
         willJump = false;
         isHanging = false;
 
         // Intentionally set the timers over the limit
-        BufferJumpTimeDelta = 2*BufferJumpGracePeriod;
-        WallJumpTimeDelta = 2*WallJumpGracePeriod;
-        WallRunTimeDelta = 2*WallRunGracePeriod;
-        WallClimbTimeDelta = 2*WallClimbGracePeriod;
-        LandingTimeDelta = 2*jumpGracePeriod;
-        MovingPlatformTimeDelta = 2*MovingPlatformGracePeriod;
+        utils.SetTimerFinished(BUFFER_JUMP_TIMER);
+        utils.SetTimerFinished(LANDING_TIMER);
+        utils.SetTimerFinished(WALL_JUMP_TIMER);
+        utils.SetTimerFinished(WALL_RUN_TIMER);
+        utils.SetTimerFinished(WALL_CLIMB_TIMER);
+        utils.SetTimerFinished(MOVING_PLATFORM_TIMER);
+
         WallJumpReflect = Vector3.zero;
     }
 
@@ -1125,7 +1103,7 @@ public class PlayerController : MonoBehaviour {
 
     public void Recover(Collider other)
     {
-        StuckTimeDelta = 0;
+        utils.ResetTimer(STUCK_TIMER);
         isHanging = false;
 
         Vector3 closest_point = other.ClosestPointOnBounds(transform.position);

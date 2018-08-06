@@ -26,6 +26,18 @@ public class Utilities : MonoBehaviour
         return Timers.ContainsKey(name) && Timers[name].done();
     }
 
+    public float GetTimerPeriod(string name)
+    {
+        if (Timers.ContainsKey(name))
+        {
+            return Timers[name].getPeriod();
+        }
+        else
+        {
+            return 0f;
+        }
+    }
+
     public float GetTimerPercent(string name)
     {
         if (Timers.ContainsKey(name))
@@ -105,6 +117,11 @@ public class Timer
     public float getPercent()
     {
         return time/period;
+    }
+
+    public float getPeriod()
+    {
+        return period;
     }
 
     public bool done()
