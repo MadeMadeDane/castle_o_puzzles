@@ -1228,7 +1228,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 201216f4a772d4e93bc570e90d32466e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  input_manager: {fileID: 0}
+  input_manager: {fileID: 114853635505283590}
   cc: {fileID: 143490867400911512}
   WallRunCollider: {fileID: 136947463090228844}
   player_camera: {fileID: 0}
@@ -1283,7 +1283,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1d9d1cad135e74f57b73de887463ce3a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  input_manager: {fileID: 0}
+  input_manager: {fileID: 114853635505283590}
   controlled_camera: {fileID: 20277521880671826}
   home: {fileID: 1066341514495280}
   target_follow_distance: {x: 0, y: 2.5, z: 0}
@@ -1292,6 +1292,8 @@ MonoBehaviour:
   yaw_pivot: {fileID: 0}
   pitch_pivot: {fileID: 0}
   fade_material: {fileID: 2100000, guid: 3d8f1ff643c3bd244b72d81775824e31, type: 2}
+  headless_model: {fileID: 0}
+  show_model_in_inspection: 0
 --- !u!114 &114853635505283590
 MonoBehaviour:
   m_ObjectHideFlags: 1

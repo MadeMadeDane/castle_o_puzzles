@@ -945,6 +945,11 @@ public class PlayerController : MonoBehaviour {
         return Vector3.ProjectOnPlane(current_velocity, Physics.gravity);
     }
 
+    public float GetHeadHeight()
+    {
+        return ((cc.height / 2) - cc.radius);
+    }
+
     public bool CanJumpBoost()
     {
         bool can_jump_boost = true;
