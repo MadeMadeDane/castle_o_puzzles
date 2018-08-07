@@ -17,6 +17,7 @@ public class PlayerController : MonoBehaviour {
     [Header("Movement constants")]
     public float RunSpeed;
     public float AirSpeed;
+    public float MaxAirSpeed;
     public float GroundAcceleration;
     public float AirAcceleration;
     public float SpeedDamp;
@@ -215,6 +216,7 @@ public class PlayerController : MonoBehaviour {
         // Movement modifiers
         RunSpeed = 15f;
         AirSpeed = 0.90f;
+        MaxAirSpeed = Mathf.Infinity;
         GroundAcceleration = 20;
         AirAcceleration = 500;
         SpeedDamp = 10f;
@@ -254,6 +256,7 @@ public class PlayerController : MonoBehaviour {
         // Movement modifiers
         RunSpeed = 15f;
         AirSpeed = 15f;
+        MaxAirSpeed = 5f;
         GroundAcceleration = 300f;
         AirAcceleration = 30f;
         SpeedDamp = 10f;
@@ -338,7 +341,7 @@ public class PlayerController : MonoBehaviour {
         bool failed_move = false;
         try
         {
-            cc.Move(current_velocity * Time.deltaTime);
+            cc.Move(ComputeMove(current_velocity * Time.deltaTime));
         }
         catch (Exception ex)
         {
@@ -411,6 +414,55 @@ public class PlayerController : MonoBehaviour {
             }
             position_history.AddFirst(transform.position);
         }
+    }
+
+    private Vector3 ComputeMove(Vector3 desired_move)
+    {
+        Vector3 ground_move = Vector3.ProjectOnPlane(desired_move, transform.up);
+        if (ground_move.normalized == Vector3.zero)
+        {
+            return desired_move;
+        }
+        ground_move = ground_move.normalized * cc.radius;
+        Vector3 ground_move_alt = Vector3.Cross(ground_move, transform.up);
+
+        Vector3 SkinPos = transform.position + (ground_move.normalized * (cc.radius + cc.skinWidth));
+        Vector3 SkinPosAlt = transform.position + (ground_move_alt.normalized * (cc.radius + cc.skinWidth));
+        Vector3 SkinPosAltN = transform.position + (-ground_move_alt.normalized * (cc.radius + cc.skinWidth));
+        Ray[] scanrays = new Ray[12] {
+            new Ray(SkinPos, ground_move),
+            new Ray(SkinPosAlt, ground_move_alt),
+            new Ray(SkinPosAltN, -ground_move_alt),
+            new Ray(SkinPos + transform.up*GetHeadHeight(), ground_move),
+            new Ray(SkinPosAlt + transform.up*GetHeadHeight(), ground_move_alt),
+            new Ray(SkinPosAltN + transform.up*GetHeadHeight(), -ground_move_alt),
+            new Ray(SkinPos + transform.up*cc.height/4, ground_move),
+            new Ray(SkinPosAlt + transform.up*cc.height/4, ground_move_alt),
+            new Ray(SkinPosAltN + transform.up*cc.height/4, -ground_move_alt),
+            new Ray(SkinPos - transform.up*cc.height/4, ground_move),
+            new Ray(SkinPosAlt - transform.up*cc.height/4, ground_move_alt),
+            new Ray(SkinPosAltN - transform.up*cc.height/4, -ground_move_alt)
+        };
+        RaycastHit hit;
+
+        //Debug.DrawRay(SkinPos + transform.up * cc.height / 2, ground_move, Color.blue);
+        //Debug.DrawRay(SkinPosAlt + transform.up * cc.height / 2, ground_move_alt, Color.blue);
+        //Debug.DrawRay(SkinPosAltN + transform.up * cc.height / 2, -ground_move_alt, Color.blue);
+        foreach (Ray scanray in scanrays) {
+            if (Physics.Raycast(scanray, out hit, ground_move.magnitude))
+            {
+                //Debug.DrawRay(SkinPos + transform.up * cc.height / 2, Vector3.ProjectOnPlane(ground_move, hit.normal).normalized, Color.green);
+                float cosanglehit = Vector3.Dot(hit.normal, scanray.direction.normalized);
+                if (Vector3.Dot(desired_move, hit.normal) < 0 && ((hit.distance + cc.radius) * Mathf.Abs(cosanglehit) < cc.radius * 1.1f))
+                {
+                    //Debug.DrawRay(SkinPos + transform.up * cc.height / 2, hit.normal, Color.red);
+                    current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
+                    return Vector3.ProjectOnPlane(desired_move, hit.normal);
+                }
+                break;
+            }
+        }
+        return desired_move;
     }
     
     private void IncrementCounters()
@@ -485,6 +537,10 @@ public class PlayerController : MonoBehaviour {
                     hit_wall = true;
                 }
                 else if (Physics.Raycast(transform.position, -transform.right, out hit, 2.0f))
+                {
+                    hit_wall = true;
+                }
+                else if (Physics.Raycast(transform.position, transform.forward, out hit, 2.0f))
                 {
                     hit_wall = true;
                 }
@@ -819,30 +875,26 @@ public class PlayerController : MonoBehaviour {
             turn_constant = 0.55f + Mathf.Sign(Vector3.Dot(current_velocity.normalized, direction))*Mathf.Pow(Vector3.Dot(current_velocity.normalized, direction), 2f) * 0.45f;
         }*/
         Vector3 deltaVel = direction * acceleration * Time.deltaTime;
-        // Accelerate if we aren't at the desired speed
-        if (Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity).magnitude <= desiredSpeed)
-        {
-            current_velocity += deltaVel;
-        }
-        // If we are past the desired speed, subtract the deltaVel off and add it back in the direction we want
-        else
-        {
-            /*if (grounded)
-            {
-                current_velocity += direction * desiredSpeed - Vector3.Project(current_velocity, direction);
-            }*/
-            if (!grounded)
-            {
-                current_velocity = current_velocity - (deltaVel.magnitude * GetGroundVelocity().normalized) + deltaVel;
-            }
-        }
-
         if (grounded)
         {
+            // Accelerate if we aren't at the desired speed
+            if (Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity).magnitude <= desiredSpeed)
+            {
+                current_velocity += deltaVel;
+            }
             accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, currentHit.normal) * SpeedDamp;
         }
         else
         {
+            if (Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity).magnitude <= Mathf.Max(GetGroundVelocity().magnitude, MaxAirSpeed))
+            {
+                current_velocity += deltaVel;
+            }
+            else
+            {
+                current_velocity = Vector3.ClampMagnitude(Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity), GetGroundVelocity().magnitude) + (current_velocity - GetGroundVelocity());
+                //current_velocity = current_velocity - (deltaVel.magnitude * GetGroundVelocity().normalized) + deltaVel;
+            }
             accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, Physics.gravity) * AirSpeedDamp;
         }
         //Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), deltaVel, Color.cyan, Time.fixedDeltaTime);
