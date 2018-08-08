@@ -107,12 +107,17 @@ public class InputManager : MonoBehaviour {
         RefreshButtons();
     }
 
+    private void FixedUpdate()
+    {
+        MouseUpdate();
+    }
+
     private void UpdateInputs()
     {
         _input_vertical_axis = Input.GetAxisRaw("Vertical");
         _input_horizontal_axis = Input.GetAxisRaw("Horizontal");
         _input_scroll_axis = Input.GetAxis("Mouse ScrollWheel");
-        MouseUpdate();
+        //MouseUpdate();
     }
 
     private void RefreshButtons()
@@ -130,8 +135,8 @@ public class InputManager : MonoBehaviour {
             Input.GetAxis("Mouse X"),
             Input.GetAxis("Mouse Y")) * mouse_sensitivity * mouse_multiplier;
         Vector2 rotVecC = new Vector2(
-            Input.GetAxisRaw("Joy X"),
-            Input.GetAxisRaw("Joy Y")) * controller_sensitivity * controller_multiplier;
+            Input.GetAxis("Joy X"),
+            Input.GetAxis("Joy Y")) * controller_sensitivity * controller_multiplier;
         Vector2 rotVec = rotVecM + rotVecC;
 
         // Use rolling average for mouse smoothing (unity sucks at mouse input)
