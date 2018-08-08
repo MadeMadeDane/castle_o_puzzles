@@ -85,7 +85,7 @@ public class InputManager : MonoBehaviour {
         mouseQueue = new Queue<Vector2>(Enumerable.Repeat<Vector2>(Vector2.zero, mouseQueueCount));
 
         mouse_multiplier = 1f;
-        controller_multiplier = 0.3f;
+        controller_multiplier = 50f;
         mouse_sensitivity = 1.45f * Vector2.one;
         controller_sensitivity = new Vector2(4, 2);
 
@@ -107,17 +107,12 @@ public class InputManager : MonoBehaviour {
         RefreshButtons();
     }
 
-    private void FixedUpdate()
-    {
-        MouseUpdate();
-    }
-
     private void UpdateInputs()
     {
         _input_vertical_axis = Input.GetAxisRaw("Vertical");
         _input_horizontal_axis = Input.GetAxisRaw("Horizontal");
         _input_scroll_axis = Input.GetAxis("Mouse ScrollWheel");
-        //MouseUpdate();
+        MouseUpdate();
     }
 
     private void RefreshButtons()
@@ -134,9 +129,10 @@ public class InputManager : MonoBehaviour {
         Vector2 rotVecM = new Vector2(
             Input.GetAxis("Mouse X"),
             Input.GetAxis("Mouse Y")) * mouse_sensitivity * mouse_multiplier;
+        // Controller input is framerate independent, but the camera updates every frame. Scale by frame time. 
         Vector2 rotVecC = new Vector2(
             Input.GetAxis("Joy X"),
-            Input.GetAxis("Joy Y")) * controller_sensitivity * controller_multiplier;
+            Input.GetAxis("Joy Y")) * controller_sensitivity * controller_multiplier * Time.deltaTime;
         Vector2 rotVec = rotVecM + rotVecC;
 
         // Use rolling average for mouse smoothing (unity sucks at mouse input)

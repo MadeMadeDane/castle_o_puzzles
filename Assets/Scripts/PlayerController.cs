@@ -461,7 +461,6 @@ public class PlayerController : MonoBehaviour {
                     current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
                     return Vector3.ProjectOnPlane(desired_move, hit.normal);
                 }
-                break;
             }
         }
         return desired_move;
