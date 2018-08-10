@@ -293,6 +293,14 @@ public class PlayerController : MonoBehaviour {
         accelerate = AccelerateStandard;
     }
 
+    private void Update()
+    {
+        if (input_manager.GetJump())
+        {
+            utils.ResetTimer(BUFFER_JUMP_TIMER);
+        }
+    }
+
     // Fixed Update is called once per physics tick
     private void FixedUpdate () {
         // If the player does not have a camera, do nothing
@@ -1029,19 +1037,11 @@ public class PlayerController : MonoBehaviour {
         }
 
         // Handle jumping and falling
-        if (willJump)
-        {
-            DoJump();
-        }
-        else if (input_manager.GetJump())
+        if (JumpBuffered())
         {
             if (OnGround() || CanWallJump() || IsWallRunning() || isHanging)
             {
                 DoJump();
-            }
-            else
-            {
-                utils.ResetTimer(BUFFER_JUMP_TIMER);
             }
         }
         // Fall fast when we let go of jump (optional)

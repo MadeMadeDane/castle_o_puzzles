@@ -6,32 +6,21 @@ using UnityEngine;
 
 public class Button
 {
-    private bool _active_down;
-    private bool _active_up;
     private string[] _button_names;
 
     public Button(string button_name)
     {
-        _active_down = true;
-        _active_up = true;
         _button_names = new string[] { button_name };
     }
 
     public Button(string[] button_names)
     {
-        _active_down = true;
-        _active_up = true;
         _button_names = button_names;
     }
 
     public bool down()
     {
-        if (_active_down)
-        {
-            _active_down = false;
-            return _button_names.Any(name => Input.GetButtonDown(name));
-        }
-        return false;
+        return _button_names.Any(name => Input.GetButtonDown(name));
     }
 
     public bool pressed()
@@ -41,23 +30,7 @@ public class Button
 
     public bool up()
     {
-        if (_active_up)
-        {
-            _active_up = false;
-            return _button_names.Any(name => Input.GetButtonUp(name));
-        }
-        return false;
-    }
-
-    public bool is_active()
-    {
-        return _active_down;
-    }
-
-    public void refresh()
-    {
-        _active_down = true;
-        _active_up = true;
+        return _button_names.Any(name => Input.GetButtonUp(name));
     }
 }
 
@@ -104,7 +77,6 @@ public class InputManager : MonoBehaviour {
     private void Update()
     {
         UpdateInputs();
-        RefreshButtons();
     }
 
     private void UpdateInputs()
@@ -113,14 +85,6 @@ public class InputManager : MonoBehaviour {
         _input_horizontal_axis = Input.GetAxisRaw("Horizontal");
         _input_scroll_axis = Input.GetAxis("Mouse ScrollWheel");
         MouseUpdate();
-    }
-
-    private void RefreshButtons()
-    {
-        foreach (Button btn in _button_map.Values)
-        {
-            btn.refresh();
-        }
     }
 
     private void MouseUpdate()
@@ -162,11 +126,7 @@ public class InputManager : MonoBehaviour {
 
     public bool GetJump()
     {
-        if (_button_map["jump_button"].is_active())
-        {
-            return _button_map["jump_button"].down() || (Mathf.Abs(_input_scroll_axis) > 0f);
-        }
-        return false;
+        return _button_map["jump_button"].down() || (Mathf.Abs(_input_scroll_axis) > 0f);
     }
 
     public bool GetJumpHold()
