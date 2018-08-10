@@ -144,15 +144,19 @@ public class CameraController : MonoBehaviour {
         }
     }
 
+    private void Update()
+    {
+        handleViewToggle();
+    }
+
     // LateUpdate is called after update. Ensures we are operating on the latest transform changes.
-    void LateUpdate ()
+    private void LateUpdate ()
     {
         UpdateCameraAngles();
     }
 
     private void FixedUpdate()
     {
-        handleViewToggle();
         hideHome();
         handlePlayerRotate();
         IncrementCounters();
