@@ -83,6 +83,7 @@ public class PlayerController : MonoBehaviour {
     private float WallRunImpulse;
     private float WallRunSpeed;
     private float WallRunClimbCosAngle;
+    private float WallScanDistance;
     private float LedgeClimbOffset;
     private float LedgeClimbBoost;
     private float WallDistanceThreshold;
@@ -138,7 +139,8 @@ public class PlayerController : MonoBehaviour {
         PreviousWallJumpPos = Vector3.positiveInfinity;
         PreviousWallNormal = Vector3.zero;
         PreviousWallJumpNormal = Vector3.zero;
-        LedgeClimbOffset = 1.0f;
+        LedgeClimbOffset = 0.5f;
+        WallScanDistance = 1.5f;
         LedgeClimbBoost = Mathf.Sqrt(2 * cc.height * 1.1f * Physics.gravity.magnitude);
         WallDistanceThreshold = 14f;
 
@@ -459,7 +461,6 @@ public class PlayerController : MonoBehaviour {
                     current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
                     return Vector3.ProjectOnPlane(desired_move, hit.normal);
                 }
-                break;
             }
         }
         return desired_move;
@@ -512,7 +513,7 @@ public class PlayerController : MonoBehaviour {
             if (IsWallRunning())
             {
                 // Scan toward the wall normal
-                if (Physics.Raycast(transform.position, -PreviousWallNormal, out hit, 2.0f))
+                if (Physics.Raycast(transform.position, -PreviousWallNormal, out hit, cc.radius + WallScanDistance))
                 {
                     hit_wall = true;
                 }
@@ -520,47 +521,60 @@ public class PlayerController : MonoBehaviour {
             else if (IsWallClimbing())
             {
                 // Scan toward the wall normal at both head and stomach height
-                if (Physics.Raycast(transform.position, -PreviousWallNormal, out hit, 2.0f))
+                if (Physics.Raycast(transform.position, -PreviousWallNormal, out hit, cc.radius + WallScanDistance))
                 {
                     hit_wall = true;
                 }
-                else if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - cc.radius)), -PreviousWallNormal, out hit, 2.0f))
+                else if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - cc.radius)), -PreviousWallNormal, out hit, cc.radius + WallScanDistance))
                 {
                     hit_wall = true;
                 }
             }
             else
             {
-                // Scan forward and sideways to find a wall
-                if (Physics.Raycast(transform.position, transform.right, out hit, 2.0f))
+                // Scan forward and sideways to find all walls
+                if (Physics.Raycast(transform.position, transform.right, out hit, cc.radius + WallScanDistance))
                 {
-                    hit_wall = true;
+                    if (IsWall(hit.normal))
+                    {
+                        UpdateWallConditions(hit.normal);
+                    }
                 }
-                else if (Physics.Raycast(transform.position, -transform.right, out hit, 2.0f))
+                if (Physics.Raycast(transform.position, -transform.right, out hit, cc.radius + WallScanDistance))
                 {
-                    hit_wall = true;
+                    if (IsWall(hit.normal))
+                    {
+                        UpdateWallConditions(hit.normal);
+                    }
                 }
-                else if (Physics.Raycast(transform.position, transform.forward, out hit, 2.0f))
+                if (Physics.Raycast(transform.position, transform.forward, out hit, cc.radius + WallScanDistance))
                 {
-                    hit_wall = true;
+                    if (IsWall(hit.normal))
+                    {
+                        UpdateWallConditions(hit.normal);
+                    }
                 }
-                else if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - cc.radius)), transform.forward, out hit, 2.0f))
+                if (Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), transform.forward, out hit, cc.radius + WallScanDistance))
                 {
-                    hit_wall = true;
+                    if (IsWall(hit.normal))
+                    {
+                        UpdateWallConditions(hit.normal);
+                    }
                 }
             }
-            // Update my current state based on my scan results
-            if (hit_wall && hit.normal.y > -0.17f && hit.normal.y <= 0.34f) 
+
+            if (hit_wall && IsWall(hit.normal)) 
             {
                 UpdateWallConditions(hit.normal);
             }
+
             if (IsWallClimbing() && !isHanging)
             {
                 // Scan for ledge
-                if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - cc.radius)), -PreviousWallNormal, out hit, 2.0f))
+                if (Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), -PreviousWallNormal, out hit, cc.radius + WallScanDistance))
                 {
-                    Vector3 LedgeScanPos = transform.position + (transform.up * cc.height / 2) + LedgeClimbOffset * transform.forward;
-                    if (Physics.Raycast(LedgeScanPos, -transform.up, out hit, LedgeClimbOffset))
+                    Vector3 LedgeScanPos = transform.position + (transform.up * cc.height / 2) + (cc.radius + LedgeClimbOffset) * transform.forward;
+                    if (Physics.Raycast(LedgeScanPos, -transform.up, out hit, cc.radius + LedgeClimbOffset))
                     {
                         if (CanGrabLedge() && Vector3.Dot(hit.normal, Physics.gravity) < -0.866f)
                         {
@@ -568,13 +582,15 @@ public class PlayerController : MonoBehaviour {
                         }
                     }
                 }
-
-                // If all ledge climb conditions are met, climb it to the surface on top
-                // and clear all wall conditions
             }
         }
 
         lastTrigger = null;
+    }
+
+    private bool IsWall(Vector3 normal)
+    {
+        return normal.y > -0.17f && normal.y <= 0.34f;
     }
 
     private void UpdateWallConditions(Vector3 wall_normal)
@@ -598,7 +614,7 @@ public class PlayerController : MonoBehaviour {
         AlongWallVel = Vector3.Dot(cc.velocity, WallAxis) * WallAxis;
         UpWallVel = current_velocity - (Vector3.Dot(current_velocity, WallAxis) * WallAxis);
         // First attempt a wall run if we pass the limit and are looking along the wall
-        if (AlongWallVel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(wall_normal, transform.forward)) < WallRunClimbCosAngle && Vector3.Dot(AlongWallVel, transform.forward) > 0)
+        if (wallRunEnabled && AlongWallVel.magnitude > WallRunLimit && Mathf.Abs(Vector3.Dot(wall_normal, transform.forward)) < WallRunClimbCosAngle && Vector3.Dot(AlongWallVel, transform.forward) > 0)
         {
             if (IsWallRunning() || CanWallRun(PreviousWallJumpPos, PreviousWallNormal, transform.position, wall_normal))
             {

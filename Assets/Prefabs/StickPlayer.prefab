@@ -1234,6 +1234,7 @@ MonoBehaviour:
   player_camera: {fileID: 0}
   RunSpeed: 0
   AirSpeed: 0
+  MaxAirSpeed: 0
   GroundAcceleration: 0
   AirAcceleration: 0
   SpeedDamp: 0
@@ -1260,6 +1261,7 @@ MonoBehaviour:
   ShortHopEnabled: 0
   JumpBoostEnabled: 0
   current_velocity: {x: 0, y: 0, z: 0}
+  debug_mode: 0
 --- !u!114 &114715917643276418
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1435,10 +1437,10 @@ CharacterController:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Height: 6
+  m_Height: 5.8
   m_Radius: 0.5
   m_SlopeLimit: 80
   m_StepOffset: 0.3
   m_SkinWidth: 0.01
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: -0.2, z: 0}
