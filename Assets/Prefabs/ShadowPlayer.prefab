@@ -27,7 +27,7 @@ GameObject:
   - component: {fileID: 114624703689856932}
   - component: {fileID: 114577602716247398}
   - component: {fileID: 114338821145127778}
-  - component: {fileID: 114769910663386216}
+  - component: {fileID: 114373706228294294}
   m_Layer: 2
   m_Name: ShadowPlayer
   m_TagString: Player
@@ -109,7 +109,7 @@ Transform:
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1195634611331240}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 6, y: -10.75, z: -15.5}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 4795742364731244}
@@ -267,6 +267,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mouse_sensitivity: {x: 0, y: 0}
   controller_sensitivity: {x: 0, y: 0}
+--- !u!114 &114373706228294294
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1195634611331240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d9411b0b84cb6c42bd279811515c987, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pc: {fileID: 114555574629338144}
+  im: {fileID: 114338821145127778}
+  cam_controller: {fileID: 114872908058559052}
+  actionSlots: {fileID: 0}
+  explosive_rad: 1
+  select_reach_dist: 20
+  enable_logs: 0
 --- !u!114 &114555574629338144
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -284,6 +302,7 @@ MonoBehaviour:
   player_camera: {fileID: 0}
   RunSpeed: 0
   AirSpeed: 0
+  MaxAirSpeed: 0
   GroundAcceleration: 0
   AirAcceleration: 0
   SpeedDamp: 0
@@ -310,6 +329,7 @@ MonoBehaviour:
   ShortHopEnabled: 0
   JumpBoostEnabled: 0
   current_velocity: {x: 0, y: 0, z: 0}
+  debug_mode: 0
 --- !u!114 &114577602716247398
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -332,21 +352,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09fc66f38057a054e84c4f25bfe45039, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &114769910663386216
-MonoBehaviour:
-  m_ObjectHideFlags: 1
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 100100000}
-  m_GameObject: {fileID: 1195634611331240}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2782ae44d5f821241b1dd7f19c0c169d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pc: {fileID: 114555574629338144}
-  im: {fileID: 114338821145127778}
-  cam: {fileID: 20581628650138712}
-  actionSlots: {fileID: 0}
 --- !u!114 &114872908058559052
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -368,7 +373,6 @@ MonoBehaviour:
   pitch_pivot: {fileID: 0}
   fade_material: {fileID: 2100000, guid: 94b4126e709dc5a4ebb7a48cd5fa53c9, type: 2}
   headless_model: {fileID: 4300000, guid: 93fc77e1b35cf4a4faa8127eaccfd159, type: 3}
-  head_position: {x: 0, y: 1.9, z: 0}
   show_model_in_inspection: 1
 --- !u!124 &124837952683067368
 Behaviour:
