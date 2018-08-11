@@ -27,11 +27,11 @@ public class ItemActionHandler : MonoBehaviour {
 
         RaycastHit hit;
         Item targetItem = null;
-        if (Physics.Raycast(cam.transform.position, cam.transform.TransformDirection(Vector3.forward), out hit, 10.0f)) {
+        if (Physics.Raycast(cam.transform.position, cam.transform.forward, out hit, 10.0f)) {
             GameObject go = hit.transform.gameObject;
             targetItem = go.GetComponent<Item>();
             if (targetItem != null) {
-                Debug.DrawRay(cam.transform.position, transform.TransformDirection(Vector3.forward) * hit.distance, Color.magenta);
+                Debug.DrawRay(cam.transform.position, cam.transform.forward * hit.distance, Color.magenta);
                 Debug.Log("Did Hit");
             }
         }
