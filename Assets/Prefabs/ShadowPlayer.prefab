@@ -27,6 +27,7 @@ GameObject:
   - component: {fileID: 114624703689856932}
   - component: {fileID: 114577602716247398}
   - component: {fileID: 114338821145127778}
+  - component: {fileID: 114769910663386216}
   m_Layer: 2
   m_Name: ShadowPlayer
   m_TagString: Player
@@ -331,6 +332,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 09fc66f38057a054e84c4f25bfe45039, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &114769910663386216
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1195634611331240}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2782ae44d5f821241b1dd7f19c0c169d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  pc: {fileID: 114555574629338144}
+  im: {fileID: 114338821145127778}
+  cam: {fileID: 20581628650138712}
+  actionSlots: {fileID: 0}
 --- !u!114 &114872908058559052
 MonoBehaviour:
   m_ObjectHideFlags: 1

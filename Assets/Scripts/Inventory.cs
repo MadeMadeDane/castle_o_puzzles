@@ -7,14 +7,12 @@ public class Inventory : MonoBehaviour
     public bool enable_logs = false;
 
     public Dictionary<string, Item> contents;
-    public uint numItems;
     public uint numSlots = 1;
 
     // Use this for initialization
     void Start()
     {
         contents = new Dictionary<string, Item>();
-        numItems = 0;
     }
 
     // Update is called once per frame
@@ -25,20 +23,23 @@ public class Inventory : MonoBehaviour
 
     public void AddItem(string addItem, Item item)
     {
-        if (numItems < numSlots) {
+        if (contents.Keys.Count < numSlots) {
             if (enable_logs) {
                 foreach (string s in item.ActionList.Keys) {
                     Debug.Log(s);
                 }
+                Debug.Log("Picking up " + addItem);
             }
-            contents.Add(addItem, item);
-            numItems++;
+            contents[addItem] = item;
         }
     }
 
     public void RemoveItem(string remItem)
     {
+
+        if (enable_logs) {
+            Debug.Log("Dropping " + remItem);
+        }
         contents.Remove(remItem);
-        numItems--;
-    } 
+    }
 }
