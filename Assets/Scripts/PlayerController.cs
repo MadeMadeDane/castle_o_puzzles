@@ -848,7 +848,7 @@ public class PlayerController : MonoBehaviour {
             }
             lastMovingPlatform = null;
         }
-        else if (InMovingCollision())
+        else if (InMovingCollision() && !OnMovingPlatform())
         {
             moving_frame_velocity = lastMovingPlatform.velocity;
         }
