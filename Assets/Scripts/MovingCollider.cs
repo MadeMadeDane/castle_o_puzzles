@@ -20,7 +20,7 @@ public class MovingCollider : MovingGeneric {
     private Utilities utils;
 
     // Timers
-    private string HOME_TIMER = "MovingColliderHomeReset";
+    private string HOME_TIMER;
 
     // Use this for initialization
     void Start () {
@@ -29,6 +29,7 @@ public class MovingCollider : MovingGeneric {
         {
             throw new Exception("Failed getting utilities.");
         }
+        HOME_TIMER = "MovingColliderHomeReset_" + gameObject.GetInstanceID().ToString();
         utils.CreateTimer(HOME_TIMER, HomeResetTime);
 
         velocity = Vector3.zero;
