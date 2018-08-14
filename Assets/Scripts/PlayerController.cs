@@ -62,6 +62,7 @@ public class PlayerController : MonoBehaviour {
     private string REGRAB_TIMER = "ReGrab";
     private string MOVING_COLLIDER_TIMER = "MovingCollider";
     private string MOVING_PLATFORM_TIMER = "MovingPlatform";
+    private string MOVING_INTERIOR_TIMER = "MovingInterior";
     private string STUCK_TIMER = "Stuck";
 
     // Jumping state variables
@@ -157,6 +158,7 @@ public class PlayerController : MonoBehaviour {
         utils.CreateTimer(REGRAB_TIMER, 0.5f).setFinished();
         utils.CreateTimer(MOVING_COLLIDER_TIMER, 0.01f).setFinished();
         utils.CreateTimer(MOVING_PLATFORM_TIMER, 0.1f).setFinished();
+        utils.CreateTimer(MOVING_INTERIOR_TIMER, 1f).setFinished();
         utils.CreateTimer(STUCK_TIMER, 0.2f).setFinished();
 
         // Initial state
@@ -833,7 +835,7 @@ public class PlayerController : MonoBehaviour {
 
     private void HandleMovingCollisions()
     {
-        if (!InMovingCollision() && !OnMovingPlatform())
+        if (!InMovingCollision() && !OnMovingPlatform() && !InMovingInterior())
         {
             moving_frame_velocity = Vector3.zero;
             if (transform.parent != null)
@@ -848,9 +850,13 @@ public class PlayerController : MonoBehaviour {
             }
             lastMovingPlatform = null;
         }
-        else if (InMovingCollision() && !OnMovingPlatform())
+        else if (InMovingCollision() && !OnMovingPlatform() && !InMovingInterior())
         {
             moving_frame_velocity = lastMovingPlatform.velocity;
+        }
+        else if (InMovingInterior())
+        {
+            moving_frame_velocity = Vector3.zero;
         }
     }
 
@@ -981,6 +987,21 @@ public class PlayerController : MonoBehaviour {
     public bool OnMovingPlatform()
     {
         return !utils.CheckTimer(MOVING_PLATFORM_TIMER);
+    }
+
+    public bool InMovingInterior()
+    {
+        return !utils.CheckTimer(MOVING_INTERIOR_TIMER);
+    }
+
+    public void StayInMovingInterior()
+    {
+        utils.ResetTimer(MOVING_INTERIOR_TIMER);
+    }
+
+    public void ExitMovingInterior()
+    {
+        utils.SetTimerFinished(MOVING_INTERIOR_TIMER);
     }
 
     public bool IsStuck()
