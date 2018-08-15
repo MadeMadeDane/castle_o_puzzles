@@ -341,15 +341,27 @@ public class CameraController : MonoBehaviour {
 
     private void FollowPlayerVelocity()
     {
-        Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
-        if (player_ground_vel.normalized != Vector3.zero)
+        if (utils.CheckTimer(IDLE_TIMER))
         {
-            Quaternion velocity_angle = Quaternion.LookRotation(player_ground_vel.normalized, current_player.transform.up);
-            idleOrientation = EulerToMouseAccum(velocity_angle.eulerAngles);
-        }
-        else
-        {
-            idleOrientation = EulerToMouseAccum(current_player.transform.eulerAngles);
+            Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
+            if (player_ground_vel.normalized != Vector3.zero && Vector3.Dot(player_ground_vel.normalized, yaw_pivot.transform.forward) > -0.8)
+            {
+                Quaternion velocity_angle = Quaternion.LookRotation(player_ground_vel.normalized, current_player.transform.up);
+                idleOrientation = EulerToMouseAccum(velocity_angle.eulerAngles);
+            }
+            else if (player_ground_vel.normalized == Vector3.zero)
+            {
+                idleOrientation.x = Mathf.LerpAngle(idleOrientation.x, mouseAccumulator.x, 0.01f);
+                idleOrientation.y = Mathf.LerpAngle(idleOrientation.y, mouseAccumulator.y, 0.01f);
+            }
+            else
+            {
+                //idleOrientation = EulerToMouseAccum(current_player.transform.eulerAngles);
+                mouseAccumulator.x += Vector3.Dot(player_ground_vel, yaw_pivot.transform.right) * 0.075f;
+                mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, 0f, 0.01f);
+                idleOrientation = mouseAccumulator;
+
+            }
         }
         yaw_pivot.transform.position = Vector3.Lerp(yaw_pivot.transform.position, current_player.transform.position, 0.025f);
     }
