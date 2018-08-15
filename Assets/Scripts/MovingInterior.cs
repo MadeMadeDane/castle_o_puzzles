@@ -18,10 +18,10 @@ public class MovingInterior : MonoBehaviour {
     private void OnTriggerExit(Collider other)
     {
         Debug.Log("exiting");
-        /*PlayerController player = other.GetComponent<PlayerController>();
+        PlayerController player = other.GetComponent<PlayerController>();
         if (player != null)
         {
             player.ExitMovingInterior();
-        }*/
+        }
     }
 }

@@ -18,6 +18,7 @@ public class CameraController : MonoBehaviour {
         Third_Person
     }
     [Header("Linked Components")]
+    public GameObject player_container;
     public InputManager input_manager;
     public Camera controlled_camera;
     public GameObject home;
@@ -41,10 +42,6 @@ public class CameraController : MonoBehaviour {
 
     // Utils
     private Utilities utils;
-
-    // Timers
-    private float WallHitTimeDelta;
-    private float WallHitGracePeriod;
 
     // Other Settings
     private float transparency_divider;
@@ -127,13 +124,9 @@ public class CameraController : MonoBehaviour {
         current_player.RegisterJumpCallback(ThirdPersonJumpCallback);
 
         // Attach the camera to the yaw_pivot and set the default distance/angles
-        yaw_pivot.transform.parent = null;
+        yaw_pivot.transform.parent = player_container.transform;
         transform.parent = pitch_pivot.transform;
         transform.localRotation = Quaternion.Euler(target_follow_angle);
-
-        // Set timers
-        WallHitGracePeriod = 0.0f;
-        WallHitTimeDelta = WallHitGracePeriod;
     }
 
     public void ThirdPersonJumpCallback()
@@ -159,7 +152,6 @@ public class CameraController : MonoBehaviour {
     {
         hideHome();
         handlePlayerRotate();
-        IncrementCounters();
     }
 
     private void handleViewToggle()
@@ -212,12 +204,6 @@ public class CameraController : MonoBehaviour {
                 render.material = opaque_material;
             }
         }
-    }
-
-    // TODO: Make a class for these
-    private void IncrementCounters()
-    {
-        WallHitTimeDelta = Mathf.Clamp(WallHitTimeDelta + Time.deltaTime, 0, 2 * WallHitGracePeriod);
     }
     
     // Rotate the camera
@@ -293,6 +279,10 @@ public class CameraController : MonoBehaviour {
             Quaternion velocity_angle = Quaternion.LookRotation(player_ground_vel.normalized, current_player.transform.up);
             idleOrientation = EulerToMouseAccum(velocity_angle.eulerAngles);
         }
+        else
+        {
+            idleOrientation = EulerToMouseAccum(current_player.transform.eulerAngles);
+        }
     }
 
     private Vector2 EulerToMouseAccum(Vector3 euler_angle)
@@ -313,7 +303,6 @@ public class CameraController : MonoBehaviour {
         
         if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude + 1f))
         {
-            WallHitTimeDelta = 0;
             Vector3 pivot_hit = (hit.point - yaw_pivot.transform.position);
             // Ignore hits that are too far away
             if (pivot_hit.magnitude > target_follow_distance.magnitude + 1f)
@@ -355,11 +344,6 @@ public class CameraController : MonoBehaviour {
             //Debug.Log("No hit");
             transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
         }
-    }
-
-    private bool InWallCollision()
-    {
-        return (WallHitTimeDelta < WallHitGracePeriod);
     }
 
     private void ThirdPersonShooterCameraMove()
