@@ -9,6 +9,7 @@ delegate void AccelerationFunction(Vector3 direction, float desiredSpeed, float 
 
 public class PlayerController : MonoBehaviour {
     [Header("Linked Components")]
+    public GameObject player_container;
     public InputManager input_manager;
     public CharacterController cc;
     public Collider WallRunCollider;
@@ -158,7 +159,7 @@ public class PlayerController : MonoBehaviour {
         utils.CreateTimer(REGRAB_TIMER, 0.5f).setFinished();
         utils.CreateTimer(MOVING_COLLIDER_TIMER, 0.01f).setFinished();
         utils.CreateTimer(MOVING_PLATFORM_TIMER, 0.1f).setFinished();
-        utils.CreateTimer(MOVING_INTERIOR_TIMER, 1f).setFinished();
+        utils.CreateTimer(MOVING_INTERIOR_TIMER, 0.1f).setFinished();
         utils.CreateTimer(STUCK_TIMER, 0.2f).setFinished();
 
         // Initial state
@@ -506,9 +507,9 @@ public class PlayerController : MonoBehaviour {
         MovingGeneric moving_obj = lastTrigger.GetComponent<MovingCollider>();
         if (moving_obj != null)
         {
-            if (transform.parent != moving_obj.transform)
+            if (player_container.transform.parent != moving_obj.transform)
             {
-                transform.parent = moving_obj.transform;
+                player_container.transform.parent = moving_obj.transform;
                 // Keep custom velocity globally accurate
                 current_velocity -= moving_obj.velocity;
             }
@@ -726,9 +727,9 @@ public class PlayerController : MonoBehaviour {
         MovingGeneric moving_platform = lastHit.gameObject.GetComponent<MovingGeneric>();
         if (moving_platform != null)
         {
-            if (transform.parent != moving_platform.transform)
+            if (player_container.transform.parent != moving_platform.transform)
             {
-                transform.parent = moving_platform.transform;
+                player_container.transform.parent = moving_platform.transform;
                 // Keep custom velocity globally accurate
                 current_velocity -= moving_platform.velocity;
             }
@@ -838,9 +839,10 @@ public class PlayerController : MonoBehaviour {
         if (!InMovingCollision() && !OnMovingPlatform() && !InMovingInterior())
         {
             moving_frame_velocity = Vector3.zero;
-            if (transform.parent != null)
+            if (player_container.transform.parent != null)
             {
-                transform.parent = null;
+                player_container.transform.parent = null;
+
                 // Inherit velocity from previous platform
                 if (lastMovingPlatform != null)
                 {
