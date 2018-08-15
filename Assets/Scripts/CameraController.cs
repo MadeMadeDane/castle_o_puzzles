@@ -341,7 +341,7 @@ public class CameraController : MonoBehaviour {
 
     private void FollowPlayerVelocity()
     {
-        if (utils.CheckTimer(IDLE_TIMER))
+        if (utils.CheckTimer(IDLE_TIMER) && !ManualCamera)
         {
             Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
             if (player_ground_vel.normalized != Vector3.zero && Vector3.Dot(player_ground_vel.normalized, yaw_pivot.transform.forward) > -0.8)
