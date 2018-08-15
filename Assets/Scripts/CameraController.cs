@@ -142,35 +142,31 @@ public class CameraController : MonoBehaviour {
         handleViewToggle();
     }
 
-    // LateUpdate is called after update. Ensures we are operating on the latest transform changes.
-    private void LateUpdate ()
-    {
-        UpdateCameraAngles();
-    }
-
-    private void FixedUpdate()
-    {
-        hideHome();
-        handlePlayerRotate();
-    }
-
     private void handleViewToggle()
     {
-        if (input_manager.GetToggleView()) {
+        if (input_manager.GetToggleView())
+        {
             utils.ResetTimer(ZOOM_TIMER);
-            if (view_mode == ViewMode.Shooter) {
+            if (view_mode == ViewMode.Shooter)
+            {
                 SetThirdPersonActionVars(current_player);
-                if (original_model && show_model_in_inspection) {
+                if (original_model && show_model_in_inspection)
+                {
                     SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
-                    foreach (SkinnedMeshRenderer render in renderers) {
+                    foreach (SkinnedMeshRenderer render in renderers)
+                    {
                         render.sharedMesh = original_model;
                     }
                 }
-            } else if (view_mode == ViewMode.Third_Person) {
+            }
+            else if (view_mode == ViewMode.Third_Person)
+            {
                 SetShooterVars(current_player);
-                if (headless_model && show_model_in_inspection) {
+                if (headless_model && show_model_in_inspection)
+                {
                     SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
-                    foreach (SkinnedMeshRenderer render in renderers) {
+                    foreach (SkinnedMeshRenderer render in renderers)
+                    {
                         render.sharedMesh = headless_model;
                     }
                 }
@@ -178,34 +174,12 @@ public class CameraController : MonoBehaviour {
         }
     }
 
-    private void hideHome()
+    // LateUpdate is called after update. Ensures we are operating on the latest transform changes.
+    private void LateUpdate ()
     {
-        Color textureColor;
-        SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
-        foreach (SkinnedMeshRenderer render in renderers) {
-            if (view_mode == ViewMode.Third_Person || !show_model_in_inspection) {
-                float distance_to_head = (current_player.GetHeadHeight()*current_player.transform.up + current_player.transform.position - transform.position).magnitude;
-                if (distance_to_head < transparency_divider) {
-                    if (!fade_texture_in_use) {
-                        fade_texture_in_use = true;
-                        render.material = fade_material;
-                    }
-                    textureColor = render.material.color;
-                    textureColor.a = distance_to_head < fully_translucent_threshold ? 0 : distance_to_head / transparency_divider;
-                    render.material.color = textureColor;
-                } else {
-                    if (fade_texture_in_use) {
-                        fade_texture_in_use = false;
-                        render.material = opaque_material;
-                    }
-                }
-            } else {
-                fade_texture_in_use = false;
-                render.material = opaque_material;
-            }
-        }
+        UpdateCameraAngles();
     }
-    
+
     // Rotate the camera
     private void UpdateCameraAngles()
     {
@@ -266,9 +240,103 @@ public class CameraController : MonoBehaviour {
                 idleOrientation = mouseAccumulator = EulerToMouseAccum(current_player.transform.eulerAngles);
             }
         }
+        AvoidWalls();
+    }
 
+    private void ThirdPersonShooterCameraMove()
+    {
+        // Set camera pitch
+        pitch_pivot.transform.localRotation = Quaternion.AngleAxis(
+            -mouseAccumulator.y, Vector3.right);
+        // Set player yaw (and camera with it)
+        yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
+            mouseAccumulator.x, Vector3.up);
+        // Set the players yaw to match our velocity
+        current_player.transform.rotation = Quaternion.Slerp(current_player.transform.rotation, yaw_pivot.transform.rotation, Mathf.Clamp(current_player.cc.velocity.magnitude / current_player.RunSpeed, 0, 1));
+        yaw_pivot.transform.position = current_player.transform.position;
+    }
+
+    private void FixedUpdate()
+    {
+        hideHome();
+        handlePlayerRotate();
         FollowPlayerVelocity();
         AvoidWalls();
+        if (utils.CheckTimer(IDLE_TIMER))
+        {
+            RotateTowardIdleOrientation();
+        }
+    }
+
+    private void hideHome()
+    {
+        Color textureColor;
+        SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
+        foreach (SkinnedMeshRenderer render in renderers) {
+            if (view_mode == ViewMode.Third_Person || !show_model_in_inspection) {
+                float distance_to_head = (current_player.GetHeadHeight()*current_player.transform.up + current_player.transform.position - transform.position).magnitude;
+                if (distance_to_head < transparency_divider) {
+                    if (!fade_texture_in_use) {
+                        fade_texture_in_use = true;
+                        render.material = fade_material;
+                    }
+                    textureColor = render.material.color;
+                    textureColor.a = distance_to_head < fully_translucent_threshold ? 0 : distance_to_head / transparency_divider;
+                    render.material.color = textureColor;
+                } else {
+                    if (fade_texture_in_use) {
+                        fade_texture_in_use = false;
+                        render.material = opaque_material;
+                    }
+                }
+            } else {
+                fade_texture_in_use = false;
+                render.material = opaque_material;
+            }
+        }
+    }
+
+    private void FirstPersonPlayerRotate()
+    {
+        if (!utils.CheckTimer(ZOOM_TIMER))
+        {
+            transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, utils.GetTimerPercent(ZOOM_TIMER));
+        }
+        else
+        {
+            transform.localPosition = target_follow_distance;
+        }
+    }
+
+    private void ThirdPersonPlayerRotate()
+    {
+        // Set the players yaw to match our velocity
+        Vector3 move_vector = current_player.GetMoveVector();
+        Vector3 ground_velocity = Vector3.ProjectOnPlane(current_player.cc.velocity, Physics.gravity);
+
+        Vector3 desired_move = Vector3.zero;
+        float interp_multiplier = 1f;
+
+        if (ground_velocity.magnitude < current_player.RunSpeed / 3)
+        {
+            //Debug.Log("Controller move");
+            desired_move = move_vector.normalized;
+            interp_multiplier = 0.5f;
+        }
+        else
+        {
+            //Debug.Log("Velocity move");
+            desired_move = Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity).normalized;
+        }
+
+        if (current_player.IsWallClimbing() && current_player.CanGrabLedge())
+        {
+            desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
+        }
+        if (desired_move != Vector3.zero && !input_manager.GetCenterCameraHold())
+        {
+            current_player.transform.forward = Vector3.RotateTowards(current_player.transform.forward, desired_move, 0.1f * interp_multiplier, 1f);
+        }
     }
 
     private void FollowPlayerVelocity()
@@ -283,6 +351,7 @@ public class CameraController : MonoBehaviour {
         {
             idleOrientation = EulerToMouseAccum(current_player.transform.eulerAngles);
         }
+        yaw_pivot.transform.position = Vector3.Lerp(yaw_pivot.transform.position, current_player.transform.position, 0.025f);
     }
 
     private Vector2 EulerToMouseAccum(Vector3 euler_angle)
@@ -343,75 +412,6 @@ public class CameraController : MonoBehaviour {
         {
             //Debug.Log("No hit");
             transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
-        }
-    }
-
-    private void ThirdPersonShooterCameraMove()
-    {
-        // Set camera pitch
-        pitch_pivot.transform.localRotation = Quaternion.AngleAxis(
-            -mouseAccumulator.y, Vector3.right);
-        // Set player yaw (and camera with it)
-        yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
-            mouseAccumulator.x, Vector3.up);
-        // Set the players yaw to match our velocity
-        current_player.transform.rotation = Quaternion.Slerp(current_player.transform.rotation, yaw_pivot.transform.rotation, Mathf.Clamp(current_player.cc.velocity.magnitude / current_player.RunSpeed, 0, 1));
-        yaw_pivot.transform.position = current_player.transform.position;
-    }
-
-    private void FirstPersonPlayerRotate()
-    {
-        if (!utils.CheckTimer(ZOOM_TIMER))
-        {
-            transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, utils.GetTimerPercent(ZOOM_TIMER));
-        }
-        else
-        {
-            transform.localPosition = target_follow_distance;
-        }
-    }
-
-    private void ThirdPersonPlayerRotate()
-    {
-        // Set the players yaw to match our velocity
-        Vector3 move_vector = current_player.GetMoveVector();
-        Vector3 ground_velocity = Vector3.ProjectOnPlane(current_player.cc.velocity, Physics.gravity);
-
-        Vector3 desired_move = Vector3.zero;
-        float interp_multiplier = 1f;
-        //if (current_player.OnGround())
-        //{
-        if (ground_velocity.magnitude < current_player.RunSpeed / 3)
-        {
-            //Debug.Log("Controller move");
-            desired_move = move_vector.normalized;
-            interp_multiplier = 0.5f;
-        }
-        /*else if (current_player.IsWallClimbing() && current_player.CanGrabLedge())
-        {
-            //Debug.Log("Wall move");
-            desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
-        }*/
-        else
-        {
-            //Debug.Log("Velocity move");
-            //Vector3 new_forward = Vector3.RotateTowards(current_player.transform.forward, ground_velocity.normalized, 0.1f * current_player.cc.velocity.magnitude / current_player.RunSpeed, 1f).normalized;
-            desired_move = Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity).normalized;
-        }
-        //}
-        if (current_player.IsWallClimbing() && current_player.CanGrabLedge())
-        {
-            desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
-        }
-        if (desired_move != Vector3.zero && !input_manager.GetCenterCameraHold())
-        {
-            current_player.transform.forward = Vector3.RotateTowards(current_player.transform.forward, desired_move, 0.1f * interp_multiplier, 1f);
-        }
-        yaw_pivot.transform.position = Vector3.Lerp(yaw_pivot.transform.position, current_player.transform.position, 0.025f);
-        AvoidWalls();
-        if (utils.CheckTimer(IDLE_TIMER))
-        {
-            RotateTowardIdleOrientation();
         }
     }
 
