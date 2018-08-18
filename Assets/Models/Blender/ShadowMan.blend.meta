@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 9253aa1771446284395432c4250dc239
 ModelImporter:
-  serializedVersion: 22
+  serializedVersion: 23
   fileIDToRecycleName:
     100000: Cylinder
     100002: Cylinder_001
@@ -10,6 +10,11 @@ ModelImporter:
     100008: Cylinder_004
     100010: //RootNode
     100012: Cylinder_000
+    100014: AlienMan
+    100016: DuckHorse
+    100018: DuckMan
+    100020: HeadlessMan
+    100022: ShadowMan
     400000: Cylinder
     400002: Cylinder_001
     400004: Cylinder_002
@@ -17,6 +22,11 @@ ModelImporter:
     400008: Cylinder_004
     400010: //RootNode
     400012: Cylinder_000
+    400014: AlienMan
+    400016: DuckHorse
+    400018: DuckMan
+    400020: HeadlessMan
+    400022: ShadowMan
     2100000: Material_001__40f3fc555a545028ba354c5efcb65c63_jpg
     2100002: unnamed
     2300000: Cylinder
@@ -25,18 +35,33 @@ ModelImporter:
     2300006: Cylinder_003
     2300008: Cylinder_004
     2300010: Cylinder_000
+    2300012: AlienMan
+    2300014: DuckHorse
+    2300016: DuckMan
+    2300018: HeadlessMan
+    2300020: ShadowMan
     3300000: Cylinder
     3300002: Cylinder_001
     3300004: Cylinder_002
     3300006: Cylinder_003
     3300008: Cylinder_004
     3300010: Cylinder_000
+    3300012: AlienMan
+    3300014: DuckHorse
+    3300016: DuckMan
+    3300018: HeadlessMan
+    3300020: ShadowMan
     4300000: Cylinder
     4300002: Cylinder_001
     4300004: Cylinder_002
     4300006: Cylinder_004
     4300008: Cylinder_003
     4300010: Cylinder_000
+    4300012: DuckHorse
+    4300014: DuckMan
+    4300016: AlienMan
+    4300018: HeadlessMan
+    4300020: ShadowMan
     7400000: Default Take
     9500000: //RootNode
   externalObjects: {}
@@ -90,6 +115,8 @@ ModelImporter:
     secondaryUVHardAngle: 88
     secondaryUVPackMargin: 4
     useFileScale: 1
+    previousCalculatedGlobalScale: 1
+    hasPreviousCalculatedGlobalScale: 1
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
