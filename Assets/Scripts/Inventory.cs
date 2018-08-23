@@ -2,36 +2,31 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Inventory : MonoBehaviour
+public class Inventory<T>
 {
-    public bool enable_logs = false;
+    public bool enable_logs = true;
 
-    public Dictionary<string, Item> contents;
+    public Dictionary<string, T> contents;
     public uint numSlots = 1;
 
     // Use this for initialization
-    void Start()
+    public Inventory()
     {
-        contents = new Dictionary<string, Item>();
+        contents = new Dictionary<string, T>();
+        Debug.Log(contents.Values);
     }
+    
 
-    // Update is called once per frame
-    void Update()
-    {
-
-    }
-
-    public void AddItem(string addItem, Item item)
+    public T AddItem(string addItem, T item)
     {
         if (contents.Keys.Count < numSlots) {
             if (enable_logs) {
-                foreach (string s in item.ActionList.Keys) {
-                    Debug.Log(s);
-                }
                 Debug.Log("Picking up " + addItem);
             }
             contents[addItem] = item;
+            return item;
         }
+        return default(T);
     }
 
     public void RemoveItem(string remItem)

@@ -3,21 +3,23 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class ItemActionHandler : MonoBehaviour {
+public class InventoryManager : MonoBehaviour {
     public PlayerController pc;
     public InputManager im;
     public CameraController cam_controller;
-    public Inventory actionSlots;
+    public ActionSlots actionSlots;
+    public Sprite image;
     public float explosive_rad = 1.0f;
     public float select_reach_dist = 20.0f;
     public bool enable_logs = false;
+    private ItemCatalogue amazon;
 
-    private Item prevItem = null;
+
+    private ItemRequest prevItem = null;
     // Use this for initialization
     void Start ()
     {
-        actionSlots = gameObject.AddComponent<Inventory>();
-        actionSlots.numSlots = 5;
+        amazon = new ItemCatalogue();
 	}
 	
 	// Update is called once per frame
@@ -32,7 +34,7 @@ public class ItemActionHandler : MonoBehaviour {
         layerMask = ~layerMask;
 
         RaycastHit hit;
-        Item targetItem = null;
+        ItemRequest targetItem = null;
         if (cam_controller.GetViewMode() == ViewMode.Shooter) {
             Camera cam = cam_controller.controlled_camera;
             if (Physics.Raycast(cam.transform.position, cam.transform.forward, out hit, select_reach_dist)) {
@@ -57,27 +59,45 @@ public class ItemActionHandler : MonoBehaviour {
             prevItem = targetItem;
         } 
         if (im.GetPickUp() && targetItem != null) {
-            actionSlots.AddItem("useItem", targetItem);
+            AddItemToInventory(targetItem);
         }
-        if (im.GetDropItem() && actionSlots.contents.ContainsKey("useItem")) {
-            actionSlots.RemoveItem("useItem");
-        }
-        if (im.GetUseItem() && actionSlots.contents.ContainsKey("useItem")) {
-            if (enable_logs) {
-                Debug.Log("Item Used");
-            }
-            actionSlots.contents["useItem"].ActionList["use"]("jump");
+        if (im.GetDropItem() && actionSlots.use_item != null) {
+            actionSlots.DropItem();
         }
     }
+    void FixedUpdate()
+    {
+        
+    }
 
-    Item ExplosiveSelect(Vector3 pos)
+    void AddItemToInventory (ItemRequest request)
+    {
+        Item shipped_item = amazon.RequestItem(request);
+
+        shipped_item.ctx = this;
+        shipped_item.Start();
+        shipped_item.menu_form = image;
+        Debug.Log("Adding item");
+        if (UseItem.isUseItem(shipped_item)) {
+            Debug.Log("Use item");
+            actionSlots.AddUseItem((UseItem) shipped_item);
+        }
+        if (AbilityItem.isAbilityItem(shipped_item)) {
+            Debug.Log("Ability item");
+            actionSlots.AddAbilityItem(actionSlots.ability_items.contents.Count + 1, (AbilityItem) shipped_item);
+        }
+        GameObject.Destroy(request.gameObject);
+    }
+
+    ItemRequest ExplosiveSelect(Vector3 pos)
     {
         Collider[] colliders = Physics.OverlapSphere(pos, explosive_rad);
-        IEnumerable<Item> gos_in_explosion = colliders
-            .Select(x => x.GetComponent<Item>())
+        IEnumerable<ItemRequest> gos_in_explosion = colliders
+            .Select(x => x.GetComponent<ItemRequest>())
             .Where(x => x != null);
         return gos_in_explosion
             .OrderBy(x => (pos - x.transform.position).magnitude)
             .FirstOrDefault();
     }
+
 }

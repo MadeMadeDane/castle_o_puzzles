@@ -1,17 +1,63 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Item : MonoBehaviour {
-    public delegate void PerformAction(string Button);
-    public Dictionary<string, PerformAction> ActionList;
-	// Use this for initialization
-	void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+public delegate bool Check();
+public class CheckAction
+{
+    public string item_name;
+    public Check check;
+    public Action action;
+    public CheckAction (string n, Check chk , Action act)
+    {
+        item_name = n;
+        check = chk;
+        action = act;
+    }
+
+}
+public class Item
+{
+    public static string name = "Item";
+    public Type type = typeof(Item);
+    public MonoBehaviour ctx;
+    protected List<CheckAction> update_check_action_list;
+    protected List<CheckAction> fixed_update_check_action_list;
+
+    public GameObject physical_form;
+    public Sprite menu_form;
+    public GameObject physical_obj = null;
+    public GameObject menu_obj = null;
+
+    public bool enable_logs = false;
+
+    public Item()
+    {
+        update_check_action_list = new List<CheckAction>();
+        fixed_update_check_action_list = new List<CheckAction>();
+    }
+
+    public virtual void Update()
+    {
+    }
+
+    public virtual void FixedUpdate()
+    {
+    }
+
+    public virtual void Start()
+    {
+
+    }
+
+    protected void outputLogs(string msg)
+    {
+        if (enable_logs)
+            Debug.Log(msg);
+    }
+    public virtual string GetName()
+    {
+        return Item.name;
+    }
 }

@@ -73,6 +73,13 @@ public class InputManager : MonoBehaviour {
             { "use_item_button", new Button("Use Item") },
             { "pick_up_button", new Button("Pick Up") },
             { "drop_item_button", new Button("Drop Item") },
+            { "toggle_inventory_button", new Button("Toggle Inventory") },
+            { "toggle_equipment_button", new Button("Toggle Equipment") },
+            { "ability_slot_1_button", new Button("Ability Slot 1") },
+            { "ability_slot_2_button", new Button("Ability Slot 2") },
+            { "ability_slot_3_button", new Button("Ability Slot 3") },
+            { "ability_slot_4_button", new Button("Ability Slot 4") },
+            { "start_button", new Button("Start") },
         };
     }
 
@@ -190,5 +197,75 @@ public class InputManager : MonoBehaviour {
     public bool GetDropItemHold()
     {
         return _button_map["drop_item_button"].pressed();
+    }
+
+    public bool GetToggleInventory ()
+    {
+        return _button_map["toggle_inventory_button"].down();
+    }
+
+    public bool GetToggleInventoryHold()
+    {
+        return _button_map["toggle_inventory_button"].pressed();
+    }
+
+    public bool GetToggleEquipment()
+    {
+        return _button_map["toggle_equipment_button"].down();
+    }
+
+    public bool GetToggleEquipmentHold()
+    {
+        return _button_map["toggle_equipment_button"].pressed();
+    }
+
+    public bool GetStart()
+    {
+        return _button_map["start_button"].down();
+    }
+
+    public bool GetStartHold()
+    {
+        return _button_map["start_button"].pressed();
+    }
+
+    public bool GetAbilitySlot1()
+    {
+        return _button_map["ability_slot_1_button"].down();
+    }
+
+    public bool GetAbilitySlot1Hold()
+    {
+        return _button_map["ability_slot_1_button"].pressed();
+    }
+
+    public bool GetAbilitySlot2()
+    {
+        return _button_map["ability_slot_2_button"].down();
+    }
+
+    public bool GetAbilitySlot2Hold()
+    {
+        return _button_map["ability_slot_2_button"].pressed();
+    }
+
+    public bool GetAbilitySlot3()
+    {
+        return _button_map["ability_slot_3_button"].down();
+    }
+
+    public bool GetAbilitySlot3Hold()
+    {
+        return _button_map["ability_slot_3_button"].pressed();
+    }
+
+    public bool GetAbilitySlot4()
+    {
+        return _button_map["ability_slot_4_button"].down();
+    }
+
+    public bool GetAbilitySlot4Hold()
+    {
+        return _button_map["ability_slot_4_button"].pressed();
     }
 }

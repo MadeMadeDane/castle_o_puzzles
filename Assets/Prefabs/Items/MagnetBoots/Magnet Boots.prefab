@@ -23,7 +23,7 @@ GameObject:
   - component: {fileID: 198415490836337164}
   - component: {fileID: 82460850293750320}
   - component: {fileID: 65476960983259336}
-  - component: {fileID: 114827732414895246}
+  - component: {fileID: 114063629239041784}
   m_Layer: 0
   m_Name: Magnet Boots
   m_TagString: Untagged
@@ -335,7 +335,7 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
---- !u!114 &114827732414895246
+--- !u!114 &114063629239041784
 MonoBehaviour:
   m_ObjectHideFlags: 1
   m_PrefabParentObject: {fileID: 0}
@@ -343,10 +343,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1248258545870840}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fd72b651e780d9f4c95971e4d6ce2ed4, type: 3}
+  m_Script: {fileID: 11500000, guid: e25ce16e607708745b385b4e6d79c239, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  enable_logs: 0
+  item_name: MagnetBoots
 --- !u!198 &198415490836337164
 ParticleSystem:
   m_ObjectHideFlags: 1

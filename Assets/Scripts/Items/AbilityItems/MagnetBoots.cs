@@ -2,40 +2,43 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MagnetBoots : Item {
+public class MagnetBoots : AbilityItem {
 
-    public bool enable_logs = false; 
-	// Use this for initialization
-	void Start () {
-        enable_logs = true;
-        this.ActionList = new Dictionary<string, PerformAction>();
-        this.ActionList.Add("use", use);
-        this.ActionList.Add("say", log);
-        this.ActionList.Add("toggle_mute", toggle_mute);
-        foreach(string s in this.ActionList.Keys) {
-            outputLogs(s);
-        }
-        outputLogs("Added Actions to Magnet Boots");
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
-    void use (string buttons) {
-        log(buttons);
-        toggle_mute(buttons);
-    }
-    void log (string buttons) {
-        outputLogs("Stuff to print from the item: I am the Gereudo King");
-    }
+    private InputManager im;
+    public static string item_name = "MagnetBoots";
+    // Use this for initialization
+        
     void toggle_mute(string buttons)
     {
-        AudioSource audio = gameObject.GetComponent<AudioSource>();
+        AudioSource audio = physical_obj.gameObject.GetComponent<AudioSource>();
         audio.mute = !audio.mute;
     }
-    void outputLogs (string msg) {
-        if (enable_logs)
-            Debug.Log(msg);
+
+    public override void Start()
+    {
+        im = ctx.GetComponentInChildren<InputManager>();
+        outputLogs("Added Actions to Magnet Boots");
+    }
+    public override void Update()
+    {
+        if (saycheck()) {
+            log();
+        }
+    }
+
+    bool saycheck()
+    {
+        bool ret = im.GetUseItem();
+        return ret;
+    }
+
+    void log()
+    {
+        Debug.Log("Stuff to print from the item: I am the Gereudo King");
+    }
+
+    public override string GetName()
+    {
+        return MagnetBoots.item_name;
     }
 }
