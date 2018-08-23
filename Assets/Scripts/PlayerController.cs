@@ -304,6 +304,13 @@ public class PlayerController : MonoBehaviour {
         }
     }
 
+    private void LateUpdate()
+    {
+        player_container.transform.position = transform.position;
+        transform.localPosition = Vector3.zero;
+        player_container.transform.rotation = Quaternion.identity;
+    }
+
     // Fixed Update is called once per physics tick
     private void FixedUpdate () {
         // If the player does not have a camera, do nothing
@@ -511,7 +518,7 @@ public class PlayerController : MonoBehaviour {
             {
                 player_container.transform.parent = moving_obj.transform;
                 // Keep custom velocity globally accurate
-                current_velocity -= moving_obj.velocity;
+                current_velocity -= moving_obj.player_velocity;
             }
             lastMovingPlatform = moving_obj;
             utils.ResetTimer(MOVING_COLLIDER_TIMER);
@@ -731,7 +738,7 @@ public class PlayerController : MonoBehaviour {
             {
                 player_container.transform.parent = moving_platform.transform;
                 // Keep custom velocity globally accurate
-                current_velocity -= moving_platform.velocity;
+                current_velocity -= moving_platform.player_velocity;
             }
             lastMovingPlatform = moving_platform;
             utils.ResetTimer(MOVING_PLATFORM_TIMER);
@@ -847,16 +854,16 @@ public class PlayerController : MonoBehaviour {
                 if (lastMovingPlatform != null)
                 {
                     // Keep custom velocity globally accurate
-                    current_velocity += lastMovingPlatform.velocity;
+                    current_velocity += lastMovingPlatform.player_velocity;
                 }
             }
             lastMovingPlatform = null;
         }
         else if (InMovingCollision() && !OnMovingPlatform() && !InMovingInterior())
         {
-            moving_frame_velocity = lastMovingPlatform.velocity;
+            moving_frame_velocity = lastMovingPlatform.player_velocity;
         }
-        else if (InMovingInterior())
+        else if (InMovingInterior() || OnMovingPlatform())
         {
             moving_frame_velocity = Vector3.zero;
         }
