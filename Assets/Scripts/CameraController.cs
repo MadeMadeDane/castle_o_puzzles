@@ -223,15 +223,7 @@ public class CameraController : MonoBehaviour {
         yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
             mouseAccumulator.x, Vector3.up);
 
-        if (input_manager.GetCenterCameraHold())
-        {
-            utils.ResetTimer(IDLE_TIMER);
-            Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
-            mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, orientation.x, 0.1f);
-            mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, orientation.y, 0.1f);
-            idleOrientation = mouseAccumulator;
-        }
-        else if (input_manager.GetCenterCameraRelease())
+        if (input_manager.GetCenterCameraRelease())
         {
             utils.SetTimerFinished(IDLE_TIMER);
             Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
@@ -260,11 +252,27 @@ public class CameraController : MonoBehaviour {
     {
         hideHome();
         handlePlayerRotate();
-        FollowPlayerVelocity();
-        AvoidWalls();
-        if (utils.CheckTimer(IDLE_TIMER))
+        if (view_mode != ViewMode.Shooter)
         {
-            RotateTowardIdleOrientation();
+            HandleTargetLock();
+            FollowPlayerVelocity();
+            AvoidWalls();
+            if (utils.CheckTimer(IDLE_TIMER)) 
+            {
+                RotateTowardIdleOrientation();
+            }
+        }
+    }
+
+    private void HandleTargetLock()
+    {
+        if (input_manager.GetCenterCameraHold())
+        {
+            utils.ResetTimer(IDLE_TIMER);
+            Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
+            mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, orientation.x, 0.1f);
+            mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, orientation.y, 0.1f);
+            idleOrientation = mouseAccumulator;
         }
     }
 

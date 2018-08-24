@@ -23,7 +23,7 @@ public class MovingCollider : MovingGeneric {
     private string HOME_TIMER;
 
     // Use this for initialization
-    void Start () {
+    private void Start () {
         utils = UtilitiesHolder.GetComponent<Utilities>();
         if (utils == null)
         {
@@ -33,6 +33,7 @@ public class MovingCollider : MovingGeneric {
         utils.CreateTimer(HOME_TIMER, HomeResetTime);
 
         velocity = Vector3.zero;
+        player_velocity = Vector3.zero;
         target_velocity = Vector3.zero;
         moving = false;
         at_home = true;
@@ -45,6 +46,15 @@ public class MovingCollider : MovingGeneric {
 
     private void FixedUpdate()
     {
+        Move();
+        player_velocity = CalculatePlayerVelocity();
+        if (ResetToHome && !Automatic)
+        {
+            CheckHomeResetTimer();
+        }
+    }
+
+    protected virtual void Move() {
         if (current_target != null)
         {
             Vector3 path = current_target.transform.position - transform.position;
@@ -62,13 +72,12 @@ public class MovingCollider : MovingGeneric {
             target_velocity = Vector3.zero;
         }
         velocity = Vector3.Lerp(velocity, target_velocity, 0.1f);
-        transform.Translate(velocity*Time.deltaTime);
-
-        if (ResetToHome && !Automatic)
-        {
-            CheckHomeResetTimer();
-        }
+        transform.Translate(velocity * Time.deltaTime, Space.World);
     }
+
+    protected virtual Vector3 CalculatePlayerVelocity() {
+        return velocity;
+    } 
 
     private void CheckHomeResetTimer()
     {
