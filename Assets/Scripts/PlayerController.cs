@@ -477,6 +477,9 @@ public class PlayerController : MonoBehaviour {
                 {
                     //Debug.DrawRay(SkinPos + transform.up * cc.height / 2, hit.normal, Color.red);
                     current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
+                    if (!OnGround() && IsWall(hit.normal)) {
+                        UpdateWallConditions(hit.normal);
+                    }
                     return Vector3.ProjectOnPlane(desired_move, hit.normal);
                 }
             }

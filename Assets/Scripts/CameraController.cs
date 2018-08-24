@@ -250,14 +250,17 @@ public class CameraController : MonoBehaviour {
 
     private void FixedUpdate()
     {
-        HandleTargetLock();
         hideHome();
         handlePlayerRotate();
-        FollowPlayerVelocity();
-        AvoidWalls();
-        if (utils.CheckTimer(IDLE_TIMER))
+        if (view_mode != ViewMode.Shooter)
         {
-            RotateTowardIdleOrientation();
+            HandleTargetLock();
+            FollowPlayerVelocity();
+            AvoidWalls();
+            if (utils.CheckTimer(IDLE_TIMER)) 
+            {
+                RotateTowardIdleOrientation();
+            }
         }
     }
 
