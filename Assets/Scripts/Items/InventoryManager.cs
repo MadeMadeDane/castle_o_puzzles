@@ -10,7 +10,7 @@ public class InventoryManager : MonoBehaviour {
     public ActionSlots actionSlots;
     public Sprite image;
     public float explosive_rad = 1.0f;
-    public float select_reach_dist = 20.0f;
+    public float select_reach_dist = 5.0f;
     public bool enable_logs = false;
     private ItemCatalogue amazon;
 
@@ -84,7 +84,7 @@ public class InventoryManager : MonoBehaviour {
         }
         if (AbilityItem.isAbilityItem(shipped_item)) {
             Debug.Log("Ability item");
-            actionSlots.AddAbilityItem(actionSlots.ability_items.contents.Count + 1, (AbilityItem) shipped_item);
+            actionSlots.AddAbilityItem(actionSlots.ability_items.contents.Count, (AbilityItem) shipped_item);
         }
         GameObject.Destroy(request.gameObject);
     }

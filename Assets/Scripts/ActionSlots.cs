@@ -16,26 +16,26 @@ public class ActionSlots : MonoBehaviour {
     void Start () {
         ability_items = new Inventory<AbilityItem>();
         ability_items.numSlots = 4;
-        active_slot = 1;
+        active_slot = 0;
         item_bar = mh.hud.ui_instance.GetComponentInChildren<ItemBar>();
     }
 	
 	// Update is called once per frame
 	void Update () {
         if (im.GetAbilitySlot1()) {
-            active_slot = 1;
+            active_slot = 0;
             ability_items.contents.TryGetValue("slot" + active_slot, out ability_item);
             UpdateSelectedSlot(active_slot);
         } else if (im.GetAbilitySlot2()) {
-            active_slot = 2;
+            active_slot = 1;
             ability_items.contents.TryGetValue("slot" + active_slot, out ability_item);
             UpdateSelectedSlot(active_slot);
         } else if (im.GetAbilitySlot3()) {
-            active_slot = 3;
+            active_slot = 2;
             ability_items.contents.TryGetValue("slot" + active_slot, out ability_item);
             UpdateSelectedSlot(active_slot);
         } else if (im.GetAbilitySlot4()) {
-            active_slot = 4;
+            active_slot = 3;
             ability_items.contents.TryGetValue("slot" + active_slot, out ability_item);
             UpdateSelectedSlot(active_slot);
         }
@@ -71,14 +71,11 @@ public class ActionSlots : MonoBehaviour {
 
     public void AddAbilityItem(int slot, AbilityItem item)
     {
-        Debug.Log("Adding Item to Slot" + slot);
-        if (slot < 5 && slot > 0) {
-            Debug.Log(item.menu_form);
+        if (slot < 4 && slot >= 0) {
             AbilityItem added_item = ability_items.AddItem("slot" + slot, item);
-            Debug.Log(item.menu_form);
             if (added_item != null) {
                 if (item_bar != null) {
-                    item_bar.ability_slots[slot - 1].sprite = added_item.menu_form;
+                    item_bar.ability_slots[slot].sprite = added_item.menu_form;
                 }
             }
             if (slot == active_slot) {
@@ -90,13 +87,12 @@ public class ActionSlots : MonoBehaviour {
     private void UpdateSelectedSlot(int slot)
     {
         for (int i = 0; i < 4; i++) {
-            if (i == (slot - 1)) {
+            if (i == slot) {
                 item_bar.ability_slots[i].transform.GetChild(0).GetComponent<Image>().enabled = true;
             } else {
                 item_bar.ability_slots[i].transform.GetChild(0).GetComponent<Image>().enabled = false;
             }
         }
-        GetComponentInChildren<Image>().enabled = true;
         
     }
     public void DropItem()
