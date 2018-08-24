@@ -51,7 +51,7 @@ public class CameraController : MonoBehaviour {
     public Material fade_material;
     private Mesh original_model;
     public Mesh headless_model;
-    public bool show_model_in_inspection;
+    public bool show_model_in_inspection = false;
 
     // Use this for initialization
     void Start () {

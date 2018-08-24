@@ -39,7 +39,7 @@ public class InventoryManager : MonoBehaviour {
             Camera cam = cam_controller.controlled_camera;
             if (Physics.Raycast(cam.transform.position, cam.transform.forward, out hit, select_reach_dist)) {
                 targetItem = ExplosiveSelect(hit.point);
-                Debug.DrawRay(cam.transform.position, hit.point - cam.transform.position, Color.cyan, 1.0f);
+                //Debug.DrawRay(cam.transform.position, hit.point - cam.transform.position, Color.cyan, 1.0f);
             } else {
                 targetItem = ExplosiveSelect(cam.transform.position + cam.transform.forward * select_reach_dist);
             }

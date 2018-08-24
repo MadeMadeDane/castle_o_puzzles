@@ -7,7 +7,6 @@ public class MenuHandler : MonoBehaviour {
     public CameraController cam_controller;
     public HeadsUpDisplay hud;
     public GameObject hud_obj;
-    public ActionSlots actionSlots;
     public StartMenu start_menu;
     public GameObject start_menu_obj;
 
