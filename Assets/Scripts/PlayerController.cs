@@ -306,9 +306,11 @@ public class PlayerController : MonoBehaviour {
 
     private void LateUpdate()
     {
+        Vector3 old_yaw_pivot_pos = player_camera.yaw_pivot.transform.position;
         player_container.transform.position = transform.position;
         transform.localPosition = Vector3.zero;
         player_container.transform.rotation = Quaternion.identity;
+        player_camera.yaw_pivot.transform.position = old_yaw_pivot_pos;
     }
 
     // Fixed Update is called once per physics tick
