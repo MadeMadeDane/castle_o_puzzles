@@ -18,7 +18,9 @@ public class RotatingCollider : MovingCollider {
         if (player != null) {
             player_pos = player.transform.position - transform.position;
         }
-        Vector3 rotating_velocity = Vector3.Cross(AngularVelocity, player_pos)*Mathf.Deg2Rad;
+        Debug.DrawRay(transform.position, player_pos, Color.green);
+        Vector3 rotating_velocity = Vector3.Cross(transform.TransformDirection(AngularVelocity), player_pos)*Mathf.Deg2Rad;
+        Debug.DrawRay(transform.position, rotating_velocity, Color.blue);
         return velocity + rotating_velocity;
     }
 }
