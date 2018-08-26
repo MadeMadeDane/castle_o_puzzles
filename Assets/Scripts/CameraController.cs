@@ -343,7 +343,11 @@ public class CameraController : MonoBehaviour {
         }
         if (desired_move != Vector3.zero && !input_manager.GetCenterCameraHold())
         {
-            current_player.transform.forward = Vector3.RotateTowards(current_player.transform.forward, desired_move, 0.1f * interp_multiplier, 1f);
+            desired_move = Vector3.ProjectOnPlane(desired_move, Physics.gravity);
+            Vector3 angles = current_player.transform.localEulerAngles;
+            float delta_angle = Vector3.SignedAngle(current_player.transform.forward, desired_move, Vector3.up);
+            angles.y += Mathf.LerpAngle(0f, delta_angle, 0.1f * interp_multiplier);
+            current_player.transform.localEulerAngles = angles;
         }
     }
 
