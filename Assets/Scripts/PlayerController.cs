@@ -548,7 +548,7 @@ public class PlayerController : MonoBehaviour {
                 {
                     hit_wall = true;
                 }
-                else if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - cc.radius)), -PreviousWallNormal, out hit, cc.radius + WallScanDistance))
+                else if (Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), -PreviousWallNormal, out hit, cc.radius + WallScanDistance))
                 {
                     hit_wall = true;
                 }
@@ -1182,6 +1182,11 @@ public class PlayerController : MonoBehaviour {
     public void RegisterJumpCallback(Action callback)
     {
         jump_callback_table.Add(callback);
+    }
+
+    public void UnregisterJumpCallback(Action callback)
+    {
+        jump_callback_table.Remove(callback);
     }
 
     private void OnTriggerStay(Collider other)
