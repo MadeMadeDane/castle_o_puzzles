@@ -478,10 +478,11 @@ public class PlayerController : MonoBehaviour {
                 if (Vector3.Dot(desired_move, hit.normal) < 0 && ((hit.distance + cc.radius) * Mathf.Abs(cosanglehit) < cc.radius * 1.1f))
                 {
                     //Debug.DrawRay(SkinPos + transform.up * cc.height / 2, hit.normal, Color.red);
-                    current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
-                    if (!OnGround() && IsWall(hit.normal)) {
+                    if (!OnGround() && IsWall(hit.normal))
+                    {
                         UpdateWallConditions(hit.normal);
                     }
+                    current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
                     return Vector3.ProjectOnPlane(desired_move, hit.normal);
                 }
             }
@@ -605,8 +606,9 @@ public class PlayerController : MonoBehaviour {
                         // Scan down for a ledge
                         if (Physics.Raycast(LedgeScanPos, -transform.up, out hit, cc.radius + LedgeClimbOffset))
                         {
-                            if (CanGrabLedge() && Vector3.Dot(hit.normal, Physics.gravity) < -0.866f)
+                            if (CanGrabLedge() && Vector3.Dot(hit.normal, Physics.gravity.normalized) < -0.866f)
                             {
+
                                 isHanging = true;
                             }
                         }
