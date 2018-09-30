@@ -9,7 +9,8 @@ using UnityEngine;
 public enum ViewMode
 {
     Shooter,
-    Third_Person
+    Third_Person,
+    Third_Person_Shooter
 }
 
 public delegate void CameraMovementFunction();
