@@ -142,7 +142,6 @@ public class InputManager : MonoBehaviour {
         _input_horizontal_axis = Input.GetAxisRaw("Horizontal");
         _input_scroll_axis = Input.GetAxis("Mouse ScrollWheel");
         MouseUpdate();
-        Debug.DrawRay(transform.position, transform.up * Input.GetAxisRaw("Ability Slot 2"), Color.green);
     }
 
     private void MouseUpdate()

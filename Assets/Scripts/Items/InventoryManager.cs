@@ -26,13 +26,6 @@ public class InventoryManager : MonoBehaviour {
 	void Update ()
     {
 
-        // Bit shift the index of the layer (8) to get a bit mask
-        int layerMask = 0 << 2;
-
-        // This would cast rays only against colliders in layer 8.
-        // But instead we want to collide against everything except layer 8. The ~ operator does this, it inverts a bitmask.
-        layerMask = ~layerMask;
-
         RaycastHit hit;
         ItemRequest targetItem = null;
         if (cam_controller.GetViewMode() == ViewMode.Shooter) {
@@ -77,13 +70,10 @@ public class InventoryManager : MonoBehaviour {
         shipped_item.ctx = this;
         shipped_item.Start();
         shipped_item.menu_form = image;
-        Debug.Log("Adding item");
         if (UseItem.isUseItem(shipped_item)) {
-            Debug.Log("Use item");
             actionSlots.AddUseItem((UseItem) shipped_item);
         }
         if (AbilityItem.isAbilityItem(shipped_item)) {
-            Debug.Log("Ability item");
             actionSlots.AddAbilityItem(actionSlots.ability_items.contents.Count, (AbilityItem) shipped_item);
         }
         GameObject.Destroy(request.gameObject);

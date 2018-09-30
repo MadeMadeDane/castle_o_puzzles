@@ -13,9 +13,6 @@ public class ItemCatalogue {
     public Item RequestItem (ItemRequest req)
     {
         Item requested_item = Activator.CreateInstance(items[req.item_name].type) as Item;
-
-        Debug.Log(requested_item.GetName());
-        Debug.Log(requested_item.type);
         //requested_item.physical_form = AssetBundle.LoadFromFile()
         return requested_item;
     }

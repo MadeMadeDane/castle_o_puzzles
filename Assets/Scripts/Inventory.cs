@@ -13,7 +13,6 @@ public class Inventory<T>
     public Inventory()
     {
         contents = new Dictionary<string, T>();
-        Debug.Log(contents.Values);
     }
     
 
