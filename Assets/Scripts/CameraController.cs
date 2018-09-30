@@ -15,7 +15,8 @@ public class CameraController : MonoBehaviour {
     enum ViewMode
     {
         Shooter,
-        Third_Person
+        Third_Person,
+        Third_Person_Shooter
     }
     [Header("Linked Components")]
     public GameObject player_container;
@@ -77,6 +78,7 @@ public class CameraController : MonoBehaviour {
         utils.CreateTimer(IDLE_TIMER, 1.0f);
         //SetShooterVars(player_home);
         SetThirdPersonActionVars(player_home);
+        //SetThirdPersonShooterVars(player_home);
         opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().material;
         original_model = home.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
         // TODO: Move this mouse hiding logic somewhere else
@@ -100,6 +102,7 @@ public class CameraController : MonoBehaviour {
         yaw_pivot.transform.localPosition = Vector3.zero;
         target.player_camera = this;
         current_player = target;
+        current_player.UnregisterJumpCallback(ThirdPersonJumpCallback);
 
         // Attach the camera to the yaw_pivot and set the default distance/angles
         yaw_pivot.transform.localRotation = Quaternion.identity;
@@ -129,12 +132,53 @@ public class CameraController : MonoBehaviour {
         transform.localRotation = Quaternion.Euler(target_follow_angle);
     }
 
+    private void SetThirdPersonShooterVars(PlayerController target)
+    {
+        view_mode = ViewMode.Third_Person_Shooter;
+        handleCameraMove = ThirdPersonShooterCameraMove;
+        handlePlayerRotate = delegate {};
+        target_follow_angle = new Vector3(0, 0, 0);
+        target_follow_distance = new Vector3(target.cc.radius*2f, target.GetHeadHeight(), -target.cc.height);
+
+        if (current_player != null)
+        {
+            current_player.player_camera = null;
+        }
+        target.player_camera = this;
+        current_player = target;
+        current_player.UnregisterJumpCallback(ThirdPersonJumpCallback);
+
+        // Attach the camera to the yaw_pivot and set the default distance/angles
+        yaw_pivot.transform.parent = player_container.transform;
+        transform.parent = pitch_pivot.transform;
+        transform.localRotation = Quaternion.Euler(target_follow_angle);
+    }
+
     public void ThirdPersonJumpCallback()
     {
         if ((current_player.IsWallRunning() || current_player.CanWallJump()) && !input_manager.GetCenterCameraHold())
         {
-            current_player.transform.forward = Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity).normalized;
+            RotatePlayerToward(direction: Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity), 
+                               lerp_factor: 1.0f);
         }
+    }
+
+    public void RotatePlayerToward(Vector3 direction, float lerp_factor)
+    {
+        direction.Normalize();
+        Vector3 angles = current_player.transform.localEulerAngles;
+        float delta_angle = Vector3.SignedAngle(current_player.transform.forward, direction, Vector3.up);
+        angles.y += Mathf.LerpAngle(0, delta_angle, lerp_factor);
+        current_player.transform.localEulerAngles = angles;
+    }
+
+    public void RotateCameraToward(Vector3 direction, float lerp_factor)
+    {
+        direction.Normalize();
+        Vector2 target_mouse_accum = EulerToMouseAccum(Quaternion.LookRotation(direction).eulerAngles);
+        mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, target_mouse_accum.x, lerp_factor);
+        mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, target_mouse_accum.y, lerp_factor);
+        idleOrientation = mouseAccumulator;
     }
 
     private void Update()
@@ -205,7 +249,7 @@ public class CameraController : MonoBehaviour {
         transform.localRotation = Quaternion.AngleAxis(
             -mouseAccumulator.y, Vector3.right);
         // Set player yaw (and camera with it)
-        yaw_pivot.transform.parent.transform.localRotation = Quaternion.AngleAxis(
+        current_player.transform.localRotation = Quaternion.AngleAxis(
             mouseAccumulator.x, Vector3.up);
     }
 
@@ -244,39 +288,30 @@ public class CameraController : MonoBehaviour {
         yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
             mouseAccumulator.x, Vector3.up);
         // Set the players yaw to match our velocity
-        current_player.transform.rotation = Quaternion.Slerp(current_player.transform.rotation, yaw_pivot.transform.rotation, Mathf.Clamp(current_player.cc.velocity.magnitude / current_player.RunSpeed, 0, 1));
+        if (!current_player.IsHanging())
+        {
+            current_player.transform.rotation = yaw_pivot.transform.rotation;
+        }
+        else
+        {
+            RotatePlayerToward(direction: -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity),
+                               lerp_factor: 1.0f);
+        }
         yaw_pivot.transform.position = current_player.transform.position;
+        AvoidWalls();
     }
 
     private void FixedUpdate()
     {
-        hideHome();
+        HideHome();
         handlePlayerRotate();
         if (view_mode != ViewMode.Shooter)
         {
-            HandleTargetLock();
-            FollowPlayerVelocity();
             AvoidWalls();
-            if (utils.CheckTimer(IDLE_TIMER)) 
-            {
-                RotateTowardIdleOrientation();
-            }
         }
     }
 
-    private void HandleTargetLock()
-    {
-        if (input_manager.GetCenterCameraHold())
-        {
-            utils.ResetTimer(IDLE_TIMER);
-            Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
-            mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, orientation.x, 0.1f);
-            mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, orientation.y, 0.1f);
-            idleOrientation = mouseAccumulator;
-        }
-    }
-
-    private void hideHome()
+    private void HideHome()
     {
         Color textureColor;
         SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
@@ -343,7 +378,26 @@ public class CameraController : MonoBehaviour {
         }
         if (desired_move != Vector3.zero && !input_manager.GetCenterCameraHold())
         {
-            current_player.transform.forward = Vector3.RotateTowards(current_player.transform.forward, desired_move, 0.1f * interp_multiplier, 1f);
+            RotatePlayerToward(direction: desired_move, lerp_factor: 0.1f * interp_multiplier);
+        }
+
+        HandleTargetLock();
+        FollowPlayerVelocity();
+        if (utils.CheckTimer(IDLE_TIMER))
+        {
+            RotateTowardIdleOrientation();
+        }
+    }
+
+    private void HandleTargetLock()
+    {
+        if (input_manager.GetCenterCameraHold())
+        {
+            utils.ResetTimer(IDLE_TIMER);
+            Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
+            mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, orientation.x, 0.1f);
+            mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, orientation.y, 0.1f);
+            idleOrientation = mouseAccumulator;
         }
     }
 
@@ -411,6 +465,7 @@ public class CameraController : MonoBehaviour {
                 {
                     transform.localPosition = Vector3.Lerp(transform.localPosition, (Vector3.up * target_follow_distance.y), 0.1f);
                 }
+                transform.localPosition = new Vector3(target_follow_distance.x, transform.localPosition.y, transform.localPosition.z);
             }
             // Otherwise move the camrea to where the hit is, minus an offset
             else
@@ -426,6 +481,7 @@ public class CameraController : MonoBehaviour {
                     transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - 1f) * Vector3.forward) + (Vector3.up * target_follow_distance.y);
                 }
                 transform.localPosition += transform.InverseTransformDirection(hit.normal) * controlled_camera.rect.width / 2;
+                transform.localPosition = new Vector3(target_follow_distance.x, transform.localPosition.y, transform.localPosition.z);
             }
         }
         else

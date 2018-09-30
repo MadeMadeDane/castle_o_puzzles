@@ -306,9 +306,11 @@ public class PlayerController : MonoBehaviour {
 
     private void LateUpdate()
     {
+        Vector3 old_yaw_pivot_pos = player_camera.yaw_pivot.transform.position;
         player_container.transform.position = transform.position;
         transform.localPosition = Vector3.zero;
         player_container.transform.rotation = Quaternion.identity;
+        player_camera.yaw_pivot.transform.position = old_yaw_pivot_pos;
     }
 
     // Fixed Update is called once per physics tick
@@ -476,10 +478,11 @@ public class PlayerController : MonoBehaviour {
                 if (Vector3.Dot(desired_move, hit.normal) < 0 && ((hit.distance + cc.radius) * Mathf.Abs(cosanglehit) < cc.radius * 1.1f))
                 {
                     //Debug.DrawRay(SkinPos + transform.up * cc.height / 2, hit.normal, Color.red);
-                    current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
-                    if (!OnGround() && IsWall(hit.normal)) {
+                    if (!OnGround() && IsWall(hit.normal))
+                    {
                         UpdateWallConditions(hit.normal);
                     }
+                    current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
                     return Vector3.ProjectOnPlane(desired_move, hit.normal);
                 }
             }
@@ -546,7 +549,7 @@ public class PlayerController : MonoBehaviour {
                 {
                     hit_wall = true;
                 }
-                else if (Physics.Raycast(transform.position + (transform.up * (cc.height / 2 - cc.radius)), -PreviousWallNormal, out hit, cc.radius + WallScanDistance))
+                else if (Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), -PreviousWallNormal, out hit, cc.radius + WallScanDistance))
                 {
                     hit_wall = true;
                 }
@@ -591,15 +594,23 @@ public class PlayerController : MonoBehaviour {
 
             if (IsWallClimbing() && !isHanging)
             {
-                // Scan for ledge
+                // Make sure our head is against a wall
                 if (Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), -PreviousWallNormal, out hit, cc.radius + WallScanDistance))
                 {
-                    Vector3 LedgeScanPos = transform.position + (transform.up * cc.height / 2) + (cc.radius + LedgeClimbOffset) * transform.forward;
-                    if (Physics.Raycast(LedgeScanPos, -transform.up, out hit, cc.radius + LedgeClimbOffset))
+                    Vector3 LedgeScanVerticalPos = transform.position + (transform.up * cc.height / 2);
+                    Vector3 LedgeScanHorizontalVector = (cc.radius + LedgeClimbOffset) * transform.forward;
+                    // Make sure we don't hit a wall at the ledge height
+                    if (!Physics.Raycast(origin: LedgeScanVerticalPos, direction: LedgeScanHorizontalVector.normalized, maxDistance: LedgeScanHorizontalVector.magnitude))
                     {
-                        if (CanGrabLedge() && Vector3.Dot(hit.normal, Physics.gravity) < -0.866f)
+                        Vector3 LedgeScanPos = LedgeScanVerticalPos + LedgeScanHorizontalVector;
+                        // Scan down for a ledge
+                        if (Physics.Raycast(LedgeScanPos, -transform.up, out hit, cc.radius + LedgeClimbOffset))
                         {
-                            isHanging = true;
+                            if (CanGrabLedge() && Vector3.Dot(hit.normal, Physics.gravity.normalized) < -0.866f)
+                            {
+
+                                isHanging = true;
+                            }
                         }
                     }
                 }
@@ -1173,6 +1184,11 @@ public class PlayerController : MonoBehaviour {
     public void RegisterJumpCallback(Action callback)
     {
         jump_callback_table.Add(callback);
+    }
+
+    public void UnregisterJumpCallback(Action callback)
+    {
+        jump_callback_table.Remove(callback);
     }
 
     private void OnTriggerStay(Collider other)
