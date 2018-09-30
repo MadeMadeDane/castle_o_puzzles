@@ -6,18 +6,18 @@ using UnityEngine;
 
 
 
+public enum ViewMode
+{
+    Shooter,
+    Third_Person,
+    Third_Person_Shooter
+}
+
 public delegate void CameraMovementFunction();
 
 public class CameraController : MonoBehaviour {
     private static string ZOOM_TIMER = "CameraZoom";
     private static string IDLE_TIMER = "CameraIdle";
-
-    enum ViewMode
-    {
-        Shooter,
-        Third_Person,
-        Third_Person_Shooter
-    }
     [Header("Linked Components")]
     public GameObject player_container;
     public InputManager input_manager;
@@ -52,7 +52,7 @@ public class CameraController : MonoBehaviour {
     public Material fade_material;
     private Mesh original_model;
     public Mesh headless_model;
-    public bool show_model_in_inspection;
+    public bool show_model_in_inspection = false;
 
     // Use this for initialization
     void Start () {
@@ -509,5 +509,8 @@ public class CameraController : MonoBehaviour {
             idleOrientation = mouseAccumulator;
         }
     }
-
+    public ViewMode GetViewMode()
+    {
+        return view_mode;
+    }
 }

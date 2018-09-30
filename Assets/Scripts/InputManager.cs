@@ -33,6 +33,50 @@ public class Button
         return _button_names.Any(name => Input.GetButtonUp(name));
     }
 }
+public class Axis
+{
+    private string _axis_name;
+    private float prev_value;
+    public Axis(string axis_name)
+    {
+        _axis_name = axis_name;
+    }
+
+    public void UpdatePreviousValue ()
+    {
+        prev_value = Input.GetAxisRaw(_axis_name);
+    }
+
+    public bool positive()
+    {
+        return Input.GetAxisRaw(_axis_name) > 0;
+    }
+
+    public bool approaching_positive()
+    {
+        return Input.GetAxisRaw(_axis_name) > prev_value;
+    }
+
+    public bool leaving_positive()
+    {
+        return Input.GetAxisRaw(_axis_name) < prev_value;
+    }
+
+    public bool negative()
+    {
+        return Input.GetAxisRaw(_axis_name) < 0;
+    }
+
+    public bool approaching_negative()
+    {
+        return Input.GetAxisRaw(_axis_name) < prev_value;
+    }
+
+    public bool leaving_negative()
+    {
+        return Input.GetAxisRaw(_axis_name) > prev_value;
+    }
+}
 
 public class InputManager : MonoBehaviour {
     [Header("Input settings")]
@@ -46,6 +90,7 @@ public class InputManager : MonoBehaviour {
     private float _input_horizontal_axis;
     private float _input_scroll_axis;
     private Dictionary<string, Button> _button_map;
+    private Dictionary<string, Axis> _axis_map;
 
     // Mouse state
     private Queue<Vector2> mouseQueue;
@@ -70,6 +115,18 @@ public class InputManager : MonoBehaviour {
             { "jump_button",  new Button("Jump") },
             { "center_camera_button",  new Button("Center Camera") },
             { "toggle_view_button",  new Button("Toggle View") },
+            { "use_item_button", new Button("Use Item") },
+            { "pick_up_button", new Button("Pick Up") },
+            { "drop_item_button", new Button("Drop Item") },
+            { "ability_slot_1_button", new Button("Ability Slot 1") },
+            { "ability_slot_2_button", new Button("Ability Slot 2") },
+            { "ability_slot_3_button", new Button("Ability Slot 3") },
+            { "ability_slot_4_button", new Button("Ability Slot 4") },
+            { "start_button", new Button("Start") },
+        };
+        _axis_map = new Dictionary<string, Axis>() {
+            { "ability_slot_4_1_axis" , new Axis("Ability Slot 4 1")},
+            { "ability_slot_2_3_axis" , new Axis("Ability Slot 2 3")},
         };
     }
 
@@ -143,7 +200,7 @@ public class InputManager : MonoBehaviour {
     {
         return _button_map["center_camera_button"].pressed();
     }
-
+    
     public bool GetCenterCameraRelease()
     {
         return _button_map["center_camera_button"].up();
@@ -157,5 +214,85 @@ public class InputManager : MonoBehaviour {
     public bool GetToggleViewHold()
     {
         return _button_map["toggle_view_button"].pressed();
+    }
+
+    public bool GetUseItem()
+    {
+        return _button_map["use_item_button"].down();
+    }
+
+    public bool GetUseItemHold()
+    {
+        return _button_map["use_item_button"].pressed();
+    }
+
+    public bool GetPickUp()
+    {
+        return _button_map["pick_up_button"].down();
+    }
+
+    public bool GetPickUpHold()
+    {
+        return _button_map["pick_up_button"].pressed();
+    }
+
+    public bool GetDropItem()
+    {
+        return _button_map["drop_item_button"].down();
+    }
+
+    public bool GetDropItemHold()
+    {
+        return _button_map["drop_item_button"].pressed();
+    }
+
+    public bool GetStart()
+    {
+        return _button_map["start_button"].down();
+    }
+
+    public bool GetStartHold()
+    {
+        return _button_map["start_button"].pressed();
+    }
+
+    public bool GetAbilitySlot1()
+    {
+        return _button_map["ability_slot_1_button"].down() || _axis_map["ability_slot_4_1_axis"].approaching_positive();
+    }
+
+    public bool GetAbilitySlot1Hold()
+    {
+        return _button_map["ability_slot_1_button"].pressed() || _axis_map["ability_slot_2_3_axis"].positive();
+    }
+
+    public bool GetAbilitySlot2()
+    {
+        return _button_map["ability_slot_2_button"].down() || _axis_map["ability_slot_2_3_axis"].approaching_negative();
+    }
+
+    public bool GetAbilitySlot2Hold()
+    {
+        return _button_map["ability_slot_2_button"].pressed() || _axis_map["ability_slot_2_3_axis"].negative();
+    }
+
+    public bool GetAbilitySlot3()
+    {
+        return _button_map["ability_slot_3_button"].down() || _axis_map["ability_slot_2_3_axis"].approaching_positive();
+    }
+
+    public bool GetAbilitySlot3Hold()
+    {
+        return _button_map["ability_slot_3_button"].pressed() || _axis_map["ability_slot_2_3_axis"].positive();
+    }
+
+    public bool GetAbilitySlot4()
+    {
+        return _button_map["ability_slot_4_button"].down() ||_axis_map["ability_slot_4_1_axis"].approaching_negative();
+    }
+
+    public bool GetAbilitySlot4Hold()
+    {
+        return _button_map["ability_slot_4_button"].pressed() || _axis_map["ability_slot_4_1_axis"].negative();
     }
 }

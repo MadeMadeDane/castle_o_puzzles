@@ -10,7 +10,7 @@ public class AdjacentScenes : MonoBehaviour {
     {
         if (SceneManager.GetActiveScene() == gameObject.scene) {
             if (!loadedAdjacentAreas) {
-                SceneLoader sceneLoader = GameObject.Find("StickPlayer").GetComponent<SceneLoader>();
+                SceneLoader sceneLoader = GameObject.Find("PlayerContainer").GetComponent<SceneLoader>();
                 if (sceneLoader != null) {
                     Debug.Log("Loading Areas");
                     Dictionary<string, Scene> scenes = new Dictionary<string, Scene>();

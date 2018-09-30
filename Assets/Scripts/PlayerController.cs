@@ -298,6 +298,11 @@ public class PlayerController : MonoBehaviour {
 
     private void Update()
     {
+         // If the player does not have a camera, do nothing
+        if (player_camera == null)
+        {
+            return;
+        }
         if (input_manager.GetJump())
         {
             utils.ResetTimer(BUFFER_JUMP_TIMER);
@@ -306,6 +311,11 @@ public class PlayerController : MonoBehaviour {
 
     private void LateUpdate()
     {
+         // If the player does not have a camera, do nothing
+        if (player_camera == null)
+        {
+            return;
+        }
         Vector3 old_yaw_pivot_pos = player_camera.yaw_pivot.transform.position;
         player_container.transform.position = transform.position;
         transform.localPosition = Vector3.zero;
