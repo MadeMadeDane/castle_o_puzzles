@@ -94,7 +94,7 @@ public class PlayerController : MonoBehaviour {
     private AccelerationFunction accelerate;
     private Vector3 moving_frame_velocity;
     private Vector3 accel;
-    public ControllerColliderHit lastHit;
+    private ControllerColliderHit lastHit;
     private MovingGeneric lastMovingPlatform;
     private Collider lastMovingTrigger;
     private Collider lastTrigger;
