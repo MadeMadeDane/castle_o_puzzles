@@ -65,7 +65,7 @@ public class InventoryManager : MonoBehaviour {
 
     void AddItemToInventory (ItemRequest request)
     {
-        Item shipped_item = amazon.RequestItem(request);
+        Item shipped_item = amazon.RequestItem(request.name);
 
         shipped_item.ctx = this;
         shipped_item.Start();

@@ -10,9 +10,9 @@ public class ItemCatalogue {
         items = new Dictionary<string, ItemCatalogueEntry>();
         items.Add(MagnetBoots.item_name, new ItemCatalogueEntry(typeof(MagnetBoots), typeof(AbilityItem), "", ""));
     }
-    public Item RequestItem (ItemRequest req)
+    public Item RequestItem (string item_name)
     {
-        Item requested_item = Activator.CreateInstance(items[req.item_name].type) as Item;
+        Item requested_item = Activator.CreateInstance(items[item_name].type) as Item;
         //requested_item.physical_form = AssetBundle.LoadFromFile()
         return requested_item;
     }

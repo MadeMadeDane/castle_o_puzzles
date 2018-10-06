@@ -11,14 +11,20 @@ public class MenuHandler : MonoBehaviour {
     public GameObject start_menu_obj;
 
     // Use this for initialization
+    void Awake () {
+        if (gameObject.GetCompoent<HeadsUpDisplay>() == null){
+            hud = gameObject.AddComponent<HeadsUpDisplay>();
+        }
+        if (gameObject.GetComponent<StartMenu>() == null){
+            start_menu = gameObject.AddComponent<StartMenu>();
+        }
+    }
     void Start () {
-        hud = gameObject.AddComponent<HeadsUpDisplay>();
         hud.cam_controller = cam_controller;
         hud.prefab = hud_obj;
         hud.open();
         hud.ui_instance.transform.SetParent(transform, false);
 
-        start_menu = gameObject.AddComponent<StartMenu>();
         start_menu.cam_controller = cam_controller;
         start_menu.prefab = start_menu_obj;
     }
