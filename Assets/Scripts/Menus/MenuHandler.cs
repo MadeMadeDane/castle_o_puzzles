@@ -12,7 +12,7 @@ public class MenuHandler : MonoBehaviour {
 
     // Use this for initialization
     void Awake () {
-        if (gameObject.GetCompoent<HeadsUpDisplay>() == null){
+        if (gameObject.GetComponent<HeadsUpDisplay>() == null){
             hud = gameObject.AddComponent<HeadsUpDisplay>();
         }
         if (gameObject.GetComponent<StartMenu>() == null){
