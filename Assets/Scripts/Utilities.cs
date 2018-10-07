@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Utilities : MonoBehaviour
+public class Utilities : UnitySingleton<Utilities>
 {
     private Dictionary<string, Timer> Timers = new Dictionary<string, Timer>();
 

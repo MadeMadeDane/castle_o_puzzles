@@ -16,7 +16,7 @@ public class MagnetBoots : AbilityItem {
 
     public override void Start()
     {
-        im = ctx.GetComponentInChildren<InputManager>();
+        im = InputManager.Instance;
         outputLogs("Added Actions to Magnet Boots");
     }
     public override void Update()

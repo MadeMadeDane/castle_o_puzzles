@@ -4,13 +4,15 @@ using UnityEngine;
 
 public class LoadArea : MonoBehaviour
 {
+    private SceneLoader sceneLoader;
+
+    private void Awake() {
+        sceneLoader = SceneLoader.Instance;
+    }
 
     public string scene = "SampleScene";
     void OnTriggerEnter(Collider col)
     {
-        SceneLoader sceneLoader = col.gameObject.GetComponent<SceneLoader>();
-        if (sceneLoader != null) {
-            sceneLoader.LoadNextScene(scene);
-        }
+        sceneLoader.LoadNextScene(scene);
     }
 }
