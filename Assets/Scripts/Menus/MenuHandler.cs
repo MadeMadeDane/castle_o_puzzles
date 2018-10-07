@@ -18,8 +18,6 @@ public class MenuHandler : MonoBehaviour {
         if (gameObject.GetComponent<StartMenu>() == null){
             start_menu = gameObject.AddComponent<StartMenu>();
         }
-    }
-    void Start () {
         hud.cam_controller = cam_controller;
         hud.prefab = hud_obj;
         hud.open();
@@ -27,6 +25,9 @@ public class MenuHandler : MonoBehaviour {
 
         start_menu.cam_controller = cam_controller;
         start_menu.prefab = start_menu_obj;
+    }
+    void Start () {
+       
     }
 	
 	// Update is called once per frame
