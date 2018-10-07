@@ -4,9 +4,13 @@ using UnityEngine;
 
 public class StartSceneLoader : MonoBehaviour {
     public string scene = "Just Platforms";
+    private SceneLoader sceneLoader;
 	// Use this for initialization
+    private void Awake() {
+        sceneLoader = SceneLoader.Instance;
+    }
+
 	void Start (){
-        SceneLoader sceneLoader = GameObject.Find("StickPlayer").GetComponent<SceneLoader>();
         sceneLoader.LoadNextScene(scene);
     }
 }

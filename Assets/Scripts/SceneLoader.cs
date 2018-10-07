@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine.SceneManagement;
 using UnityEngine;
 
-public class SceneLoader : MonoBehaviour {
+public class SceneLoader : UnitySingleton<SceneLoader> {
     public void LoadNextScene(string scene)
     {
         Debug.Log("Scene Name: " + scene);
@@ -24,7 +24,10 @@ public class SceneLoader : MonoBehaviour {
             newScene = SceneManager.GetSceneByName(scene);
         }
         // Move the GameObject (you attach this in the Inspector) to the newly loaded Scene
-        SceneManager.MoveGameObjectToScene(gameObject, newScene);
+        GameObject[] objs = GameObject.FindGameObjectsWithTag(Constants.TAG_PLAYER);
+        foreach (GameObject obj in objs) {
+            SceneManager.MoveGameObjectToScene(obj, newScene);
+        }
         // Set the current Scene to be able to unload it later
         SceneManager.SetActiveScene(newScene);
     }

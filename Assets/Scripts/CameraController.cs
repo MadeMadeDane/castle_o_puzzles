@@ -20,7 +20,6 @@ public class CameraController : MonoBehaviour {
     private static string IDLE_TIMER = "CameraIdle";
     [Header("Linked Components")]
     public GameObject player_container;
-    public InputManager input_manager;
     public Camera controlled_camera;
     public GameObject home;
     [Header("Camera Settings")]
@@ -41,7 +40,8 @@ public class CameraController : MonoBehaviour {
     private CameraMovementFunction handleCameraMove;
     private CameraMovementFunction handlePlayerRotate;
 
-    // Utils
+    // Managers
+    private InputManager input_manager;
     private Utilities utils;
 
     // Other Settings
@@ -55,32 +55,34 @@ public class CameraController : MonoBehaviour {
     public bool show_model_in_inspection = false;
 
     // Use this for initialization
-    void Start () {
+    private void Awake() {
         QualitySettings.vSyncCount = 0;
         // Application.targetFrameRate = 45;
         transparency_divider = 4;
         fully_translucent_threshold = 1;
         yaw_pivot = new GameObject("yaw_pivot");
-        yaw_pivot.tag = "Player";
+        yaw_pivot.transform.parent = player_container.transform;
         pitch_pivot = new GameObject("pitch_pivot");
         pitch_pivot.transform.parent = yaw_pivot.transform;
+
+        input_manager = InputManager.Instance;
+        utils = Utilities.Instance;
+        utils.CreateTimer(ZOOM_TIMER, 0.5f);
+        utils.CreateTimer(IDLE_TIMER, 1.0f);
+
+        opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().material;
+        original_model = home.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
+    }
+
+    void Start () {
         PlayerController player_home = home.GetComponent<PlayerController>();
         if (player_home == null)
         {
             throw new Exception("Failed initializing camera.");
         }
-        utils = home.GetComponent<Utilities>();
-        if (utils == null)
-        {
-            throw new Exception("Failed getting utilities.");
-        }
-        utils.CreateTimer(ZOOM_TIMER, 0.5f);
-        utils.CreateTimer(IDLE_TIMER, 1.0f);
         //SetShooterVars(player_home);
         SetThirdPersonActionVars(player_home);
         //SetThirdPersonShooterVars(player_home);
-        opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().material;
-        original_model = home.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
         // TODO: Move this mouse hiding logic somewhere else
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;

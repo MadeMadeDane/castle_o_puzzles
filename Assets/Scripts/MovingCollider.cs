@@ -6,7 +6,6 @@ using System.Linq;
 
 public class MovingCollider : MovingGeneric {
     public GameObject nextTargetObject;
-    public GameObject UtilitiesHolder;
     public bool Automatic = false;
     public bool ResetToHome = true;
     public float HomeResetTime = 10f;
@@ -24,11 +23,7 @@ public class MovingCollider : MovingGeneric {
 
     // Use this for initialization
     private void Start () {
-        utils = UtilitiesHolder.GetComponent<Utilities>();
-        if (utils == null)
-        {
-            throw new Exception("Failed getting utilities.");
-        }
+        utils = Utilities.Instance;
         HOME_TIMER = "MovingColliderHomeReset_" + gameObject.GetInstanceID().ToString();
         utils.CreateTimer(HOME_TIMER, HomeResetTime);
 

@@ -78,7 +78,7 @@ public class Axis
     }
 }
 
-public class InputManager : MonoBehaviour {
+public class InputManager : UnitySingleton<InputManager> {
     [Header("Input settings")]
     public Vector2 mouse_sensitivity;
     public Vector2 controller_sensitivity;

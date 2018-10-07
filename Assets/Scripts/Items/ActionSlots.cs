@@ -7,10 +7,14 @@ public class ActionSlots : MonoBehaviour {
     public UseItem use_item = null;
     public AbilityItem ability_item = null;
     public Inventory<AbilityItem> ability_items;
-    public InputManager im;
     public MenuHandler mh;
+    private InputManager im;
     private int active_slot;
     private ItemBar item_bar;
+
+    private void Awake() {
+        im = InputManager.Instance;
+    }
 
     // Use this for initialization
     void Start () {

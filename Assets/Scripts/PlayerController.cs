@@ -10,7 +10,6 @@ delegate void AccelerationFunction(Vector3 direction, float desiredSpeed, float 
 public class PlayerController : MonoBehaviour {
     [Header("Linked Components")]
     public GameObject player_container;
-    public InputManager input_manager;
     public CharacterController cc;
     public Collider WallRunCollider;
     [HideInInspector]
@@ -49,7 +48,8 @@ public class PlayerController : MonoBehaviour {
     public Vector3 current_velocity;
     public bool debug_mode = false;
 
-    // Utils
+    // Managers
+    private InputManager input_manager;
     private Utilities utils;
 
     // Timers
@@ -115,38 +115,10 @@ public class PlayerController : MonoBehaviour {
     private GameObject debugcanvas;
     private Dictionary<string, Text> debugtext;
 
-    // Use this for initialization
-    private void Start () {
-        utils = GetComponent<Utilities>();
-        if (utils == null)
-        {
-            throw new Exception("Failed getting utilities.");
-        }
-        if (debug_mode)
-        {
-            EnableDebug();
-        }
-        // Movement values
-        //SetShooterVars();
-        SetThirdPersonActionVars();
+    private void Awake() {
+        input_manager = InputManager.Instance;
+        utils = Utilities.Instance;
 
-        isJumping = false;
-        isFalling = false;
-        willJump = false;
-        // Wall related vars
-        WallAxis = Vector3.zero;
-        AlongWallVel = Vector3.zero;
-        UpWallVel = Vector3.zero;
-        WallJumpReflect = Vector3.zero;
-        PreviousWallJumpPos = Vector3.positiveInfinity;
-        PreviousWallNormal = Vector3.zero;
-        PreviousWallJumpNormal = Vector3.zero;
-        LedgeClimbOffset = 0.5f;
-        WallScanDistance = 1.5f;
-        LedgeClimbBoost = Mathf.Sqrt(2 * cc.height * 1.1f * Physics.gravity.magnitude);
-        WallDistanceThreshold = 14f;
-
-        // Timers
         utils.CreateTimer(JUMP_METER, 0.3f);
         JumpMeterThreshold = utils.GetTimerPeriod(JUMP_METER) / 3;
         JumpMeterComputed = utils.GetTimerPercent(JUMP_METER);
@@ -162,23 +134,10 @@ public class PlayerController : MonoBehaviour {
         utils.CreateTimer(MOVING_INTERIOR_TIMER, 0.1f).setFinished();
         utils.CreateTimer(STUCK_TIMER, 0.2f).setFinished();
 
-        // Initial state
-        position_history_size = 50;
-        position_history = new LinkedList<Vector3>();
-        total_error = 0f;
-        error_threshold = 50;
-        error_stage = 0;
-        error_bucket = 0;
-        error_accum_size = 10;
-        error_accum = new Queue<float>(Enumerable.Repeat<float>(0f, error_accum_size));
-        moving_frame_velocity = Vector3.zero;
-        current_velocity = Vector3.zero;
-        currentHit = new ControllerColliderHit();
-        StartPos = transform.position;
-
-        // TODO: Test below
-        //cc.enableOverlapRecovery = false;
-        Physics.IgnoreCollision(WallRunCollider, cc);
+        if (debug_mode)
+        {
+            EnableDebug();
+        }
     }
 
     private void EnableDebug()
@@ -214,6 +173,47 @@ public class PlayerController : MonoBehaviour {
             item.Value.font = ArialFont;
             idx++;
         }
+    }
+
+    // Use this for initialization
+    private void Start () {
+        // Movement values
+        //SetShooterVars();
+        SetThirdPersonActionVars();
+
+        isJumping = false;
+        isFalling = false;
+        willJump = false;
+        // Wall related vars
+        WallAxis = Vector3.zero;
+        AlongWallVel = Vector3.zero;
+        UpWallVel = Vector3.zero;
+        WallJumpReflect = Vector3.zero;
+        PreviousWallJumpPos = Vector3.positiveInfinity;
+        PreviousWallNormal = Vector3.zero;
+        PreviousWallJumpNormal = Vector3.zero;
+        LedgeClimbOffset = 0.5f;
+        WallScanDistance = 1.5f;
+        LedgeClimbBoost = Mathf.Sqrt(2 * cc.height * 1.1f * Physics.gravity.magnitude);
+        WallDistanceThreshold = 14f;
+
+        // Initial state
+        position_history_size = 50;
+        position_history = new LinkedList<Vector3>();
+        total_error = 0f;
+        error_threshold = 50;
+        error_stage = 0;
+        error_bucket = 0;
+        error_accum_size = 10;
+        error_accum = new Queue<float>(Enumerable.Repeat<float>(0f, error_accum_size));
+        moving_frame_velocity = Vector3.zero;
+        current_velocity = Vector3.zero;
+        currentHit = new ControllerColliderHit();
+        StartPos = transform.position;
+
+        // TODO: Test below
+        //cc.enableOverlapRecovery = false;
+        Physics.IgnoreCollision(WallRunCollider, cc);
     }
 
     private void SetShooterVars()

@@ -4,26 +4,29 @@ using System.Linq;
 using UnityEngine;
 
 public class InventoryManager : MonoBehaviour {
-    public PlayerController pc;
-    public InputManager im;
     public CameraController cam_controller;
     public ActionSlots actionSlots;
     public Sprite image;
     public float explosive_rad = 1.0f;
     public float select_reach_dist = 5.0f;
     public bool enable_logs = false;
+    private InputManager im;
     private ItemCatalogue amazon;
 
 
     private ItemRequest prevItem = null;
     // Use this for initialization
+    private void Awake() {
+        im = InputManager.Instance;
+        amazon = new ItemCatalogue();
+    }
+
     void Start ()
     {
-        amazon = new ItemCatalogue();
-	}
-	
-	// Update is called once per frame
-	void Update ()
+    }
+
+    // Update is called once per frame
+    void Update ()
     {
 
         RaycastHit hit;

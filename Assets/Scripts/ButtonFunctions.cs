@@ -3,6 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class ButtonFunctions : MonoBehaviour {
+    private SceneLoader sceneLoader;
+
+    private void Awake() {
+        sceneLoader = SceneLoader.Instance;
+    }
 
     // Use this for initialization
     void Start()
@@ -23,7 +28,6 @@ public class ButtonFunctions : MonoBehaviour {
     public void StartGame()
     {
         string scene = "ItemTest";
-        SceneLoader sceneLoader = GameObject.Find("PlayerContainer").GetComponent<SceneLoader>();
         CameraController cc = GameObject.Find("PlayerContainer").GetComponentInChildren<CameraController>();
         cc.enabled = true;
         sceneLoader.LoadNextScene(scene);

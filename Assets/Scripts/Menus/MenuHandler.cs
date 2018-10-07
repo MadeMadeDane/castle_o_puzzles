@@ -3,15 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class MenuHandler : MonoBehaviour {
-    public InputManager im;
     public CameraController cam_controller;
     public HeadsUpDisplay hud;
     public GameObject hud_obj;
     public StartMenu start_menu;
     public GameObject start_menu_obj;
 
+    private InputManager im;
     // Use this for initialization
     void Awake () {
+        im = InputManager.Instance;
         if (gameObject.GetComponent<HeadsUpDisplay>() == null){
             hud = gameObject.AddComponent<HeadsUpDisplay>();
         }
