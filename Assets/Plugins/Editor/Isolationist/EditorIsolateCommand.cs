@@ -51,7 +51,7 @@ namespace Plugins.Isolationist.Editor
 			_hideLights = EditorPrefs.GetBool(ISOLATE_HIDE_LIGHTS_PREF, true);
 			_hideCameras = EditorPrefs.GetBool(ISOLATE_HIDE_CAMERAS_PREF, true);
 			EditorApplication.update += Update;
-			EditorApplication.playmodeStateChanged += PlaymodeStateChanged;
+			EditorApplication.playModeStateChanged += PlaymodeStateChanged;
 			EditorApplication.hierarchyWindowItemOnGUI += HierarchyWindowItemOnGUI;
 			SceneView.onSceneGUIDelegate += OnSceneGUI;
 
@@ -99,9 +99,9 @@ namespace Plugins.Isolationist.Editor
 			Event.current.Use();
 		}
 
-		private static void PlaymodeStateChanged()
+		private static void PlaymodeStateChanged(PlayModeStateChange change)
 		{
-			if (EditorApplication.isPlayingOrWillChangePlaymode) IsolateInfo.Show();
+			if (change == PlayModeStateChange.EnteredPlayMode) IsolateInfo.Show();
 			else IsolateInfo.Hide();
 		}
 
