@@ -1,18 +1,32 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
-public class AnalogState : MonoBehaviour
+[System.Serializable]
+public class AnalogStateChange: UnityEvent<AnalogState> {};
+
+[System.Serializable]
+public class AnalogState
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    public AnalogStateChange Change;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+    public float previous_state {private set; get;}
+
+    private float _state = 0f;
+    public float state {
+        set {
+            // Set state before invoking listeners
+            previous_state = _state;
+            _state = value;
+
+            // Invoke UnityEvent on state change
+            if (_state != previous_state) {
+                Change.Invoke(this);
+            }
+        }
+        get {
+            return _state;
+        }
     }
 }

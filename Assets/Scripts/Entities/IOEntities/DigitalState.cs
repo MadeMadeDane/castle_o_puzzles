@@ -1,18 +1,38 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
-public class DigitalState : MonoBehaviour
+[System.Serializable]
+public class DigitalStateChange: UnityEvent<DigitalState> {};
+
+[System.Serializable]
+public class DigitalState
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
+    public UnityEvent Trigger;
+    public DigitalStateChange Change;
+
+    private bool _state = false;
+    public bool state {
+        set {
+            // Set state before invoking listeners
+            bool prev_state = _state;
+            _state = value;
+
+            // Invoke UnityEvent on state change
+            if (_state != prev_state) {
+                if (_state == true) {
+                    Trigger.Invoke();
+                }
+                Change.Invoke(this);
+            }
+        }
+        get {
+            return _state;
+        }
     }
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+    public void trigger() {
+        Trigger.Invoke();
     }
 }
