@@ -2,41 +2,53 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-[AddComponentMenu("IOEntities/IOButton")]
-public class IOTest : IOEntity, IUsable
+// This class is purely for testing IOEntities
+[AddComponentMenu("IOEntities/IOTestEntity")]
+public class IOTestEntity : IOEntity, IUsable
 {
-    public DigitalState pressed;
+    public DigitalState exampleDigital;
+    public AnalogState exampleAnalog;
 
     // Start is called before the first frame update
     void Start()
     {
-        StartCoroutine(WaitThenChange());
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        return;
+        StartCoroutine(TestDigitalStates());
     }
 
     public void Use() {
-        pressed.trigger();
-        return;
+        exampleDigital.trigger();
     }
 
-    public void TestChange(DigitalState input) {
+    public void TestDigitalChange(DigitalState input) {
         Debug.Log("Current state: " + input.state.ToString());
     }
 
-    public IEnumerator WaitThenChange() {
+    public void TestAnalogChange(AnalogState input) {
+        Debug.Log("Current state: " + input.state.ToString());
+        Debug.Log("Previous state: " + input.previous_state.ToString());
+    }
+
+    public IEnumerator TestDigitalStates() {
+        Debug.Log("Testing digital states");
         Debug.Log("Waiting to use...");
         yield return new WaitForSeconds(3);
         Use();
-        Debug.Log("Waiting to set pressed...");
+        Debug.Log("Waiting to set example digital state to true...");
         yield return new WaitForSeconds(3);
-        pressed.state = true;
-        Debug.Log("Waiting to set pressed...");
+        exampleDigital.state = true;
+        Debug.Log("Waiting to set example digital state to false...");
         yield return new WaitForSeconds(3);
-        pressed.state = false;
+        exampleDigital.state = false;
+        StartCoroutine(TestAnalogStates());
+    }
+
+    public IEnumerator TestAnalogStates() {
+        Debug.Log("Testing analog states");
+        Debug.Log("Waiting to set example analog state to 127.0");
+        yield return new WaitForSeconds(3);
+        exampleAnalog.state = 127;
+        Debug.Log("Waiting to set example analog state to 0.0");
+        yield return new WaitForSeconds(3);
+        exampleAnalog.state = 0;
     }
 }
