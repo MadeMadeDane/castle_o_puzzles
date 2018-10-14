@@ -22,9 +22,9 @@ public class DigitalState
             // Invoke UnityEvent on state change
             if (_state != prev_state) {
                 if (_state == true) {
-                    Trigger.Invoke();
+                    IOManager.Instance.IOTick(() => Trigger.Invoke());
                 }
-                Change.Invoke(this);
+                IOManager.Instance.IOTick(() => Change.Invoke(this));
             }
         }
         get {
@@ -33,6 +33,6 @@ public class DigitalState
     }
 
     public void trigger() {
-        Trigger.Invoke();
+        IOManager.Instance.IOTick(() => Trigger.Invoke());
     }
 }

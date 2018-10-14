@@ -18,6 +18,11 @@ public class MovingCollider : MovingGeneric {
     private bool at_home;
     private Utilities utils;
 
+    // States
+    AnalogState a_Velocity;
+    DigitalState d_AtHome;
+    DigitalState d_Moving;
+
     // Timers
     private string HOME_TIMER;
 
