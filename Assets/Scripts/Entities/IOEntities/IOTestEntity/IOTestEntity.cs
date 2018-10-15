@@ -46,13 +46,13 @@ public class IOTestEntity : IOEntity, IUsable
         Debug.Log("Waiting to use...");
         yield return new WaitForSeconds(3);
         Use();
-        /*Debug.Log("Waiting to set example digital state to true...");
-        yield return new WaitForSeconds(1);
+        Debug.Log("Waiting to set example digital state to true...");
+        yield return new WaitForSeconds(3);
         exampleDigital.state = true;
         Debug.Log("Waiting to set example digital state to false...");
-        yield return new WaitForSeconds(1);
+        yield return new WaitForSeconds(3);
         exampleDigital.state = false;
-        Debug.Log("Finished testing");*/
+        Debug.Log("Finished testing");
     }
 
     public IEnumerator TestAnalogStates() {

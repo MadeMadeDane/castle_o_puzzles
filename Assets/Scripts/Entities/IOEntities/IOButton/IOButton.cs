@@ -3,18 +3,12 @@ using System.Collections.Generic;
 using UnityEngine;
 
 [AddComponentMenu("IOEntities/IOButton")]
-public class IOButton : IOEntity
+public class IOButton : IOEntity, IUsable
 {
+    DigitalState pressed;
 
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        
+    public void Use() {
+        // Send a quick impulse
+        pressed.impulse();
     }
 }

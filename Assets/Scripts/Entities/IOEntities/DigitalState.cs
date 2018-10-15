@@ -39,4 +39,10 @@ public class DigitalState
     public void trigger() {
         IOManager.Instance.IOTick(() => Trigger.Invoke());
     }
+
+    public void impulse(bool impulse_state=true) {
+        _state = !impulse_state;
+        state = impulse_state;
+        state = !impulse_state;
+    }
 }

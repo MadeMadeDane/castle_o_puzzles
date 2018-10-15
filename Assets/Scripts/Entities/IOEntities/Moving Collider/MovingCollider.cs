@@ -95,7 +95,6 @@ public class MovingCollider : MovingGeneric {
         }
         else if (!at_home && utils.CheckTimer(HOME_TIMER))
         {
-            at_home = true;
             GoHome();
         }
     }
