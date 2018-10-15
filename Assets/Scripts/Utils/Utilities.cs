@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class Utilities : UnitySingleton<Utilities>
@@ -86,7 +87,27 @@ public class Utilities : UnitySingleton<Utilities>
         }
     }
 
-    public void FixedUpdate()
+    public T RayCastExplosiveSelect<T>(Vector3 origin, Vector3 path, float radius) where T: MonoBehaviour
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(origin, path, out hit, path.magnitude)) {
+            return ExplosiveSelect<T>(hit.point, radius);
+        }
+        return ExplosiveSelect<T>(origin + path, radius);
+    }
+
+    public T ExplosiveSelect<T>(Vector3 position, float radius) where T: MonoBehaviour
+    {
+        Collider[] colliders = Physics.OverlapSphere(position, radius);
+        IEnumerable<T> gos_in_explosion = colliders
+            .Select(x => x.GetComponent<T>())
+            .Where(x => x != null);
+        return gos_in_explosion
+            .OrderBy(x => (position - x.transform.position).magnitude)
+            .FirstOrDefault();
+    }
+
+    private void FixedUpdate()
     {
         IncrementTimers();
     }

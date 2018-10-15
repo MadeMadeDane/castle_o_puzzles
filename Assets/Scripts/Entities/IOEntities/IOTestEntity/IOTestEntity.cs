@@ -13,9 +13,12 @@ public class IOTestEntity : IOEntity, IUsable
     void Start()
     {
         StartCoroutine(TestDigitalStates());
+        //StartCoroutine(TestAnalogStates());
+        //StartCoroutine(TestIOLoop());
     }
 
     public void Use() {
+        Debug.Log("Using IOTestEntity");
         exampleDigital.trigger();
     }
 
@@ -28,18 +31,28 @@ public class IOTestEntity : IOEntity, IUsable
         Debug.Log("Previous state: " + input.previous_state.ToString());
     }
 
+    public void TestAnalogLoopChange(AnalogState input) {
+        if (input.state < 25600) {
+            input.state++;
+        }
+        else {
+            Debug.Log("Current state: " + input.state.ToString());
+            Debug.Log("Finished testing");
+        }
+    }
+
     public IEnumerator TestDigitalStates() {
         Debug.Log("Testing digital states");
         Debug.Log("Waiting to use...");
         yield return new WaitForSeconds(3);
         Use();
-        Debug.Log("Waiting to set example digital state to true...");
-        yield return new WaitForSeconds(3);
+        /*Debug.Log("Waiting to set example digital state to true...");
+        yield return new WaitForSeconds(1);
         exampleDigital.state = true;
         Debug.Log("Waiting to set example digital state to false...");
-        yield return new WaitForSeconds(3);
+        yield return new WaitForSeconds(1);
         exampleDigital.state = false;
-        StartCoroutine(TestAnalogStates());
+        Debug.Log("Finished testing");*/
     }
 
     public IEnumerator TestAnalogStates() {
@@ -50,5 +63,13 @@ public class IOTestEntity : IOEntity, IUsable
         Debug.Log("Waiting to set example analog state to 0.0");
         yield return new WaitForSeconds(3);
         exampleAnalog.state = 0;
+        Debug.Log("Finished testing");
+    }
+
+    // Hook exampleAnalog up to TestAnalogLoopChange to start an IO event loop
+    public IEnumerator TestIOLoop() {
+        Debug.Log("Testing IO loop");
+        yield return new WaitForSeconds(3);
+        exampleAnalog.state = 1;
     }
 }

@@ -19,9 +19,9 @@ public class MovingCollider : MovingGeneric {
     private Utilities utils;
 
     // States
-    AnalogState a_Velocity;
-    DigitalState d_AtHome;
-    DigitalState d_Moving;
+    public AnalogState a_Velocity;
+    public DigitalState d_AtHome;
+    public DigitalState d_Moving;
 
     // Timers
     private string HOME_TIMER;
@@ -41,6 +41,11 @@ public class MovingCollider : MovingGeneric {
         current_target = null;
         // Save the original target as the home
         home = nextTargetObject;
+
+        // Set IOStates
+        d_Moving.initialize(moving);
+        d_AtHome.initialize(at_home);
+
         StartCoroutine(MoveToNextTarget());
     }
 
@@ -52,6 +57,8 @@ public class MovingCollider : MovingGeneric {
         {
             CheckHomeResetTimer();
         }
+        d_Moving.state = moving;
+        d_AtHome.state = !moving && at_home;
     }
 
     protected virtual void Move() {
@@ -73,6 +80,7 @@ public class MovingCollider : MovingGeneric {
         }
         velocity = Vector3.Lerp(velocity, target_velocity, 0.1f);
         transform.Translate(velocity * Time.deltaTime, Space.World);
+        a_Velocity.state = velocity.magnitude;
     }
 
     protected virtual Vector3 CalculatePlayerVelocity() {
@@ -132,6 +140,7 @@ public class MovingCollider : MovingGeneric {
             yield break;
         }
         moving = true;
+
         if (nextTargetObject == null)
         {
             // Wait for nextTargetObject to bet set
@@ -168,7 +177,12 @@ public class MovingCollider : MovingGeneric {
             yield return new WaitForSeconds(current_target.waitTime);
         }
         nextTargetObject = current_target.nextTargetObject;
+
         moving = false;
+        if (current_target.gameObject == home) {
+            at_home = true;
+        }
+
         if (Automatic)
         {
             StartCoroutine(MoveToNextTarget());

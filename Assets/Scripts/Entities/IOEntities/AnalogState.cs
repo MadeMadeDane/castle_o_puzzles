@@ -29,4 +29,8 @@ public class AnalogState
             return _state;
         }
     }
+
+    public void initialize(float initial_state) {
+        _state = initial_state;
+    }
 }

@@ -32,6 +32,10 @@ public class DigitalState
         }
     }
 
+    public void initialize(bool initial_state) {
+        _state = initial_state;
+    }
+
     public void trigger() {
         IOManager.Instance.IOTick(() => Trigger.Invoke());
     }

@@ -6,7 +6,8 @@ using UnityEngine;
 public class IOManager : UnitySingleton<IOManager>
 {
     private int CurrentIOTick = 1;
-    private const int IOTickRate = 100;
+    // At a game tick rate of 250hz our IOTickRate is 1000hz
+    private const int IOTickRate = 4;
 
     private IEnumerator RunOnNextTickCoroutine(Action action) {
         yield return new WaitForFixedUpdate();
