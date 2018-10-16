@@ -5,7 +5,7 @@ using UnityEngine;
 
 public class IOManager : UnitySingleton<IOManager>
 {
-    private int CurrentIOTick = 1;
+    private int CurrentIOTick = 0;
     // At a game tick rate of 250hz our IOTickRate is 1000hz
     private const int IOTickRate = 4;
 
@@ -26,12 +26,12 @@ public class IOManager : UnitySingleton<IOManager>
     //  The IOTickRate represents the maximum length of any IO event chain allowed to run in a game tick.
     public void IOTick(Action action) {
         if (CurrentIOTick >= IOTickRate) {
-            RunOnNextTick(action);
+            RunOnNextTick(() => IOTick(action));
         }
         else {
             CurrentIOTick++;
             action();
         }
-        CurrentIOTick = 1;
+        CurrentIOTick = 0;
     }
 }

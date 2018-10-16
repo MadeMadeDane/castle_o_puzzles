@@ -346,6 +346,7 @@ public class PlayerController : MonoBehaviour {
         ProcessTriggers();
         HandleMovement();
         HandleJumping();
+        HandleUse();
         UpdatePlayerState();
         if (debug_mode)
         {
@@ -1107,6 +1108,21 @@ public class PlayerController : MonoBehaviour {
                 current_velocity -= Vector3.Project(current_velocity, Physics.gravity.normalized) / 2;
             }
             isFalling = true;
+        }
+    }
+
+    private void HandleUse()
+    {
+        if (input_manager.GetPickUp())
+        {
+            IUsable usable = utils.RayCastExplosiveSelect<IUsable>(
+                origin: transform.position,
+                path: transform.forward*1f,
+                radius: 1.5f);
+            if (usable != null) {
+                Debug.Log("Attempting to use usable!");
+                usable.Use();
+            }
         }
     }
 

@@ -87,7 +87,7 @@ public class Utilities : UnitySingleton<Utilities>
         }
     }
 
-    public T RayCastExplosiveSelect<T>(Vector3 origin, Vector3 path, float radius) where T: MonoBehaviour
+    public T RayCastExplosiveSelect<T>(Vector3 origin, Vector3 path, float radius) where T: class
     {
         RaycastHit hit;
         if (Physics.Raycast(origin, path, out hit, path.magnitude)) {
@@ -96,15 +96,14 @@ public class Utilities : UnitySingleton<Utilities>
         return ExplosiveSelect<T>(origin + path, radius);
     }
 
-    public T ExplosiveSelect<T>(Vector3 position, float radius) where T: MonoBehaviour
+    public T ExplosiveSelect<T>(Vector3 position, float radius) where T: class
     {
         Collider[] colliders = Physics.OverlapSphere(position, radius);
         IEnumerable<T> gos_in_explosion = colliders
+            .OrderBy(x => (position - x.transform.position).magnitude)
             .Select(x => x.GetComponent<T>())
             .Where(x => x != null);
-        return gos_in_explosion
-            .OrderBy(x => (position - x.transform.position).magnitude)
-            .FirstOrDefault();
+        return gos_in_explosion.FirstOrDefault();
     }
 
     private void FixedUpdate()

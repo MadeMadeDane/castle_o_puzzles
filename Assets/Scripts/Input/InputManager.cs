@@ -6,33 +6,86 @@ using UnityEngine;
 
 public class Button
 {
+    private delegate bool ButtonActionDelegate();
+    private class ButtonAction
+    {
+        private bool consumed;
+        private ButtonActionDelegate action;
+
+        public ButtonAction(ButtonActionDelegate action)
+        {
+            this.action = action;
+        }
+
+        public bool check()
+        {
+            if (!consumed)
+            {
+                consumed = true;
+                return action();
+            }
+            return false;
+        }
+
+        public bool safe_check()
+        {
+            return action();
+        }
+
+        public void refresh()
+        {
+            consumed = false;
+        }
+    }
+
+    private ButtonAction buttonDown;
+    private ButtonAction buttonPressed;
+    private ButtonAction buttonUp;
+
     private string[] _button_names;
 
     public Button(string button_name)
     {
         _button_names = new string[] { button_name };
+        SetActions();
     }
 
     public Button(string[] button_names)
     {
         _button_names = button_names;
+        SetActions();
+    }
+
+    private void SetActions()
+    {
+        buttonDown = new ButtonAction(() => _button_names.Any(name => Input.GetButtonDown(name)));
+        buttonPressed = new ButtonAction(() => _button_names.Any(name => Input.GetButton(name)));
+        buttonUp = new ButtonAction(() => _button_names.Any(name => Input.GetButtonUp(name)));
     }
 
     public bool down()
     {
-        return _button_names.Any(name => Input.GetButtonDown(name));
+        return buttonDown.check();
     }
 
     public bool pressed()
     {
-        return _button_names.Any(name => Input.GetButton(name));
+        return buttonPressed.safe_check();
     }
 
     public bool up()
     {
-        return _button_names.Any(name => Input.GetButtonUp(name));
+        return buttonUp.check();
+    }
+
+    public void refresh()
+    {
+        buttonDown.refresh();
+        buttonPressed.refresh();
+        buttonUp.refresh();
     }
 }
+
 public class Axis
 {
     private string _axis_name;
@@ -128,6 +181,18 @@ public class InputManager : UnitySingleton<InputManager> {
             { "ability_slot_4_1_axis" , new Axis("Ability Slot 4 1")},
             { "ability_slot_2_3_axis" , new Axis("Ability Slot 2 3")},
         };
+    }
+
+    private void LateUpdate()
+    {
+        RefreshButtons();
+    }
+
+    private void RefreshButtons() {
+        foreach(Button button in _button_map.Values)
+        {
+            button.refresh();
+        }
     }
 
     // Update is called once per frame
