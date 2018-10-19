@@ -8,22 +8,22 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
-  - enabled: 0
+  - enabled: 1
     path: Assets/Scenes/PracticeScene.unity
     guid: af29a2dede1e026439f90a27153e06b1
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/test/SceneLoading/TestSceneLoadingStart.unity
     guid: db253e8e99e2cf5448380cad16716051
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/test/SceneLoading/TestSceneLoading3.unity
     guid: 28f2e73264a414d5c9b33466c2265642
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/test/SceneLoading/TestSceneLoading2.unity
     guid: 2e68a81b16b9a44aa9c67c9152b2c5d3
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/test/SceneLoading/TestSceneLoading4.unity
     guid: 58a384dbdcb2145a9a1e4e36ed1e2c51
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/test/SceneLoading/TestSceneLoading1.unity
     guid: 024fb97c2187d4f48aca0d04c2ec2edc
   m_configObjects: {}

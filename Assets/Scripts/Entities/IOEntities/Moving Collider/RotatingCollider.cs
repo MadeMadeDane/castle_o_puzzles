@@ -5,9 +5,13 @@ using UnityEngine;
 public class RotatingCollider : MovingCollider {
     public Vector3 AngularVelocity = Vector3.zero;
 
+    // States
+    public AnalogState a_AngularVelocity;
+
     protected override void Move() {
         base.Move();
         transform.Rotate(AngularVelocity * Time.deltaTime);
+        a_AngularVelocity.state = AngularVelocity.magnitude;
         //transform.RotateAround(transform.position, AngularVelocity.normalized, AngularVelocity.magnitude*Time.deltaTime);
     }
 

@@ -22,11 +22,15 @@ public class AnalogState
 
             // Invoke UnityEvent on state change
             if (_state != previous_state) {
-                Change.Invoke(this);
+                IOManager.Instance.IOTick(() => Change.Invoke(this));
             }
         }
         get {
             return _state;
         }
+    }
+
+    public void initialize(float initial_state) {
+        _state = initial_state;
     }
 }
