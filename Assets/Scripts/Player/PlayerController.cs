@@ -967,6 +967,7 @@ public class PlayerController : MonoBehaviour {
 
     public Vector3 GetMoveVector()
     {
+        if (player_camera == null) return Vector3.zero;
         return (input_manager.GetMoveVertical() * player_camera.yaw_pivot.transform.forward +
                 input_manager.GetMoveHorizontal() * player_camera.yaw_pivot.transform.right);
     }

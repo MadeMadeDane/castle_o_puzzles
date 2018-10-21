@@ -23,14 +23,12 @@ public class Menu : MonoBehaviour {
 
     public void open()
     {
-        cam_controller.enabled = false;
         ui_instance = Instantiate(prefab);
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.Confined;
     }
     public void close()
     {
-        cam_controller.enabled = true;
         Destroy(ui_instance);
         ui_instance = null;
         Cursor.lockState = CursorLockMode.Locked;

@@ -7,7 +7,6 @@ using UnityEngine;
 public class Pushable : PhysicsProp
 {
     public void Push(Vector3 force) {
-        Debug.Log("Pushing with force: " + force.ToString());
         rigidbody.AddForce(force);
     }
 }

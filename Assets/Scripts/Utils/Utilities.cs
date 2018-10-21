@@ -160,3 +160,26 @@ public class Timer
         time = period;
     }
 }
+
+public class Buffer<T> {
+    private Queue<T> queue;
+    private T accum;
+    private int size;
+
+    public Buffer(int size) {
+        this.size = size;
+        queue = new Queue<T>(Enumerable.Repeat<T>(default(T), size));
+        accum = default(T);
+    }
+
+    public T Accumulate(T value) {
+        accum += (dynamic) value - (dynamic) queue.Dequeue();
+        queue.Enqueue(value);
+        return accum;
+    }
+
+    public void Clear() {
+        queue = new Queue<T>(Enumerable.Repeat<T>(default(T), size));
+        accum = default(T);
+    }
+}
