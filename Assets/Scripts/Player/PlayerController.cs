@@ -456,6 +456,11 @@ public class PlayerController : MonoBehaviour {
         {
             return desired_move;
         }
+        // Save a bit on perfomance by returning early if we don't need to raycast
+        Vector3 desired_pos = transform.position + desired_move;
+        if (!Physics.CheckCapsule(desired_pos - 0.8f*(cc.height/2)*transform.up, desired_pos + 0.8f*(cc.height/2)*transform.up, cc.radius)) {
+            return desired_move;
+        }
         ground_move = ground_move.normalized * cc.radius;
         Vector3 ground_move_alt = Vector3.Cross(ground_move, transform.up);
 

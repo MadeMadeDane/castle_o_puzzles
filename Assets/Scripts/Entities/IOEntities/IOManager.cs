@@ -9,15 +9,6 @@ public class IOManager : UnitySingleton<IOManager>
     // At a game tick rate of 250hz our IOTickRate is 1000hz
     private const int IOTickRate = 4;
 
-    private IEnumerator RunOnNextTickCoroutine(Action action) {
-        yield return new WaitForFixedUpdate();
-        action();
-    }
-
-    public void RunOnNextTick(Action action) {
-        StartCoroutine(RunOnNextTickCoroutine(action));
-    }
-
     // How this works:
     //  An IO event chain is started by an action running. If that action triggers another action the
     //  current tick is incremented. If this chain continues the CurrentIOTick will keep being incremented
@@ -26,7 +17,7 @@ public class IOManager : UnitySingleton<IOManager>
     //  The IOTickRate represents the maximum length of any IO event chain allowed to run in a game tick.
     public void IOTick(Action action) {
         if (CurrentIOTick >= IOTickRate) {
-            RunOnNextTick(() => IOTick(action));
+            Utilities.Instance.RunOnNextTick(() => IOTick(action));
         }
         else {
             CurrentIOTick++;

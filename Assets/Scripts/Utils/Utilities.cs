@@ -8,6 +8,15 @@ public class Utilities : UnitySingleton<Utilities>
 {
     private Dictionary<string, Timer> Timers = new Dictionary<string, Timer>();
 
+    private IEnumerator RunOnNextTickCoroutine(Action action) {
+        yield return new WaitForFixedUpdate();
+        action();
+    }
+
+    public void RunOnNextTick(Action action) {
+        StartCoroutine(RunOnNextTickCoroutine(action));
+    }
+
     public Timer GetTimer(string name)
     {
         Timer timer;
