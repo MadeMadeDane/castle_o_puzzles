@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ComponentPlugin
 {
-    private MonoBehaviour context;
+    protected MonoBehaviour context;
     public ComponentPlugin(MonoBehaviour context) {
         this.context = context;
     }

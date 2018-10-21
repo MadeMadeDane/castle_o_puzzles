@@ -42,6 +42,7 @@ public class MovingColliderTrigger : MonoBehaviour {
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!other.GetComponent<PlayerController>()) return;
         if (!triggering)
         {
             triggering = true;
@@ -51,6 +52,7 @@ public class MovingColliderTrigger : MonoBehaviour {
 
     private void OnTriggerStay(Collider other)
     {
+        if (!other.GetComponent<PlayerController>()) return;
         if (HoldOnStay && !staying)
         {
             staying = true;

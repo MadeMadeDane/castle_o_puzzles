@@ -4,15 +4,9 @@ using UnityEngine;
 
 public class PhysicsProp : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        
-    }
+    new protected Rigidbody rigidbody;
 
-    // Update is called once per frame
-    void Update()
-    {
-        
+    private void Awake() {
+        rigidbody = GetComponent<Rigidbody>();
     }
 }
