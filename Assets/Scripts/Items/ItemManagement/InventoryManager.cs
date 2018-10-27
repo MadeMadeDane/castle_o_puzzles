@@ -23,18 +23,16 @@ public class InventoryManager : MonoBehaviour {
         amazon = new ItemCatalogue();
     }
 
-    void Start ()
-    {
+    void Start() {
     }
 
     // Update is called once per frame
-    void Update ()
-    {
+    void Update() {
         ItemRequest targetItem = null;
         if (cam_controller.GetViewMode() == ViewMode.Shooter) {
             Camera cam = cam_controller.controlled_camera;
             targetItem = utils.RayCastExplosiveSelect<ItemRequest>(origin: cam.transform.position,
-                                                                   path: cam.transform.forward*select_reach_dist,
+                                                                   path: cam.transform.forward * select_reach_dist,
                                                                    radius: explosive_rad);
         }
         if (prevItem != null && prevItem != targetItem) {
@@ -44,13 +42,13 @@ public class InventoryManager : MonoBehaviour {
             prevItem = null;
         }
         if (targetItem != null) {
-            if(!targetItem.gameObject.GetComponent<ParticleSystem>().isPlaying) {
+            if (!targetItem.gameObject.GetComponent<ParticleSystem>().isPlaying) {
                 targetItem.gameObject.GetComponent<ParticleSystem>().Play();
             }
             ParticleSystem.EmissionModule emitter = targetItem.gameObject.GetComponent<ParticleSystem>().emission;
             emitter.enabled = true;
             prevItem = targetItem;
-        } 
+        }
         if (im.GetPickUp() && targetItem != null) {
             AddItemToInventory(targetItem);
         }
@@ -59,18 +57,17 @@ public class InventoryManager : MonoBehaviour {
         }
     }
 
-    void AddItemToInventory (ItemRequest request)
-    {
+    void AddItemToInventory(ItemRequest request) {
         Item shipped_item = amazon.RequestItem(request.item_name);
 
         shipped_item.ctx = this;
         shipped_item.Start();
         shipped_item.menu_form = image;
         if (UseItem.isUseItem(shipped_item)) {
-            actionSlots.AddUseItem((UseItem) shipped_item);
+            actionSlots.AddUseItem((UseItem)shipped_item);
         }
         if (AbilityItem.isAbilityItem(shipped_item)) {
-            actionSlots.AddAbilityItem(actionSlots.ability_items.contents.Count, (AbilityItem) shipped_item);
+            actionSlots.AddAbilityItem(actionSlots.ability_items.contents.Count, (AbilityItem)shipped_item);
         }
         GameObject.Destroy(request.gameObject);
     }
