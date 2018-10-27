@@ -5,7 +5,7 @@ using UnityEngine;
 [AddComponentMenu("IOEntities/IOButton")]
 public class IOButton : IOEntity, IUsable
 {
-    DigitalState pressed;
+    public DigitalState pressed;
 
     public void Use() {
         // Send a quick impulse

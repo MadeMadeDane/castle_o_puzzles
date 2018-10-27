@@ -5,18 +5,9 @@ using UnityEngine;
 
 public class IOManager : UnitySingleton<IOManager>
 {
-    private int CurrentIOTick = 1;
+    private int CurrentIOTick = 0;
     // At a game tick rate of 250hz our IOTickRate is 1000hz
     private const int IOTickRate = 4;
-
-    private IEnumerator RunOnNextTickCoroutine(Action action) {
-        yield return new WaitForFixedUpdate();
-        action();
-    }
-
-    public void RunOnNextTick(Action action) {
-        StartCoroutine(RunOnNextTickCoroutine(action));
-    }
 
     // How this works:
     //  An IO event chain is started by an action running. If that action triggers another action the
@@ -26,12 +17,12 @@ public class IOManager : UnitySingleton<IOManager>
     //  The IOTickRate represents the maximum length of any IO event chain allowed to run in a game tick.
     public void IOTick(Action action) {
         if (CurrentIOTick >= IOTickRate) {
-            RunOnNextTick(action);
+            Utilities.Instance.RunOnNextTick(() => IOTick(action));
         }
         else {
             CurrentIOTick++;
             action();
         }
-        CurrentIOTick = 1;
+        CurrentIOTick = 0;
     }
 }

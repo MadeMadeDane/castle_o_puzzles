@@ -12,9 +12,9 @@ public class IOTestEntity : IOEntity, IUsable
     // Start is called before the first frame update
     void Start()
     {
-        StartCoroutine(TestDigitalStates());
+        //StartCoroutine(TestDigitalStates());
         //StartCoroutine(TestAnalogStates());
-        //StartCoroutine(TestIOLoop());
+        StartCoroutine(TestIOLoop());
     }
 
     public void Use() {

@@ -4,76 +4,62 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-public class Button
-{
+public class Button {
     private string[] _button_names;
 
-    public Button(string button_name)
-    {
+    public Button(string button_name) {
         _button_names = new string[] { button_name };
     }
 
-    public Button(string[] button_names)
-    {
+    public Button(string[] button_names) {
         _button_names = button_names;
     }
 
-    public bool down()
-    {
+    public bool down() {
         return _button_names.Any(name => Input.GetButtonDown(name));
     }
 
-    public bool pressed()
-    {
+    public bool pressed() {
         return _button_names.Any(name => Input.GetButton(name));
     }
 
-    public bool up()
-    {
+    public bool up() {
         return _button_names.Any(name => Input.GetButtonUp(name));
     }
 }
-public class Axis
-{
+
+public class Axis {
     private string _axis_name;
     private float prev_value;
-    public Axis(string axis_name)
-    {
+    public Axis(string axis_name) {
         _axis_name = axis_name;
     }
 
-    public void UpdatePreviousValue ()
-    {
+    public void UpdatePreviousValue() {
         prev_value = Input.GetAxisRaw(_axis_name);
     }
 
-    public bool positive()
-    {
+    public bool positive() {
         return Input.GetAxisRaw(_axis_name) > 0;
     }
 
-    public bool approaching_positive()
-    {
+    public bool approaching_positive() {
         return Input.GetAxisRaw(_axis_name) > prev_value;
     }
 
-    public bool leaving_positive()
-    {
+    public bool leaving_positive() {
         return Input.GetAxisRaw(_axis_name) < prev_value;
     }
 
-    public bool negative()
-    {
+    public bool negative() {
         return Input.GetAxisRaw(_axis_name) < 0;
     }
 
-    public bool approaching_negative()
-    {
+    public bool approaching_negative() {
         return Input.GetAxisRaw(_axis_name) < prev_value;
     }
 
-    public bool leaving_negative()
-    {
+    public bool leaving_negative() {
         return Input.GetAxisRaw(_axis_name) > prev_value;
     }
 }
@@ -98,7 +84,7 @@ public class InputManager : UnitySingleton<InputManager> {
     private int mouseQueueCount = 1;
 
     // Use this for initialization
-    void Start () {
+    void Start() {
         // Initial state
         mouseQueue = new Queue<Vector2>(Enumerable.Repeat<Vector2>(Vector2.zero, mouseQueueCount));
 
@@ -131,21 +117,18 @@ public class InputManager : UnitySingleton<InputManager> {
     }
 
     // Update is called once per frame
-    private void Update()
-    {
+    private void Update() {
         UpdateInputs();
     }
 
-    private void UpdateInputs()
-    {
+    private void UpdateInputs() {
         _input_vertical_axis = Input.GetAxisRaw("Vertical");
         _input_horizontal_axis = Input.GetAxisRaw("Horizontal");
         _input_scroll_axis = Input.GetAxis("Mouse ScrollWheel");
         MouseUpdate();
     }
 
-    private void MouseUpdate()
-    {
+    private void MouseUpdate() {
         // Handle both mouse and gamepad at the same time
         Vector2 rotVecM = new Vector2(
             Input.GetAxis("Mouse X"),
@@ -161,138 +144,111 @@ public class InputManager : UnitySingleton<InputManager> {
         mouseQueue.Enqueue(rotVec);
     }
 
-    public Vector2 GetMouseMotion()
-    {
+    public Vector2 GetMouseMotion() {
         return mouseQueueAvg;
     }
 
-    public Vector2 GetMove()
-    {
+    public Vector2 GetMove() {
         return new Vector2(_input_horizontal_axis, _input_vertical_axis);
     }
 
-    public float GetMoveHorizontal()
-    {
+    public float GetMoveHorizontal() {
         return _input_horizontal_axis;
     }
 
-    public float GetMoveVertical()
-    {
+    public float GetMoveVertical() {
         return _input_vertical_axis;
     }
 
-    public bool GetJump()
-    {
+    public bool GetJump() {
         return _button_map["jump_button"].down() || (Mathf.Abs(_input_scroll_axis) > 0f);
     }
 
-    public bool GetJumpHold()
-    {
+    public bool GetJumpHold() {
         return _button_map["jump_button"].pressed();
     }
 
-    public bool GetCenterCamera()
-    {
+    public bool GetCenterCamera() {
         return _button_map["center_camera_button"].down();
     }
 
-    public bool GetCenterCameraHold()
-    {
+    public bool GetCenterCameraHold() {
         return _button_map["center_camera_button"].pressed();
     }
-    
-    public bool GetCenterCameraRelease()
-    {
+
+    public bool GetCenterCameraRelease() {
         return _button_map["center_camera_button"].up();
     }
 
-    public bool GetToggleView()
-    {
+    public bool GetToggleView() {
         return _button_map["toggle_view_button"].down();
     }
 
-    public bool GetToggleViewHold()
-    {
+    public bool GetToggleViewHold() {
         return _button_map["toggle_view_button"].pressed();
     }
 
-    public bool GetUseItem()
-    {
+    public bool GetUseItem() {
         return _button_map["use_item_button"].down();
     }
 
-    public bool GetUseItemHold()
-    {
+    public bool GetUseItemHold() {
         return _button_map["use_item_button"].pressed();
     }
 
-    public bool GetPickUp()
-    {
+    public bool GetPickUp() {
         return _button_map["pick_up_button"].down();
     }
 
-    public bool GetPickUpHold()
-    {
+    public bool GetPickUpHold() {
         return _button_map["pick_up_button"].pressed();
     }
 
-    public bool GetDropItem()
-    {
+    public bool GetDropItem() {
         return _button_map["drop_item_button"].down();
     }
 
-    public bool GetDropItemHold()
-    {
+    public bool GetDropItemHold() {
         return _button_map["drop_item_button"].pressed();
     }
 
-    public bool GetStart()
-    {
+    public bool GetStart() {
         return _button_map["start_button"].down();
     }
 
-    public bool GetStartHold()
-    {
+    public bool GetStartHold() {
         return _button_map["start_button"].pressed();
     }
 
-    public bool GetAbilitySlot1()
-    {
+    public bool GetAbilitySlot1() {
         return _button_map["ability_slot_1_button"].down() || _axis_map["ability_slot_4_1_axis"].approaching_positive();
     }
 
-    public bool GetAbilitySlot1Hold()
-    {
+    public bool GetAbilitySlot1Hold() {
         return _button_map["ability_slot_1_button"].pressed() || _axis_map["ability_slot_2_3_axis"].positive();
     }
 
-    public bool GetAbilitySlot2()
-    {
+    public bool GetAbilitySlot2() {
         return _button_map["ability_slot_2_button"].down() || _axis_map["ability_slot_2_3_axis"].approaching_negative();
     }
 
-    public bool GetAbilitySlot2Hold()
-    {
+    public bool GetAbilitySlot2Hold() {
         return _button_map["ability_slot_2_button"].pressed() || _axis_map["ability_slot_2_3_axis"].negative();
     }
 
-    public bool GetAbilitySlot3()
-    {
+    public bool GetAbilitySlot3() {
         return _button_map["ability_slot_3_button"].down() || _axis_map["ability_slot_2_3_axis"].approaching_positive();
     }
 
-    public bool GetAbilitySlot3Hold()
-    {
+    public bool GetAbilitySlot3Hold() {
         return _button_map["ability_slot_3_button"].pressed() || _axis_map["ability_slot_2_3_axis"].positive();
     }
 
-    public bool GetAbilitySlot4()
-    {
-        return _button_map["ability_slot_4_button"].down() ||_axis_map["ability_slot_4_1_axis"].approaching_negative();
+    public bool GetAbilitySlot4() {
+        return _button_map["ability_slot_4_button"].down() || _axis_map["ability_slot_4_1_axis"].approaching_negative();
     }
 
-    public bool GetAbilitySlot4Hold()
-    {
+    public bool GetAbilitySlot4Hold() {
         return _button_map["ability_slot_4_button"].pressed() || _axis_map["ability_slot_4_1_axis"].negative();
     }
 }
