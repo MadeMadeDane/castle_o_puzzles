@@ -35,7 +35,8 @@ public class Utilities : UnitySingleton<Utilities> {
     public float GetTimerPeriod(string name) {
         if (Timers.ContainsKey(name)) {
             return Timers[name].getPeriod();
-        } else {
+        }
+        else {
             return 0f;
         }
     }
@@ -43,7 +44,8 @@ public class Utilities : UnitySingleton<Utilities> {
     public float GetTimerPercent(string name) {
         if (Timers.ContainsKey(name)) {
             return Timers[name].getPercent();
-        } else {
+        }
+        else {
             return 0f;
         }
     }
@@ -51,7 +53,8 @@ public class Utilities : UnitySingleton<Utilities> {
     public float GetTimerTime(string name) {
         if (Timers.ContainsKey(name)) {
             return Timers[name].getTime();
-        } else {
+        }
+        else {
             return 0f;
         }
     }
@@ -155,5 +158,28 @@ public class Buffer<T> {
     public void Clear() {
         queue = new Queue<T>(Enumerable.Repeat<T>(default(T), size));
         accum = default(T);
+    }
+}
+
+public class FloatBuffer {
+    private Queue<float> queue;
+    private float accum;
+    private int size;
+
+    public FloatBuffer(int size) {
+        this.size = size;
+        queue = new Queue<float>(Enumerable.Repeat<float>(0f, size));
+        accum = 0f;
+    }
+
+    public float Accumulate(float value) {
+        accum += value - queue.Dequeue();
+        queue.Enqueue(value);
+        return accum;
+    }
+
+    public void Clear() {
+        queue = new Queue<float>(Enumerable.Repeat<float>(0f, size));
+        accum = 0f;
     }
 }
