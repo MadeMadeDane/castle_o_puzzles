@@ -468,11 +468,13 @@ public class PlayerController : MonoBehaviour {
                 float cosanglehit = Vector3.Dot(hit.normal, scanray.direction.normalized);
                 if (Vector3.Dot(desired_move, hit.normal) < 0 && ((hit.distance + cc.radius) * Mathf.Abs(cosanglehit) < cc.radius * 1.1f)) {
                     //Debug.DrawRay(SkinPos + transform.up * cc.height / 2, hit.normal, Color.red);
-                    if (!OnGround() && IsWall(hit.normal)) {
-                        UpdateWallConditions(hit.normal);
+                    if (IsWall(hit.normal)) {
+                        if (!OnGround()) {
+                            UpdateWallConditions(hit.normal);
+                        }
+                        current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
+                        return Vector3.ProjectOnPlane(desired_move, hit.normal);
                     }
-                    current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
-                    return Vector3.ProjectOnPlane(desired_move, hit.normal);
                 }
             }
         }
@@ -841,6 +843,9 @@ public class PlayerController : MonoBehaviour {
             if (Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity).magnitude <= desiredSpeed) {
                 current_velocity += deltaVel;
             }
+            /*else if (desiredSpeed > GetGroundVelocity().magnitude) {
+                current_velocity = Vector3.ClampMagnitude(Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity), desiredSpeed) + (current_velocity + Vector3.Project(deltaVel, Physics.gravity) - GetGroundVelocity());
+            }*/
             accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, currentHit.normal) * SpeedDamp;
         }
         else {

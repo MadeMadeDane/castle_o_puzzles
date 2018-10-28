@@ -172,6 +172,13 @@ public class CameraController : MonoBehaviour {
         idleOrientation = mouseAccumulator;
     }
 
+    public void RotateIdleCameraToward(Vector3 direction, float lerp_factor) {
+        direction.Normalize();
+        Vector2 target_mouse_accum = EulerToMouseAccum(Quaternion.LookRotation(direction).eulerAngles);
+        idleOrientation.x = Mathf.LerpAngle(idleOrientation.x, target_mouse_accum.x, lerp_factor);
+        idleOrientation.y = Mathf.LerpAngle(idleOrientation.y, target_mouse_accum.y, lerp_factor);
+    }
+
     private void Update() {
         handleViewToggle();
     }
