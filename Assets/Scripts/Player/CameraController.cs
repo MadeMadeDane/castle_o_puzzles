@@ -6,8 +6,7 @@ using UnityEngine;
 
 
 
-public enum ViewMode
-{
+public enum ViewMode {
     Shooter,
     Third_Person,
     Third_Person_Shooter
@@ -72,32 +71,30 @@ public class CameraController : MonoBehaviour {
 
         opaque_material = home.GetComponentInChildren<SkinnedMeshRenderer>().material;
         original_model = home.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
-    }
 
-    void Start () {
         PlayerController player_home = home.GetComponent<PlayerController>();
-        if (player_home == null)
-        {
+        if (player_home == null) {
             throw new Exception("Failed initializing camera.");
         }
         //SetShooterVars(player_home);
         SetThirdPersonActionVars(player_home);
         //SetThirdPersonShooterVars(player_home);
+    }
+
+    void Start() {
         // TODO: Move this mouse hiding logic somewhere else
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
-    private void SetShooterVars(PlayerController target)
-    {
+    private void SetShooterVars(PlayerController target) {
         view_mode = ViewMode.Shooter;
         handleCameraMove = FirstPersonCameraMove;
         handlePlayerRotate = FirstPersonPlayerRotate;
         target_follow_angle = Vector3.zero;
         target_follow_distance = new Vector3(0, target.GetHeadHeight(), 0);
 
-        if (current_player != null)
-        {
+        if (current_player != null) {
             current_player.player_camera = null;
         }
         yaw_pivot.transform.parent = target.transform;
@@ -112,16 +109,14 @@ public class CameraController : MonoBehaviour {
         transform.localRotation = Quaternion.Euler(target_follow_angle);
     }
 
-    private void SetThirdPersonActionVars(PlayerController target)
-    {
+    private void SetThirdPersonActionVars(PlayerController target) {
         view_mode = ViewMode.Third_Person;
         handleCameraMove = ThirdPersonCameraMove;
         handlePlayerRotate = ThirdPersonPlayerRotate;
         target_follow_angle = new Vector3(14f, 0, 0);
-        target_follow_distance = new Vector3(0, target.GetHeadHeight(), -target.cc.height*1.5f);
+        target_follow_distance = new Vector3(0, target.GetHeadHeight(), -target.cc.height * 1.5f);
 
-        if (current_player != null)
-        {
+        if (current_player != null) {
             current_player.player_camera = null;
         }
         target.player_camera = this;
@@ -134,16 +129,14 @@ public class CameraController : MonoBehaviour {
         transform.localRotation = Quaternion.Euler(target_follow_angle);
     }
 
-    private void SetThirdPersonShooterVars(PlayerController target)
-    {
+    private void SetThirdPersonShooterVars(PlayerController target) {
         view_mode = ViewMode.Third_Person_Shooter;
         handleCameraMove = ThirdPersonShooterCameraMove;
-        handlePlayerRotate = delegate {};
+        handlePlayerRotate = delegate { };
         target_follow_angle = new Vector3(0, 0, 0);
-        target_follow_distance = new Vector3(target.cc.radius*2f, target.GetHeadHeight(), -target.cc.height);
+        target_follow_distance = new Vector3(target.cc.radius * 2f, target.GetHeadHeight(), -target.cc.height);
 
-        if (current_player != null)
-        {
+        if (current_player != null) {
             current_player.player_camera = null;
         }
         target.player_camera = this;
@@ -156,17 +149,14 @@ public class CameraController : MonoBehaviour {
         transform.localRotation = Quaternion.Euler(target_follow_angle);
     }
 
-    public void ThirdPersonJumpCallback()
-    {
-        if ((current_player.IsWallRunning() || current_player.CanWallJump()) && !input_manager.GetCenterCameraHold())
-        {
-            RotatePlayerToward(direction: Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity), 
+    public void ThirdPersonJumpCallback() {
+        if ((current_player.IsWallRunning() || current_player.CanWallJump()) && !input_manager.GetCenterCameraHold()) {
+            RotatePlayerToward(direction: Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity),
                                lerp_factor: 1.0f);
         }
     }
 
-    public void RotatePlayerToward(Vector3 direction, float lerp_factor)
-    {
+    public void RotatePlayerToward(Vector3 direction, float lerp_factor) {
         direction.Normalize();
         Vector3 angles = current_player.transform.localEulerAngles;
         float delta_angle = Vector3.SignedAngle(current_player.transform.forward, direction, Vector3.up);
@@ -174,8 +164,7 @@ public class CameraController : MonoBehaviour {
         current_player.transform.localEulerAngles = angles;
     }
 
-    public void RotateCameraToward(Vector3 direction, float lerp_factor)
-    {
+    public void RotateCameraToward(Vector3 direction, float lerp_factor) {
         direction.Normalize();
         Vector2 target_mouse_accum = EulerToMouseAccum(Quaternion.LookRotation(direction).eulerAngles);
         mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, target_mouse_accum.x, lerp_factor);
@@ -183,36 +172,27 @@ public class CameraController : MonoBehaviour {
         idleOrientation = mouseAccumulator;
     }
 
-    private void Update()
-    {
+    private void Update() {
         handleViewToggle();
     }
 
-    private void handleViewToggle()
-    {
-        if (input_manager.GetToggleView())
-        {
+    private void handleViewToggle() {
+        if (input_manager.GetToggleView()) {
             utils.ResetTimer(ZOOM_TIMER);
-            if (view_mode == ViewMode.Shooter)
-            {
+            if (view_mode == ViewMode.Shooter) {
                 SetThirdPersonActionVars(current_player);
-                if (original_model && show_model_in_inspection)
-                {
+                if (original_model && show_model_in_inspection) {
                     SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
-                    foreach (SkinnedMeshRenderer render in renderers)
-                    {
+                    foreach (SkinnedMeshRenderer render in renderers) {
                         render.sharedMesh = original_model;
                     }
                 }
             }
-            else if (view_mode == ViewMode.Third_Person)
-            {
+            else if (view_mode == ViewMode.Third_Person) {
                 SetShooterVars(current_player);
-                if (headless_model && show_model_in_inspection)
-                {
+                if (headless_model && show_model_in_inspection) {
                     SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
-                    foreach (SkinnedMeshRenderer render in renderers)
-                    {
+                    foreach (SkinnedMeshRenderer render in renderers) {
                         render.sharedMesh = headless_model;
                     }
                 }
@@ -221,32 +201,27 @@ public class CameraController : MonoBehaviour {
     }
 
     // LateUpdate is called after update. Ensures we are operating on the latest transform changes.
-    private void LateUpdate ()
-    {
+    private void LateUpdate() {
         UpdateCameraAngles();
     }
 
     // Rotate the camera
-    private void UpdateCameraAngles()
-    {
+    private void UpdateCameraAngles() {
         // Accumulate the angle changes and ensure x revolves in (-360, 360) and y is clamped in (-90,90)
         Vector2 mouse_input = input_manager.GetMouseMotion();
-        if (mouse_input != Vector2.zero)
-        {
+        if (mouse_input != Vector2.zero) {
             utils.ResetTimer(IDLE_TIMER);
             idleOrientation = mouseAccumulator;
         }
         mouseAccumulator += mouse_input;
         mouseAccumulator.x = mouseAccumulator.x % 360;
         mouseAccumulator.y = Mathf.Clamp(mouseAccumulator.y, -90, 90);
-        if (current_player != null)
-        {
+        if (current_player != null) {
             handleCameraMove();
         }
     }
 
-    private void FirstPersonCameraMove()
-    {
+    private void FirstPersonCameraMove() {
         // Set camera pitch
         transform.localRotation = Quaternion.AngleAxis(
             -mouseAccumulator.y, Vector3.right);
@@ -255,10 +230,8 @@ public class CameraController : MonoBehaviour {
             mouseAccumulator.x, Vector3.up);
     }
 
-    private void ThirdPersonCameraMove()
-    {
-        if (mouseAccumulator.x < 0)
-        {
+    private void ThirdPersonCameraMove() {
+        if (mouseAccumulator.x < 0) {
             mouseAccumulator.x = 360 + mouseAccumulator.x;
         }
         mouseAccumulator.y = Mathf.Clamp(mouseAccumulator.y, -65, 75);
@@ -269,20 +242,17 @@ public class CameraController : MonoBehaviour {
         yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
             mouseAccumulator.x, Vector3.up);
 
-        if (input_manager.GetCenterCameraRelease())
-        {
+        if (input_manager.GetCenterCameraRelease()) {
             utils.SetTimerFinished(IDLE_TIMER);
             Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
-            if (Mathf.Abs(Mathf.DeltaAngle(orientation.x, mouseAccumulator.x)) > 15f)
-            {
+            if (Mathf.Abs(Mathf.DeltaAngle(orientation.x, mouseAccumulator.x)) > 15f) {
                 idleOrientation = mouseAccumulator = EulerToMouseAccum(current_player.transform.eulerAngles);
             }
         }
         AvoidWalls();
     }
 
-    private void ThirdPersonShooterCameraMove()
-    {
+    private void ThirdPersonShooterCameraMove() {
         // Set camera pitch
         pitch_pivot.transform.localRotation = Quaternion.AngleAxis(
             -mouseAccumulator.y, Vector3.right);
@@ -290,12 +260,10 @@ public class CameraController : MonoBehaviour {
         yaw_pivot.transform.localRotation = Quaternion.AngleAxis(
             mouseAccumulator.x, Vector3.up);
         // Set the players yaw to match our velocity
-        if (!current_player.IsHanging())
-        {
+        if (!current_player.IsHanging()) {
             current_player.transform.rotation = yaw_pivot.transform.rotation;
         }
-        else
-        {
+        else {
             RotatePlayerToward(direction: -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity),
                                lerp_factor: 1.0f);
         }
@@ -303,23 +271,20 @@ public class CameraController : MonoBehaviour {
         AvoidWalls();
     }
 
-    private void FixedUpdate()
-    {
+    private void FixedUpdate() {
         HideHome();
         handlePlayerRotate();
-        if (view_mode != ViewMode.Shooter)
-        {
+        if (view_mode != ViewMode.Shooter) {
             AvoidWalls();
         }
     }
 
-    private void HideHome()
-    {
+    private void HideHome() {
         Color textureColor;
         SkinnedMeshRenderer[] renderers = home.GetComponentsInChildren<SkinnedMeshRenderer>();
         foreach (SkinnedMeshRenderer render in renderers) {
             if (view_mode == ViewMode.Third_Person || !show_model_in_inspection) {
-                float distance_to_head = (current_player.GetHeadHeight()*current_player.transform.up + current_player.transform.position - transform.position).magnitude;
+                float distance_to_head = (current_player.GetHeadHeight() * current_player.transform.up + current_player.transform.position - transform.position).magnitude;
                 if (distance_to_head < transparency_divider) {
                     if (!fade_texture_in_use) {
                         fade_texture_in_use = true;
@@ -328,33 +293,31 @@ public class CameraController : MonoBehaviour {
                     textureColor = render.material.color;
                     textureColor.a = distance_to_head < fully_translucent_threshold ? 0 : distance_to_head / transparency_divider;
                     render.material.color = textureColor;
-                } else {
+                }
+                else {
                     if (fade_texture_in_use) {
                         fade_texture_in_use = false;
                         render.material = opaque_material;
                     }
                 }
-            } else {
+            }
+            else {
                 fade_texture_in_use = false;
                 render.material = opaque_material;
             }
         }
     }
 
-    private void FirstPersonPlayerRotate()
-    {
-        if (!utils.CheckTimer(ZOOM_TIMER))
-        {
+    private void FirstPersonPlayerRotate() {
+        if (!utils.CheckTimer(ZOOM_TIMER)) {
             transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, utils.GetTimerPercent(ZOOM_TIMER));
         }
-        else
-        {
+        else {
             transform.localPosition = target_follow_distance;
         }
     }
 
-    private void ThirdPersonPlayerRotate()
-    {
+    private void ThirdPersonPlayerRotate() {
         // Set the players yaw to match our velocity
         Vector3 move_vector = current_player.GetMoveVector();
         Vector3 ground_velocity = Vector3.ProjectOnPlane(current_player.cc.velocity, Physics.gravity);
@@ -362,39 +325,32 @@ public class CameraController : MonoBehaviour {
         Vector3 desired_move = Vector3.zero;
         float interp_multiplier = 1f;
 
-        if (ground_velocity.magnitude < current_player.RunSpeed / 3)
-        {
+        if (ground_velocity.magnitude < current_player.RunSpeed / 3) {
             //Debug.Log("Controller move");
             desired_move = move_vector.normalized;
             interp_multiplier = 0.5f;
         }
-        else
-        {
+        else {
             //Debug.Log("Velocity move");
             desired_move = Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity).normalized;
         }
 
-        if (current_player.IsWallClimbing() && current_player.CanGrabLedge())
-        {
+        if (current_player.IsWallClimbing() && current_player.CanGrabLedge()) {
             desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
         }
-        if (desired_move != Vector3.zero && !input_manager.GetCenterCameraHold())
-        {
+        if (desired_move != Vector3.zero && !input_manager.GetCenterCameraHold()) {
             RotatePlayerToward(direction: desired_move, lerp_factor: 0.1f * interp_multiplier);
         }
 
         HandleTargetLock();
         FollowPlayerVelocity();
-        if (utils.CheckTimer(IDLE_TIMER))
-        {
+        if (utils.CheckTimer(IDLE_TIMER)) {
             RotateTowardIdleOrientation();
         }
     }
 
-    private void HandleTargetLock()
-    {
-        if (input_manager.GetCenterCameraHold())
-        {
+    private void HandleTargetLock() {
+        if (input_manager.GetCenterCameraHold()) {
             utils.ResetTimer(IDLE_TIMER);
             Vector2 orientation = EulerToMouseAccum(current_player.transform.eulerAngles);
             mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, orientation.x, 0.1f);
@@ -403,23 +359,18 @@ public class CameraController : MonoBehaviour {
         }
     }
 
-    private void FollowPlayerVelocity()
-    {
-        if (utils.CheckTimer(IDLE_TIMER) && !ManualCamera)
-        {
+    private void FollowPlayerVelocity() {
+        if (utils.CheckTimer(IDLE_TIMER) && !ManualCamera) {
             Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
-            if (player_ground_vel.normalized != Vector3.zero && Vector3.Dot(player_ground_vel.normalized, yaw_pivot.transform.forward) > -0.8)
-            {
+            if (player_ground_vel.normalized != Vector3.zero && Vector3.Dot(player_ground_vel.normalized, yaw_pivot.transform.forward) > -0.8) {
                 Quaternion velocity_angle = Quaternion.LookRotation(player_ground_vel.normalized, current_player.transform.up);
                 idleOrientation = EulerToMouseAccum(velocity_angle.eulerAngles);
             }
-            else if (player_ground_vel.normalized == Vector3.zero)
-            {
+            else if (player_ground_vel.normalized == Vector3.zero) {
                 idleOrientation.x = Mathf.LerpAngle(idleOrientation.x, mouseAccumulator.x, 0.01f);
                 idleOrientation.y = Mathf.LerpAngle(idleOrientation.y, mouseAccumulator.y, 0.01f);
             }
-            else
-            {
+            else {
                 //idleOrientation = EulerToMouseAccum(current_player.transform.eulerAngles);
                 mouseAccumulator.x += Vector3.Dot(player_ground_vel, yaw_pivot.transform.right) * 0.075f;
                 mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, 0f, 0.01f);
@@ -430,89 +381,73 @@ public class CameraController : MonoBehaviour {
         yaw_pivot.transform.position = Vector3.Lerp(yaw_pivot.transform.position, current_player.transform.position, 0.025f);
     }
 
-    private Vector2 EulerToMouseAccum(Vector3 euler_angle)
-    {
+    private Vector2 EulerToMouseAccum(Vector3 euler_angle) {
         float pitch = euler_angle.x;
         float yaw = euler_angle.y;
         float adjusted_pitch = 360 - pitch < pitch ? 360 - pitch : -pitch;
         return new Vector2(yaw, adjusted_pitch);
     }
 
-    private void AvoidWalls()
-    {
+    private void AvoidWalls() {
         RaycastHit hit;
         Vector3 startpos = current_player.transform.position;
         Vector3 world_target_vec = transform.TransformVector(Quaternion.Inverse(transform.localRotation) * target_follow_distance);
         Vector3 path = (yaw_pivot.transform.position + world_target_vec - startpos);
         //Debug.DrawRay(startpos, path.normalized*(path.magnitude+1f), Color.green);
-        
-        if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude + 1f))
-        {
+
+        if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude + 1f)) {
             Vector3 pivot_hit = (hit.point - yaw_pivot.transform.position);
             // Ignore hits that are too far away
-            if (pivot_hit.magnitude > target_follow_distance.magnitude + 1f)
-            {
+            if (pivot_hit.magnitude > target_follow_distance.magnitude + 1f) {
                 //Debug.Log("Too far hit");
                 transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
             }
             // Very close hits should move the camera to a predefined location
-            else if (hit.distance < 1f)
-            {
+            else if (hit.distance < 1f) {
                 //Debug.Log("Too close hit");
-                if (pitch_pivot.transform.localRotation.x < 0)
-                {
+                if (pitch_pivot.transform.localRotation.x < 0) {
                     transform.localPosition = Vector3.Lerp(transform.localPosition, (Quaternion.Inverse(pitch_pivot.transform.localRotation) * Vector3.up * target_follow_distance.y), 0.1f);
                 }
-                else
-                {
+                else {
                     transform.localPosition = Vector3.Lerp(transform.localPosition, (Vector3.up * target_follow_distance.y), 0.1f);
                 }
                 transform.localPosition = new Vector3(target_follow_distance.x, transform.localPosition.y, transform.localPosition.z);
             }
             // Otherwise move the camrea to where the hit is, minus an offset
-            else
-            {
+            else {
                 //Debug.Log("Wall hit");
                 float horizontal_displacement = Vector3.Dot(pivot_hit, pitch_pivot.transform.forward);
-                if (pitch_pivot.transform.localRotation.x < 0)
-                {
+                if (pitch_pivot.transform.localRotation.x < 0) {
                     transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - 1f) * Vector3.forward) + (Quaternion.Inverse(pitch_pivot.transform.localRotation) * Vector3.up * target_follow_distance.y);
                 }
-                else
-                {
+                else {
                     transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - 1f) * Vector3.forward) + (Vector3.up * target_follow_distance.y);
                 }
                 transform.localPosition += transform.InverseTransformDirection(hit.normal) * controlled_camera.rect.width / 2;
                 transform.localPosition = new Vector3(target_follow_distance.x, transform.localPosition.y, transform.localPosition.z);
             }
         }
-        else
-        {
+        else {
             //Debug.Log("No hit");
             transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
         }
     }
 
-    private void RotateTowardIdleOrientation()
-    {
-        if (ManualCamera)
-        {
+    private void RotateTowardIdleOrientation() {
+        if (ManualCamera) {
             return;
         }
-        if (!current_player.IsHanging())
-        {
+        if (!current_player.IsHanging()) {
             Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
             float lerp_factor = Mathf.Max(player_ground_vel.magnitude / current_player.RunSpeed, 0.2f);
             mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, idleOrientation.x, 0.005f * lerp_factor);
             mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, idleOrientation.y, 0.005f * lerp_factor);
         }
-        else
-        {
+        else {
             idleOrientation = mouseAccumulator;
         }
     }
-    public ViewMode GetViewMode()
-    {
+    public ViewMode GetViewMode() {
         return view_mode;
     }
 }
