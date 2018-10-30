@@ -1000,7 +1000,7 @@ public class PlayerController : MonoBehaviour {
             PreviousWallJumpNormal = PreviousWallNormal;
         }
         if (!isHanging && utils.GetTimerTime(JUMP_METER) > JumpMeterThreshold) {
-            if (CanWallJump() && WallJumpReflect.magnitude > 0) {
+            if (!OnGround() && CanWallJump() && WallJumpReflect.magnitude > 0) {
                 //Debug.Log("Wall Jump");
                 current_velocity += (WallJumpReflect - current_velocity) * WallJumpBoost * JumpMeterComputed;
                 if (conserveUpwardMomentum) {
@@ -1011,7 +1011,7 @@ public class PlayerController : MonoBehaviour {
                 }
                 utils.ResetTimer(JUMP_METER);
             }
-            else if (IsWallRunning()) {
+            else if (!OnGround() && IsWallRunning()) {
                 //Debug.Log("Wall Run Jump");
                 current_velocity += PreviousWallNormal * WallRunJumpSpeed * JumpMeterComputed;
                 float pathvel = Vector3.Dot(current_velocity, transform.forward);

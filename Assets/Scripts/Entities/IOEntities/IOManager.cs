@@ -3,8 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class IOManager : UnitySingleton<IOManager>
-{
+public class IOManager : UnitySingleton<IOManager> {
     private int CurrentIOTick = 0;
     // At a game tick rate of 250hz our IOTickRate is 1000hz
     private const int IOTickRate = 4;
@@ -12,8 +11,8 @@ public class IOManager : UnitySingleton<IOManager>
     // How this works:
     //  An IO event chain is started by an action running. If that action triggers another action the
     //  current tick is incremented. If this chain continues the CurrentIOTick will keep being incremented
-    //  without being set back to 1. When it reaches the IOTickRate the next action in the chain is scheduled
-    //  to run on the next game tick, thus breaking the chain and setting the CurrentIOTick back to 1.
+    //  without being set back to 0. When it reaches the IOTickRate the next action in the chain is scheduled
+    //  to run on the next game tick, thus breaking the chain and setting the CurrentIOTick back to 0.
     //  The IOTickRate represents the maximum length of any IO event chain allowed to run in a game tick.
     public void IOTick(Action action) {
         if (CurrentIOTick >= IOTickRate) {

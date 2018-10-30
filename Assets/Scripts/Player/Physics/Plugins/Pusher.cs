@@ -7,7 +7,6 @@ public class Pusher : PhysicsPlugin {
     private float pushtarget = 0f;
     private Vector3 lastpushsurface;
     private CameraController camera;
-    private Utilities utils;
     private string PUSH_TIMER = "PushTimer";
     private string PUSH_START_TIMER = "PushStartTimer";
 
@@ -15,9 +14,8 @@ public class Pusher : PhysicsPlugin {
 
     public override void Awake() {
         base.Awake();
-        utils = Utilities.Instance;
         utils.CreateTimer(PUSH_TIMER, 0.1f).setFinished();
-        utils.CreateTimer(PUSH_START_TIMER, 0.5f);
+        utils.CreateTimer(PUSH_START_TIMER, 0.3f);
     }
 
     public override void Start() {
@@ -47,9 +45,6 @@ public class Pusher : PhysicsPlugin {
                 utils.ResetTimer(PUSH_TIMER);
             }
         }
-        //Debug.DrawRay(context.transform.position, motion_vector, Color.green, 100f);
-        //Debug.DrawRay(context.transform.position, hit.normal, Color.red, 100f);
-        //Debug.DrawRay(context.transform.position, 20f*Vector3.Project(motion_vector, hit.normal), Color.blue, 100f);
     }
 
     public override void FixedUpdate() {
@@ -57,8 +52,8 @@ public class Pusher : PhysicsPlugin {
             if (camera.GetViewMode() == ViewMode.Third_Person) {
                 camera.RotateCameraToward(direction: -lastpushsurface,
                                           lerp_factor: 0.03f);
-                player.current_velocity = Vector3.Project(player.current_velocity, lastpushsurface) + Vector3.Project(player.current_velocity, Physics.gravity);
             }
+            player.current_velocity = Vector3.Project(player.current_velocity, lastpushsurface) + Vector3.Project(player.current_velocity, Physics.gravity);
         }
     }
 }

@@ -1,11 +1,21 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 using UnityEngine;
 
-public class PhysicsPropHandler : MonoBehaviour 
-{
+public class PhysicsPropHandler : MonoBehaviour {
     private Dictionary<Type, PhysicsPlugin> plugins;
+
+    public PhysicsPlugin GetPluginByProp<T>() where T : PhysicsProp {
+        PhysicsPlugin plugin;
+        plugins.TryGetValue(typeof(T), out plugin);
+        return plugin;
+    }
+
+    public T GetPlugin<T>() where T : PhysicsPlugin {
+        return plugins.Values.Where(x => x is T).FirstOrDefault() as T;
+    }
 
     private void Awake() {
         plugins = new Dictionary<Type, PhysicsPlugin>() {
