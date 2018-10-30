@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PhysicsProp : MonoBehaviour
-{
-    new protected Rigidbody rigidbody;
+public class PhysicsProp : MonoBehaviour {
+    new public Rigidbody rigidbody;
 
     private void Awake() {
         rigidbody = GetComponent<Rigidbody>();
