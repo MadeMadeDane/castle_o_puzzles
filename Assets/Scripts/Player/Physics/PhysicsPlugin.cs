@@ -32,4 +32,6 @@ public class PhysicsPlugin : ComponentPlugin {
     public virtual void OnCollisionExit(Collision other, PhysicsProp prop) { }
 
     public virtual void OnControllerColliderHit(ControllerColliderHit hit, PhysicsProp prop) { }
+
+    public virtual void OnUse(PhysicsProp prop) { }
 }
