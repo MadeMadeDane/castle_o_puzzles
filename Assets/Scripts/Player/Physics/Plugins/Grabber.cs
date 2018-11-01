@@ -6,6 +6,7 @@ using UnityEngine;
 public class Grabber : PhysicsPlugin {
     private const string GRAB_PRESS_TIMER = "GrabPressTimer";
     private Grabable grabbed;
+    private bool will_grab = false;
 
     public Grabber(MonoBehaviour context) : base(context) { }
 
@@ -16,14 +17,16 @@ public class Grabber : PhysicsPlugin {
 
     public override void OnUse(PhysicsProp prop) {
         Grabable grabable = prop as Grabable;
-        if (grabbed == null) {
+        if (grabbed == null && !will_grab) {
             Collider grabable_collider = grabable.GetComponent<Collider>();
             float grabable_height = grabable_collider.bounds.size.y;
             bool success = grabable.Pickup(
                 grabber: context.gameObject,
                 grab_offset: Vector3.up * (0.2f + (player.cc.height / 2f) + (grabable_height / 2f)));
             if (success) {
-                utils.RunOnNextFrame(() => grabbed = grabable);
+                // Delay 1 frame to ignore throw inputs on the current frame
+                will_grab = true;
+                utils.RunOnNextFrame(() => { grabbed = grabable; will_grab = false; });
             }
         }
     }
