@@ -939,6 +939,14 @@ public class PlayerController : MonoBehaviour {
         return Vector3.ProjectOnPlane(current_velocity, Physics.gravity);
     }
 
+    public Vector3 GetWorldVelocity() {
+        if (OnMovingPlatform() && lastMovingPlatform != null) {
+            // Keep custom velocity globally accurate
+            return current_velocity + lastMovingPlatform.player_velocity;
+        }
+        return current_velocity + moving_frame_velocity;
+    }
+
     public float GetHeadHeight() {
         return ((cc.height / 2) - cc.radius);
     }

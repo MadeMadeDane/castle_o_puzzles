@@ -216,7 +216,7 @@ public class CameraController : MonoBehaviour {
     private void UpdateCameraAngles() {
         // Accumulate the angle changes and ensure x revolves in (-360, 360) and y is clamped in (-90,90)
         Vector2 mouse_input = input_manager.GetMouseMotion();
-        if (mouse_input != Vector2.zero) {
+        if (mouse_input.magnitude > 0.01f) {
             utils.ResetTimer(IDLE_TIMER);
             idleOrientation = mouseAccumulator;
         }

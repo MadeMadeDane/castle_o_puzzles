@@ -39,7 +39,7 @@ public class Grabber : PhysicsPlugin {
 
     public override void FixedUpdate() {
         if (!utils.CheckTimer(GRAB_PRESS_TIMER) && grabbed) {
-            Vector3 local_velocity = player.transform.InverseTransformVector(player.cc.velocity);
+            Vector3 local_velocity = player.transform.InverseTransformVector(player.GetWorldVelocity());
             bool success = grabbed.Throw(velocity: local_velocity + 5f * (Vector3.forward + Vector3.up));
             if (success) {
                 grabbed = null;
