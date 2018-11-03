@@ -51,6 +51,7 @@ public class PlayerController : MonoBehaviour {
     // Managers
     private InputManager input_manager;
     private Utilities utils;
+    private PhysicsPropHandler physhandler;
 
     // Timers
     private string JUMP_METER = "JumpMeter";
@@ -212,6 +213,10 @@ public class PlayerController : MonoBehaviour {
 
         // TODO: Test below
         //cc.enableOverlapRecovery = false;
+        physhandler = GetComponent<PhysicsPropHandler>();
+        if (physhandler == null) {
+            throw new Exception("Could not find physics prop handler");
+        }
         Physics.IgnoreCollision(WallRunCollider, cc);
     }
 
@@ -982,12 +987,15 @@ public class PlayerController : MonoBehaviour {
 
     private void HandleUse() {
         if (!utils.CheckTimer(USE_TIMER)) {
+            GameObject usable_object;
             IUsable usable = utils.RayCastExplosiveSelect<IUsable>(
                 origin: transform.position,
                 path: transform.forward * 1f,
-                radius: 1.5f);
+                radius: 1.5f,
+                gameObject: out usable_object);
             if (usable != null) {
                 usable.Use();
+                physhandler.HandleUse(usable_object);
             }
             utils.SetTimerFinished(USE_TIMER);
         }

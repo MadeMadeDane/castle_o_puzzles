@@ -16,6 +16,15 @@ public class Utilities : UnitySingleton<Utilities> {
         StartCoroutine(RunOnNextTickCoroutine(action));
     }
 
+    private IEnumerator RunOnNextFrameCoroutine(Action action) {
+        yield return new WaitForEndOfFrame();
+        action();
+    }
+
+    public void RunOnNextFrame(Action action) {
+        StartCoroutine(RunOnNextFrameCoroutine(action));
+    }
+
     public Timer GetTimer(string name) {
         Timer timer;
         Timers.TryGetValue(name, out timer);
@@ -83,6 +92,27 @@ public class Utilities : UnitySingleton<Utilities> {
             return ExplosiveSelect<T>(hit.point, radius);
         }
         return ExplosiveSelect<T>(origin + path, radius);
+    }
+
+    public T RayCastExplosiveSelect<T>(Vector3 origin, Vector3 path, float radius, out GameObject gameObject) where T : class {
+        RaycastHit hit;
+        if (Physics.Raycast(origin, path, out hit, path.magnitude)) {
+            return ExplosiveSelect<T>(hit.point, radius, out gameObject);
+        }
+        return ExplosiveSelect<T>(origin + path, radius, out gameObject);
+    }
+
+    public T ExplosiveSelect<T>(Vector3 position, float radius, out GameObject gameObject) where T : class {
+        gameObject = null;
+        Collider[] colliders = Physics.OverlapSphere(position, radius);
+        Collider nearest_selected = colliders.OrderBy(x => (position - x.transform.position).magnitude)
+                                             .Where(x => x.GetComponent<T>() != null)
+                                             .FirstOrDefault();
+        if (nearest_selected != null) {
+            gameObject = nearest_selected.gameObject;
+            return nearest_selected.GetComponent<T>();
+        }
+        return null;
     }
 
     public T ExplosiveSelect<T>(Vector3 position, float radius) where T : class {
