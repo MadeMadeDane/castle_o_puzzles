@@ -62,6 +62,7 @@ public class PlayerController : MonoBehaviour {
     private string WALL_JUMP_TIMER = "WallJump";
     private string WALL_RUN_TIMER = "WallRun";
     private string WALL_CLIMB_TIMER = "WallClimb";
+    private string WALL_HIT_TIMER = "WallHit";
     private string REGRAB_TIMER = "ReGrab";
     private string MOVING_COLLIDER_TIMER = "MovingCollider";
     private string MOVING_PLATFORM_TIMER = "MovingPlatform";
@@ -131,6 +132,7 @@ public class PlayerController : MonoBehaviour {
         utils.CreateTimer(WALL_JUMP_TIMER, 0.2f).setFinished();
         utils.CreateTimer(WALL_RUN_TIMER, 0.2f).setFinished();
         utils.CreateTimer(WALL_CLIMB_TIMER, 0.2f).setFinished();
+        utils.CreateTimer(WALL_HIT_TIMER, 0.2f).setFinished();
         utils.CreateTimer(REGRAB_TIMER, 0.5f).setFinished();
         utils.CreateTimer(MOVING_COLLIDER_TIMER, 0.01f).setFinished();
         utils.CreateTimer(MOVING_PLATFORM_TIMER, 0.1f).setFinished();
@@ -477,6 +479,7 @@ public class PlayerController : MonoBehaviour {
                         if (!OnGround()) {
                             UpdateWallConditions(hit.normal);
                         }
+                        utils.ResetTimer(WALL_HIT_TIMER);
                         current_velocity = Vector3.ProjectOnPlane(current_velocity, hit.normal);
                         return Vector3.ProjectOnPlane(desired_move, hit.normal);
                     }
@@ -594,6 +597,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     private void UpdateWallConditions(Vector3 wall_normal) {
+        utils.ResetTimer(WALL_HIT_TIMER);
         if (Vector3.Dot(GetGroundVelocity(), wall_normal) < -WallJumpThreshold) {
             // Are we jumping in a new direction (atleast 20 degrees difference)
             if (Vector3.Dot(PreviousWallJumpNormal, wall_normal) < 0.94f) {
@@ -899,6 +903,10 @@ public class PlayerController : MonoBehaviour {
         return wallClimbEnabled && !utils.CheckTimer(WALL_CLIMB_TIMER);
     }
 
+    public bool IsOnWall() {
+        return !utils.CheckTimer(WALL_HIT_TIMER);
+    }
+
     public bool CanGrabLedge() {
         return wallClimbEnabled && utils.CheckTimer(REGRAB_TIMER);
     }
@@ -1026,6 +1034,7 @@ public class PlayerController : MonoBehaviour {
                     current_velocity.y = Math.Max(current_velocity.y, WallJumpSpeed * JumpMeterComputed);
                 }
                 utils.ResetTimer(JUMP_METER);
+                utils.SetTimerFinished(WALL_HIT_TIMER);
             }
             else if (!OnGround() && IsWallRunning()) {
                 //Debug.Log("Wall Run Jump");
@@ -1035,6 +1044,7 @@ public class PlayerController : MonoBehaviour {
                 current_velocity += transform.forward * (newspeed - pathvel);
                 current_velocity.y = Math.Max(current_velocity.y, WallRunJumpUpSpeed * JumpMeterComputed);
                 utils.ResetTimer(JUMP_METER);
+                utils.SetTimerFinished(WALL_HIT_TIMER);
             }
             else if (OnGround()) {
                 //Debug.Log("Upward Jump");

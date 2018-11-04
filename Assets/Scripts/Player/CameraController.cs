@@ -345,6 +345,11 @@ public class CameraController : MonoBehaviour {
         if (current_player.IsWallClimbing() && current_player.CanGrabLedge()) {
             desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
         }
+        else if (current_player.IsOnWall()) {
+            if (Vector3.Dot(current_player.GetLastWallNormal(), current_player.GetMoveVector()) < -0.7f) {
+                desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
+            }
+        }
         if (desired_move != Vector3.zero && !input_manager.GetCenterCameraHold() && !input_manager.GetCenterCameraRelease()) {
             RotatePlayerToward(direction: desired_move, lerp_factor: 0.1f * interp_multiplier);
         }
@@ -382,7 +387,6 @@ public class CameraController : MonoBehaviour {
                 mouseAccumulator.x += Vector3.Dot(player_ground_vel, yaw_pivot.transform.right) * 0.075f;
                 mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, 0f, 0.01f);
                 idleOrientation = mouseAccumulator;
-
             }
         }
         yaw_pivot.transform.position = Vector3.Lerp(yaw_pivot.transform.position, current_player.transform.position, 0.025f);

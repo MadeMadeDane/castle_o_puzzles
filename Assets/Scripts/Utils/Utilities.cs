@@ -8,7 +8,7 @@ public class Utilities : UnitySingleton<Utilities> {
     private Dictionary<string, Timer> Timers = new Dictionary<string, Timer>();
 
     private IEnumerator WaitUntilConditionCoroutine(Func<bool> check, Action action) {
-        yield return new WaitUntil(() => { return check(); });
+        yield return new WaitUntil(check);
         action();
     }
 

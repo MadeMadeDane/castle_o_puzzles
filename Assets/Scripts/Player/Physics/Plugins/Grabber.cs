@@ -28,7 +28,6 @@ public class Grabber : PhysicsPlugin {
                 grabber: context.gameObject,
                 grab_offset: Vector3.up * (0.2f + (player.cc.height / 2f) + (grabable_height / 2f)));
             if (success) {
-                // Delay 1 frame to ignore throw inputs on the current frame
                 will_grab = true;
                 // Wait until the grab button is released to finish the pick up
                 utils.WaitUntilCondition(
