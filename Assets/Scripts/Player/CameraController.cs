@@ -345,7 +345,7 @@ public class CameraController : MonoBehaviour {
         if (current_player.IsWallClimbing() && current_player.CanGrabLedge()) {
             desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
         }
-        if (desired_move != Vector3.zero && !input_manager.GetCenterCameraHold()) {
+        if (desired_move != Vector3.zero && !input_manager.GetCenterCameraHold() && !input_manager.GetCenterCameraRelease()) {
             RotatePlayerToward(direction: desired_move, lerp_factor: 0.1f * interp_multiplier);
         }
 

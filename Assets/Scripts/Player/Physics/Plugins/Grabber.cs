@@ -4,15 +4,19 @@ using System.Linq;
 using UnityEngine;
 
 public class Grabber : PhysicsPlugin {
-    private const string GRAB_PRESS_TIMER = "GrabPressTimer";
+    private const string THROW_METER = "ThrowMeter";
+    private const string THROW_PRESS = "ThrowPress";
     private Grabable grabbed;
     private bool will_grab = false;
+    public float throw_base_strength = 5f;
+    public float throw_added_strength = 5f;
 
     public Grabber(MonoBehaviour context) : base(context) { }
 
     public override void Awake() {
         base.Awake();
-        utils.CreateTimer(GRAB_PRESS_TIMER, 0.1f);
+        utils.CreateTimer(THROW_PRESS, 0.1f);
+        utils.CreateTimer(THROW_METER, 1f);
     }
 
     public override void OnUse(PhysicsProp prop) {
@@ -26,25 +30,39 @@ public class Grabber : PhysicsPlugin {
             if (success) {
                 // Delay 1 frame to ignore throw inputs on the current frame
                 will_grab = true;
-                utils.RunOnNextFrame(() => { grabbed = grabable; will_grab = false; });
+                // Wait until the grab button is released to finish the pick up
+                utils.WaitUntilCondition(
+                    check: () => {
+                        return !input_manager.GetPickUpHold();
+                    },
+                    action: () => {
+                        grabbed = grabable;
+                        will_grab = false;
+                    });
             }
         }
     }
 
     public override void Update() {
         if (input_manager.GetPickUp() && grabbed) {
-            utils.ResetTimer(GRAB_PRESS_TIMER);
+            utils.ResetTimer(THROW_METER);
+        }
+        if (input_manager.GetPickUpRelease() && grabbed) {
+            utils.ResetTimer(THROW_PRESS);
         }
     }
 
     public override void FixedUpdate() {
-        if (!utils.CheckTimer(GRAB_PRESS_TIMER) && grabbed) {
+        if (!utils.CheckTimer(THROW_PRESS) && grabbed) {
             Vector3 local_velocity = player.transform.InverseTransformVector(player.GetWorldVelocity());
-            bool success = grabbed.Throw(velocity: local_velocity + 5f * (Vector3.forward + Vector3.up));
+            float throw_power = (throw_base_strength + throw_added_strength * utils.GetTimerPercent(THROW_METER));
+            bool success = grabbed.Throw(
+                velocity: local_velocity + throw_power * (Vector3.forward + Vector3.up));
             if (success) {
                 grabbed = null;
             }
-            utils.SetTimerFinished(GRAB_PRESS_TIMER);
+            utils.SetTimerFinished(THROW_PRESS);
+            utils.SetTimerFinished(THROW_METER);
         }
     }
 }

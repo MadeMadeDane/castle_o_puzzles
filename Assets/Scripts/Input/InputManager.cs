@@ -204,6 +204,10 @@ public class InputManager : UnitySingleton<InputManager> {
         return _button_map["pick_up_button"].pressed();
     }
 
+    public bool GetPickUpRelease() {
+        return _button_map["pick_up_button"].up();
+    }
+
     public bool GetDropItem() {
         return _button_map["drop_item_button"].down();
     }
