@@ -7,13 +7,22 @@ using UnityEngine;
 public class Utilities : UnitySingleton<Utilities> {
     private Dictionary<string, Timer> Timers = new Dictionary<string, Timer>();
 
+    private IEnumerator WaitUntilConditionCoroutine(Func<bool> check, Action action) {
+        yield return new WaitUntil(check);
+        action();
+    }
+
+    public Coroutine WaitUntilCondition(Func<bool> check, Action action) {
+        return StartCoroutine(WaitUntilConditionCoroutine(check, action));
+    }
+
     private IEnumerator RunOnNextTickCoroutine(Action action) {
         yield return new WaitForFixedUpdate();
         action();
     }
 
-    public void RunOnNextTick(Action action) {
-        StartCoroutine(RunOnNextTickCoroutine(action));
+    public Coroutine RunOnNextTick(Action action) {
+        return StartCoroutine(RunOnNextTickCoroutine(action));
     }
 
     private IEnumerator RunOnNextFrameCoroutine(Action action) {
@@ -21,8 +30,8 @@ public class Utilities : UnitySingleton<Utilities> {
         action();
     }
 
-    public void RunOnNextFrame(Action action) {
-        StartCoroutine(RunOnNextFrameCoroutine(action));
+    public Coroutine RunOnNextFrame(Action action) {
+        return StartCoroutine(RunOnNextFrameCoroutine(action));
     }
 
     public Timer GetTimer(string name) {
