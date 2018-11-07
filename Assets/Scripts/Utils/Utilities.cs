@@ -177,6 +177,7 @@ public class Timer {
     }
 }
 
+// WARNING: Dynamic value subtraction breaks WebGL. Create specificly typed buffers like below
 public class Buffer<T> {
     private Queue<T> queue;
     private T accum;
