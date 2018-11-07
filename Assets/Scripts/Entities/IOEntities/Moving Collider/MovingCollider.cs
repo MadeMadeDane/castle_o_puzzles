@@ -27,7 +27,7 @@ public class MovingCollider : MovingGeneric {
     private string HOME_TIMER;
 
     // Use this for initialization
-    private void Start () {
+    private void Start() {
         utils = Utilities.Instance;
         HOME_TIMER = "MovingColliderHomeReset_" + gameObject.GetInstanceID().ToString();
         utils.CreateTimer(HOME_TIMER, HomeResetTime);
@@ -49,12 +49,10 @@ public class MovingCollider : MovingGeneric {
         StartCoroutine(MoveToNextTarget());
     }
 
-    private void FixedUpdate()
-    {
+    private void FixedUpdate() {
         Move();
         player_velocity = CalculatePlayerVelocity();
-        if (ResetToHome && !Automatic)
-        {
+        if (ResetToHome && !Automatic) {
             CheckHomeResetTimer();
         }
         d_Moving.state = moving;
@@ -62,20 +60,16 @@ public class MovingCollider : MovingGeneric {
     }
 
     protected virtual void Move() {
-        if (current_target != null)
-        {
+        if (current_target != null) {
             Vector3 path = current_target.transform.position - transform.position;
-            if (path.magnitude > distanceThreshold)
-            {
+            if (path.magnitude > distanceThreshold) {
                 target_velocity = path.normalized * current_target.speed;
             }
-            else
-            {
+            else {
                 target_velocity = path / distanceThreshold;
             }
         }
-        else
-        {
+        else {
             target_velocity = Vector3.zero;
         }
         velocity = Vector3.Lerp(velocity, target_velocity, 0.1f);
@@ -85,74 +79,59 @@ public class MovingCollider : MovingGeneric {
 
     protected virtual Vector3 CalculatePlayerVelocity() {
         return velocity;
-    } 
+    }
 
-    private void CheckHomeResetTimer()
-    {
-        if (moving)
-        {
+    private void CheckHomeResetTimer() {
+        if (moving) {
             utils.ResetTimer(HOME_TIMER);
         }
-        else if (!at_home && utils.CheckTimer(HOME_TIMER))
-        {
+        else if (!at_home && utils.CheckTimer(HOME_TIMER)) {
             GoHome();
         }
     }
 
-    public void Stay()
-    {
+    public void Stay() {
         utils.ResetTimer(HOME_TIMER);
     }
 
-    public void GoHome()
-    {
-        if (!moving)
-        {
+    public void GoHome() {
+        if (!moving) {
             nextTargetObject = home;
             StartCoroutine(MoveToNextTarget());
         }
-        else
-        {
+        else {
             MotionTarget home_target = home.GetComponent<MotionTarget>();
-            if (home_target != null)
-            {
+            if (home_target != null) {
                 current_target = home_target;
             }
         }
     }
 
-    public void Trigger()
-    {
+    public void Trigger() {
         StartCoroutine(MoveToNextTarget());
     }
 
-    public Coroutine TriggerAsync()
-    {
+    public Coroutine TriggerAsync() {
         return StartCoroutine(MoveToNextTarget());
     }
 
-    private IEnumerator MoveToNextTarget()
-    {
+    private IEnumerator MoveToNextTarget() {
         // Basic lock for coroutines. Do not allow other coroutines to run when moving
-        if (moving)
-        {
+        if (moving) {
             yield break;
         }
         moving = true;
 
-        if (nextTargetObject == null)
-        {
+        if (nextTargetObject == null) {
             // Wait for nextTargetObject to bet set
             yield return new WaitUntil(() => nextTargetObject != null);
         }
-        if (nextTargetObject != home)
-        {
+        if (nextTargetObject != home) {
             at_home = false;
         }
         MotionTarget nextTarget = nextTargetObject.GetComponent<MotionTarget>();
         // Reset to home if we fail to find a next target
-        if (nextTarget == null)
-        {
+        if (nextTarget == null) {
             Debug.Log("Target was not a MotionTarget");
             nextTargetObject = home;
             yield return new WaitForSeconds(1f);
@@ -162,8 +141,7 @@ public class MovingCollider : MovingGeneric {
         }
 
         current_target = nextTarget;
-        while ((current_target.transform.position - transform.position).magnitude > distanceThreshold)
-        {
+        while ((current_target.transform.position - transform.position).magnitude > distanceThreshold) {
             //target_velocity = (current_target.transform.position - transform.position).normalized * current_target.speed;
             // Synchronize with fixed update
             yield return new WaitForFixedUpdate();
@@ -171,8 +149,7 @@ public class MovingCollider : MovingGeneric {
 
         // Put the coroutine to sleep while we wait
         target_velocity = Vector3.zero;
-        if (current_target.waitTime > 0f)
-        {
+        if (current_target.waitTime > 0f) {
             yield return new WaitForSeconds(current_target.waitTime);
         }
         nextTargetObject = current_target.nextTargetObject;
@@ -182,14 +159,15 @@ public class MovingCollider : MovingGeneric {
             at_home = true;
         }
 
-        if (Automatic)
-        {
+        if (Automatic) {
             StartCoroutine(MoveToNextTarget());
         }
     }
 
-    private void OnCollisionStay(Collision collision)
-    {
-        // Debug.Log("Collision: " + (from contact in collision.contacts select contact.normal).ToString());
+    private void OnCollisionStay(Collision collision) {
+        MovingColliderRigidBody other = collision.gameObject.GetComponent<MovingColliderRigidBody>();
+        if (other != null) {
+            other.attach(gameObject);
+        }
     }
 }

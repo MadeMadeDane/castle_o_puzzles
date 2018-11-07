@@ -4,17 +4,18 @@ using UnityEngine;
 
 // This class is purely for testing IOEntities
 [AddComponentMenu("IOEntities/IOTestEntity")]
-public class IOTestEntity : IOEntity, IUsable
-{
+public class IOTestEntity : IOEntity, IUsable {
+    public bool run_tests = false;
     public DigitalState exampleDigital;
     public AnalogState exampleAnalog;
 
     // Start is called before the first frame update
-    void Start()
-    {
-        //StartCoroutine(TestDigitalStates());
-        //StartCoroutine(TestAnalogStates());
-        StartCoroutine(TestIOLoop());
+    void Start() {
+        if (run_tests) {
+            //StartCoroutine(TestDigitalStates());
+            //StartCoroutine(TestAnalogStates());
+            StartCoroutine(TestIOLoop());
+        }
     }
 
     public void Use() {

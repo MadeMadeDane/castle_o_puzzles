@@ -7,23 +7,6 @@ using UnityEngine;
 public class PhysicsPropHandler : MonoBehaviour {
     private Dictionary<Type, PhysicsPlugin> plugins;
 
-    public PhysicsPlugin GetPluginByProp<T>() where T : PhysicsProp {
-        PhysicsPlugin plugin;
-        plugins.TryGetValue(typeof(T), out plugin);
-        return plugin;
-    }
-
-    public T GetPlugin<T>() where T : PhysicsPlugin {
-        return plugins.Values.Where(x => x is T).FirstOrDefault() as T;
-    }
-
-    public void HandleUse(GameObject other) {
-        PhysicsProp[] props = other.GetComponents<PhysicsProp>();
-        foreach (PhysicsProp prop in props) {
-            plugins[prop.GetType()].OnUse(prop);
-        }
-    }
-
     private void Awake() {
         plugins = new Dictionary<Type, PhysicsPlugin>() {
             {typeof(Pushable), new Pusher(context: this)},
@@ -33,6 +16,16 @@ public class PhysicsPropHandler : MonoBehaviour {
         foreach (ComponentPlugin plugin in plugins.Values) {
             plugin.Awake();
         }
+    }
+
+    public T GetPlugin<T>() where T : PhysicsPlugin {
+        return plugins.Values.Where(x => x is T).FirstOrDefault() as T;
+    }
+
+    public PhysicsPlugin GetPluginByProp<T>() where T : PhysicsProp {
+        PhysicsPlugin plugin;
+        plugins.TryGetValue(typeof(T), out plugin);
+        return plugin;
     }
 
     private void Start() {
@@ -99,6 +92,13 @@ public class PhysicsPropHandler : MonoBehaviour {
         PhysicsProp[] props = hit.gameObject.GetComponents<PhysicsProp>();
         foreach (PhysicsProp prop in props) {
             plugins[prop.GetType()].OnControllerColliderHit(hit, prop);
+        }
+    }
+
+    public void HandleUse(GameObject other) {
+        PhysicsProp[] props = other.GetComponents<PhysicsProp>();
+        foreach (PhysicsProp prop in props) {
+            plugins[prop.GetType()].OnUse(prop);
         }
     }
 }
