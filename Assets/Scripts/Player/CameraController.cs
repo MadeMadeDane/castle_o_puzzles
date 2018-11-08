@@ -279,10 +279,27 @@ public class CameraController : MonoBehaviour {
     }
 
     private void FixedUpdate() {
+        SetTargetPos();
         HideHome();
         handlePlayerRotate();
         if (view_mode != ViewMode.Shooter) {
             AvoidWalls();
+        }
+    }
+
+    private void SetTargetPos() {
+        switch (GetViewMode()) {
+            case ViewMode.Shooter:
+                target_follow_distance = new Vector3(0, current_player.GetHeadHeight(), 0);
+                break;
+            case ViewMode.Third_Person:
+                target_follow_distance = new Vector3(
+                    0, current_player.GetHeadHeight(), -current_player.cc.height * 1.5f);
+                break;
+            case ViewMode.Third_Person_Shooter:
+                target_follow_distance = new Vector3(
+                    current_player.cc.radius * 2f, current_player.GetHeadHeight(), -current_player.cc.height);
+                break;
         }
     }
 
