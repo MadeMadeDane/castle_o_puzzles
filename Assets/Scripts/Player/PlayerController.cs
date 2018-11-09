@@ -596,7 +596,7 @@ public class PlayerController : MonoBehaviour {
             if (IsWallClimbing() && !isHanging) {
                 // Make sure our head is against a wall
                 if (Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), -PreviousWallNormal, out hit, cc.radius + WallScanDistance)) {
-                    Vector3 LedgeScanVerticalPos = transform.position + (transform.up * cc.height / 2);
+                    Vector3 LedgeScanVerticalPos = transform.position + transform.up * (GetHeadHeight() + cc.radius);
                     Vector3 LedgeScanHorizontalVector = (cc.radius + LedgeClimbOffset) * transform.forward;
                     // Make sure we don't hit a wall at the ledge height
                     if (!Physics.Raycast(origin: LedgeScanVerticalPos, direction: LedgeScanHorizontalVector.normalized, maxDistance: LedgeScanHorizontalVector.magnitude)) {
