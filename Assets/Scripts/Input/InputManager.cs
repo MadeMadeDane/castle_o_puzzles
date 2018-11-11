@@ -99,6 +99,7 @@ public class InputManager : UnitySingleton<InputManager> {
 
         _button_map = new Dictionary<string, Button>() {
             { "jump_button",  new Button("Jump") },
+            { "crouch_button",  new Button("Crouch") },
             { "center_camera_button",  new Button("Center Camera") },
             { "toggle_view_button",  new Button("Toggle View") },
             { "use_item_button", new Button("Use Item") },
@@ -166,6 +167,18 @@ public class InputManager : UnitySingleton<InputManager> {
 
     public bool GetJumpHold() {
         return _button_map["jump_button"].pressed();
+    }
+
+    public bool GetCrouch() {
+        return _button_map["crouch_button"].down();
+    }
+
+    public bool GetCrouchHold() {
+        return _button_map["crouch_button"].pressed();
+    }
+
+    public bool GetCrouchRelease() {
+        return _button_map["crouch_button"].up();
     }
 
     public bool GetCenterCamera() {

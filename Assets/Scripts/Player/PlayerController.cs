@@ -44,6 +44,7 @@ public class PlayerController : MonoBehaviour {
     public bool conserveUpwardMomentum;
     public bool ShortHopEnabled;
     public bool JumpBoostEnabled;
+    public bool ToggleCrouch;
     [HideInInspector]
     public Vector3 current_velocity;
     public bool debug_mode = false;
@@ -68,6 +69,7 @@ public class PlayerController : MonoBehaviour {
     private string MOVING_PLATFORM_TIMER = "MovingPlatform";
     private string MOVING_INTERIOR_TIMER = "MovingInterior";
     private string STUCK_TIMER = "Stuck";
+    private string CROUCH_TIMER = "Crouch";
 
     // Jumping state variables
     private float JumpMeterThreshold;
@@ -75,7 +77,16 @@ public class PlayerController : MonoBehaviour {
     private bool isHanging;
     private bool isJumping;
     private bool isFalling;
+    private bool isCrouching;
     private bool willJump;
+    private float cc_standHeight;
+    private float cc_standCenter;
+    private float wr_standHeight;
+    private float wr_standCenter;
+    private float re_standHeight;
+    private float re_standCenter;
+    private CapsuleCollider wall_run_collider;
+    private CapsuleCollider recovery_collider;
 
     // Wall related variables
     private Vector3 WallJumpReflect;
@@ -121,6 +132,14 @@ public class PlayerController : MonoBehaviour {
     private void Awake() {
         input_manager = InputManager.Instance;
         utils = Utilities.Instance;
+        wall_run_collider = GetComponent<CapsuleCollider>();
+        recovery_collider = GetComponentInChildren<CollisionRecovery>().GetComponent<CapsuleCollider>();
+        cc_standHeight = cc.height;
+        cc_standCenter = cc.center.y;
+        wr_standHeight = wall_run_collider.height;
+        wr_standCenter = wall_run_collider.center.y;
+        re_standHeight = recovery_collider.height;
+        re_standCenter = recovery_collider.center.y;
 
         utils.CreateTimer(JUMP_METER, 0.3f);
         utils.CreateTimer(USE_TIMER, 0.1f);
@@ -138,6 +157,7 @@ public class PlayerController : MonoBehaviour {
         utils.CreateTimer(MOVING_PLATFORM_TIMER, 0.1f).setFinished();
         utils.CreateTimer(MOVING_INTERIOR_TIMER, 0.1f).setFinished();
         utils.CreateTimer(STUCK_TIMER, 0.2f).setFinished();
+        utils.CreateTimer(CROUCH_TIMER, 0.1f).setFinished();
 
         if (debug_mode) {
             EnableDebug();
@@ -186,6 +206,7 @@ public class PlayerController : MonoBehaviour {
         isJumping = false;
         isFalling = false;
         willJump = false;
+        isCrouching = false;
         // Wall related vars
         WallAxis = Vector3.zero;
         AlongWallVel = Vector3.zero;
@@ -257,6 +278,7 @@ public class PlayerController : MonoBehaviour {
         wallClimbEnabled = true;
         ShortHopEnabled = false;
         JumpBoostEnabled = false;
+        ToggleCrouch = true;
         // Delegates
         accelerate = AccelerateCPM;
     }
@@ -296,6 +318,7 @@ public class PlayerController : MonoBehaviour {
         wallClimbEnabled = true;
         ShortHopEnabled = true;
         JumpBoostEnabled = true;
+        ToggleCrouch = true;
         // Delegates
         accelerate = AccelerateStandard;
     }
@@ -310,6 +333,9 @@ public class PlayerController : MonoBehaviour {
         }
         if (input_manager.GetPickUp()) {
             utils.ResetTimer(USE_TIMER);
+        }
+        if (input_manager.GetCrouch()) {
+            utils.ResetTimer(CROUCH_TIMER);
         }
     }
 
@@ -343,6 +369,7 @@ public class PlayerController : MonoBehaviour {
 
         ProcessHits();
         ProcessTriggers();
+        HandleCrouch();
         HandleMovement();
         HandleJumping();
         HandleUse();
@@ -440,8 +467,8 @@ public class PlayerController : MonoBehaviour {
             return desired_move;
         }
         // Save a bit on perfomance by returning early if we don't need to raycast
-        Vector3 desired_pos = transform.position + desired_move;
-        if (!Physics.CheckCapsule(desired_pos - 0.8f * (cc.height / 2) * transform.up, desired_pos + 0.8f * (cc.height / 2) * transform.up, cc.radius)) {
+        Vector3 desired_pos = transform.position + desired_move + cc.center;
+        if (!Physics.CheckCapsule(desired_pos - (cc.height / 2 - cc.radius) * transform.up, desired_pos + (cc.height / 2 - cc.radius) * transform.up, cc.radius)) {
             return desired_move;
         }
         ground_move = ground_move.normalized * cc.radius;
@@ -450,19 +477,16 @@ public class PlayerController : MonoBehaviour {
         Vector3 SkinPos = transform.position + (ground_move.normalized * (cc.radius + cc.skinWidth));
         Vector3 SkinPosAlt = transform.position + (ground_move_alt.normalized * (cc.radius + cc.skinWidth));
         Vector3 SkinPosAltN = transform.position + (-ground_move_alt.normalized * (cc.radius + cc.skinWidth));
-        Ray[] scanrays = new Ray[12] {
+        Ray[] scanrays = new Ray[9] {
             new Ray(SkinPos, ground_move),
             new Ray(SkinPosAlt, ground_move_alt),
             new Ray(SkinPosAltN, -ground_move_alt),
-            new Ray(SkinPos + transform.up*GetHeadHeight(), ground_move),
-            new Ray(SkinPosAlt + transform.up*GetHeadHeight(), ground_move_alt),
-            new Ray(SkinPosAltN + transform.up*GetHeadHeight(), -ground_move_alt),
-            new Ray(SkinPos + transform.up*cc.height/4, ground_move),
-            new Ray(SkinPosAlt + transform.up*cc.height/4, ground_move_alt),
-            new Ray(SkinPosAltN + transform.up*cc.height/4, -ground_move_alt),
-            new Ray(SkinPos - transform.up*cc.height/4, ground_move),
-            new Ray(SkinPosAlt - transform.up*cc.height/4, ground_move_alt),
-            new Ray(SkinPosAltN - transform.up*cc.height/4, -ground_move_alt)
+            new Ray(SkinPos + cc.center + transform.up*cc.height/4, ground_move),
+            new Ray(SkinPosAlt + cc.center + transform.up*cc.height/4, ground_move_alt),
+            new Ray(SkinPosAltN + cc.center + transform.up*cc.height/4, -ground_move_alt),
+            new Ray(SkinPos + cc.center - transform.up*cc.height/4, ground_move),
+            new Ray(SkinPosAlt + cc.center - transform.up*cc.height/4, ground_move_alt),
+            new Ray(SkinPosAltN + cc.center - transform.up*cc.height/4, -ground_move_alt)
         };
         RaycastHit hit;
 
@@ -572,7 +596,7 @@ public class PlayerController : MonoBehaviour {
             if (IsWallClimbing() && !isHanging) {
                 // Make sure our head is against a wall
                 if (Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), -PreviousWallNormal, out hit, cc.radius + WallScanDistance)) {
-                    Vector3 LedgeScanVerticalPos = transform.position + (transform.up * cc.height / 2);
+                    Vector3 LedgeScanVerticalPos = transform.position + transform.up * (GetHeadHeight() + cc.radius);
                     Vector3 LedgeScanHorizontalVector = (cc.radius + LedgeClimbOffset) * transform.forward;
                     // Make sure we don't hit a wall at the ledge height
                     if (!Physics.Raycast(origin: LedgeScanVerticalPos, direction: LedgeScanHorizontalVector.normalized, maxDistance: LedgeScanHorizontalVector.magnitude)) {
@@ -726,6 +750,60 @@ public class PlayerController : MonoBehaviour {
         PreviousWallNormal = Vector3.zero;
         PreviousWallJumpNormal = Vector3.zero;
         PreviousWallJumpPos = Vector3.positiveInfinity;
+    }
+
+    private void HandleCrouch() {
+        if (ToggleCrouch) {
+            if (!utils.CheckTimer(CROUCH_TIMER)) {
+                if (!isCrouching) {
+                    isCrouching = true;
+                    SetCrouchHeight();
+                }
+                else if (CheckIfCanStand()) {
+                    isCrouching = false;
+                    SetStandHeight();
+                }
+                utils.SetTimerFinished(CROUCH_TIMER);
+            }
+        }
+        else if (!isCrouching && input_manager.GetCrouchHold()) {
+            isCrouching = true;
+            SetCrouchHeight();
+            utils.WaitUntilCondition(
+                check: () => {
+                    return (!input_manager.GetCrouchHold() && CheckIfCanStand());
+                },
+                action: () => {
+                    isCrouching = false;
+                    SetStandHeight();
+                });
+        }
+    }
+
+    private bool CheckIfCanStand() {
+        Vector3 stand_center = transform.position + cc.center + transform.up * (cc_standCenter - cc.center.y);
+        float radius = cc.radius;
+        Vector3 start = stand_center - transform.up * (cc_standHeight / 2 - radius);
+        Vector3 end = stand_center + transform.up * (cc_standHeight / 2 - radius);
+        return !Physics.CheckCapsule(start, end, radius);
+    }
+
+    private void SetCrouchHeight() {
+        cc.height = cc_standHeight / 2;
+        cc.center = new Vector3(cc.center.x, cc_standCenter - (cc.height / 2), cc.center.z);
+        wall_run_collider.height = wr_standHeight / 2;
+        wall_run_collider.center = new Vector3(wall_run_collider.center.x, wr_standCenter - (wall_run_collider.height / 2), wall_run_collider.center.z);
+        recovery_collider.height = re_standHeight / 2;
+        recovery_collider.center = new Vector3(recovery_collider.center.x, re_standCenter - (recovery_collider.height / 2), recovery_collider.center.z);
+    }
+
+    private void SetStandHeight() {
+        cc.height = cc_standHeight;
+        cc.center = new Vector3(cc.center.x, cc_standCenter, cc.center.z);
+        wall_run_collider.height = wr_standHeight;
+        wall_run_collider.center = new Vector3(wall_run_collider.center.x, wr_standCenter, wall_run_collider.center.z);
+        recovery_collider.height = re_standHeight;
+        recovery_collider.center = new Vector3(recovery_collider.center.x, re_standCenter, recovery_collider.center.z);
     }
 
     // Apply movement forces from input (FAST edition)
@@ -915,6 +993,10 @@ public class PlayerController : MonoBehaviour {
         return isHanging;
     }
 
+    public bool IsCrouching() {
+        return isCrouching;
+    }
+
     public bool InMovingCollision() {
         return !utils.CheckTimer(MOVING_COLLIDER_TIMER);
     }
@@ -956,7 +1038,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     public float GetHeadHeight() {
-        return ((cc.height / 2) - cc.radius);
+        return ((cc.height / 2) - cc.radius + cc.center.y);
     }
 
     public bool CanJumpBoost() {
