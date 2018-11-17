@@ -83,8 +83,7 @@ public class InputManager : UnitySingleton<InputManager> {
     private Vector2 mouseQueueAvg = Vector2.zero;
     private int mouseQueueCount = 1;
 
-    // Use this for initialization
-    void Start() {
+    private void Awake() {
         // Initial state
         mouseQueue = new Queue<Vector2>(Enumerable.Repeat<Vector2>(Vector2.zero, mouseQueueCount));
 

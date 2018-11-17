@@ -3,6 +3,7 @@ using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using MLAPI;
 
 
 
@@ -14,7 +15,7 @@ public enum ViewMode {
 
 public delegate void CameraMovementFunction();
 
-public class CameraController : MonoBehaviour {
+public class CameraController : NetworkedBehaviour {
     private static string ZOOM_TIMER = "CameraZoom";
     private static string IDLE_TIMER = "CameraIdle";
     [Header("Linked Components")]
@@ -54,7 +55,7 @@ public class CameraController : MonoBehaviour {
     public bool show_model_in_inspection = false;
 
     // Use this for initialization
-    private void Awake() {
+    private void Setup() {
         QualitySettings.vSyncCount = 0;
         // Application.targetFrameRate = 45;
         transparency_divider = 4;
@@ -82,6 +83,8 @@ public class CameraController : MonoBehaviour {
     }
 
     void Start() {
+        if (!isOwner) return;
+        Setup();
         // TODO: Move this mouse hiding logic somewhere else
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -180,6 +183,7 @@ public class CameraController : MonoBehaviour {
     }
 
     private void Update() {
+        if (!isOwner) return;
         handleViewToggle();
     }
 
@@ -209,6 +213,7 @@ public class CameraController : MonoBehaviour {
 
     // LateUpdate is called after update. Ensures we are operating on the latest transform changes.
     private void LateUpdate() {
+        if (!isOwner) return;
         UpdateCameraAngles();
     }
 
@@ -279,6 +284,7 @@ public class CameraController : MonoBehaviour {
     }
 
     private void FixedUpdate() {
+        if (!isOwner) return;
         SetTargetPos();
         HideHome();
         handlePlayerRotate();

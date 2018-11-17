@@ -536,6 +536,7 @@ GameObject:
   - component: {fileID: 3809476801668544939}
   - component: {fileID: 3889923146922603631}
   - component: {fileID: 3857515276327892747}
+  - component: {fileID: 1028557241}
   m_Layer: 2
   m_Name: StickPlayer
   m_TagString: Untagged
@@ -642,6 +643,7 @@ MonoBehaviour:
   conserveUpwardMomentum: 0
   ShortHopEnabled: 0
   JumpBoostEnabled: 0
+  ToggleCrouch: 0
   current_velocity: {x: 0, y: 0, z: 0}
   debug_mode: 0
 --- !u!54 &3809476801668544939
@@ -690,7 +692,20 @@ MonoBehaviour:
   pc: {fileID: 3857977534723365077}
   animator: {fileID: 3840802101551939593}
   runMinSpeed: 5
+  walkMaxSpeed: 4
   sprintMinSpeed: 12
+--- !u!114 &1028557241
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3754296374550706765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d42371711e0a4cc8b8a6bd6dbdc7fe5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &3754310118493782233
 GameObject:
   m_ObjectHideFlags: 0
@@ -1201,6 +1216,7 @@ GameObject:
   - component: {fileID: 3755937003960181133}
   - component: {fileID: 3755937003960181132}
   - component: {fileID: 3755937003960181123}
+  - component: {fileID: 257536838159462354}
   m_Layer: 0
   m_Name: PlayerContainer
   m_TagString: Player
@@ -1272,6 +1288,20 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mh: {fileID: 3755937003960181132}
+--- !u!114 &257536838159462354
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3754669400956811389}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 209037615, guid: 66c1ef50f50774948b27183d7d3c79c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  NetworkedPrefabName: PlayerContainer
+  SceneDelayedSpawn: 0
 --- !u!1 &3754779230382536095
 GameObject:
   m_ObjectHideFlags: 0

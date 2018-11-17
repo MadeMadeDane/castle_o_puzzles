@@ -3,11 +3,12 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using UnityEngine;
+using MLAPI;
 
-public class PhysicsPropHandler : MonoBehaviour {
+public class PhysicsPropHandler : NetworkedBehaviour {
     private Dictionary<Type, PhysicsPlugin> plugins;
 
-    private void Awake() {
+    private void Setup() {
         plugins = new Dictionary<Type, PhysicsPlugin>() {
             {typeof(Pushable), new Pusher(context: this)},
             {typeof(Grabable), new Grabber(context: this)}
@@ -29,24 +30,29 @@ public class PhysicsPropHandler : MonoBehaviour {
     }
 
     private void Start() {
+        if (!isOwner) return;
+        Setup();
         foreach (ComponentPlugin plugin in plugins.Values) {
             plugin.Start();
         }
     }
 
     private void Update() {
+        if (!isOwner) return;
         foreach (ComponentPlugin plugin in plugins.Values) {
             plugin.Update();
         }
     }
 
     private void FixedUpdate() {
+        if (!isOwner) return;
         foreach (ComponentPlugin plugin in plugins.Values) {
             plugin.FixedUpdate();
         }
     }
 
     private void OnTriggerEnter(Collider other) {
+        if (!isOwner) return;
         PhysicsProp[] props = other.GetComponents<PhysicsProp>();
         foreach (PhysicsProp prop in props) {
             plugins[prop.GetType()].OnTriggerEnter(other, prop);
@@ -54,6 +60,7 @@ public class PhysicsPropHandler : MonoBehaviour {
     }
 
     private void OnTriggerStay(Collider other) {
+        if (!isOwner) return;
         PhysicsProp[] props = other.GetComponents<PhysicsProp>();
         foreach (PhysicsProp prop in props) {
             plugins[prop.GetType()].OnTriggerStay(other, prop);
@@ -61,6 +68,7 @@ public class PhysicsPropHandler : MonoBehaviour {
     }
 
     private void OnTriggerExit(Collider other) {
+        if (!isOwner) return;
         PhysicsProp[] props = other.GetComponents<PhysicsProp>();
         foreach (PhysicsProp prop in props) {
             plugins[prop.GetType()].OnTriggerExit(other, prop);
@@ -68,6 +76,7 @@ public class PhysicsPropHandler : MonoBehaviour {
     }
 
     private void OnCollisionEnter(Collision other) {
+        if (!isOwner) return;
         PhysicsProp[] props = other.gameObject.GetComponents<PhysicsProp>();
         foreach (PhysicsProp prop in props) {
             plugins[prop.GetType()].OnCollisionEnter(other, prop);
@@ -75,6 +84,7 @@ public class PhysicsPropHandler : MonoBehaviour {
     }
 
     private void OnCollisionStay(Collision other) {
+        if (!isOwner) return;
         PhysicsProp[] props = other.gameObject.GetComponents<PhysicsProp>();
         foreach (PhysicsProp prop in props) {
             plugins[prop.GetType()].OnCollisionStay(other, prop);
@@ -82,6 +92,7 @@ public class PhysicsPropHandler : MonoBehaviour {
     }
 
     private void OnCollisionExit(Collision other) {
+        if (!isOwner) return;
         PhysicsProp[] props = other.gameObject.GetComponents<PhysicsProp>();
         foreach (PhysicsProp prop in props) {
             plugins[prop.GetType()].OnCollisionExit(other, prop);
@@ -89,6 +100,7 @@ public class PhysicsPropHandler : MonoBehaviour {
     }
 
     private void OnControllerColliderHit(ControllerColliderHit hit) {
+        if (!isOwner) return;
         PhysicsProp[] props = hit.gameObject.GetComponents<PhysicsProp>();
         foreach (PhysicsProp prop in props) {
             plugins[prop.GetType()].OnControllerColliderHit(hit, prop);
