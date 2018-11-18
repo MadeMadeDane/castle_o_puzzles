@@ -1,18 +1,22 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using MLAPI.Components;
+using MLAPI;
 
-public class LoadArea : MonoBehaviour
+public class LoadArea : NetworkedBehaviour
 {
-    private SceneLoader sceneLoader;
-
-    private void Awake() {
-        sceneLoader = SceneLoader.Instance;
-    }
 
     public string scene = "SampleScene";
     void OnTriggerEnter(Collider col)
     {
-        sceneLoader.LoadNextScene(scene);
+        Debug.Log("Collision happened");
+        InvokeServerRpc(ChangeSceneRPC, scene);
+    }
+    [ServerRPC]
+    private void ChangeSceneRPC(string sceneName)
+    {
+        NetworkSceneManager.SwitchScene(sceneName);
+        Debug.Log("Running on the server");
     }
 }
