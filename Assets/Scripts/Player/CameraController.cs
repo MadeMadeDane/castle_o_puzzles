@@ -64,6 +64,9 @@ public class CameraController : NetworkedBehaviour {
         yaw_pivot.transform.parent = player_container.transform;
         pitch_pivot = new GameObject("pitch_pivot");
         pitch_pivot.transform.parent = yaw_pivot.transform;
+        if (controlled_camera == null) {
+            controlled_camera = gameObject.AddComponent<Camera>();
+        }
 
         input_manager = InputManager.Instance;
         utils = Utilities.Instance;

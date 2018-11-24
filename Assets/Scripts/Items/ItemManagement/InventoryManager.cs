@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using MLAPI;
 
-public class InventoryManager : MonoBehaviour {
+public class InventoryManager : NetworkedBehaviour {
     public CameraController cam_controller;
     public ActionSlots actionSlots;
     public Sprite image;
@@ -17,17 +18,20 @@ public class InventoryManager : MonoBehaviour {
 
     private ItemRequest prevItem = null;
     // Use this for initialization
-    private void Awake() {
+    private void Setup() {
         utils = Utilities.Instance;
         im = InputManager.Instance;
         amazon = new ItemCatalogue();
     }
 
     void Start() {
+        if (!isOwner) return;
+        Setup();
     }
 
     // Update is called once per frame
     void Update() {
+        if (!isOwner) return;
         ItemRequest targetItem = null;
         if (cam_controller.GetViewMode() == ViewMode.Shooter) {
             Camera cam = cam_controller.controlled_camera;
@@ -58,6 +62,7 @@ public class InventoryManager : MonoBehaviour {
     }
 
     void AddItemToInventory(ItemRequest request) {
+        if (!isOwner) return;
         Item shipped_item = amazon.RequestItem(request.item_name);
 
         shipped_item.ctx = this;
