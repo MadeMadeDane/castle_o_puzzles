@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System;
 using UnityEngine;
 using System.Linq;
 using MLAPI;
@@ -84,7 +85,15 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
     public AnimationCurve DistanceSendrate = AnimationCurve.Constant(0, 500, 20);
     private readonly Dictionary<uint, ClientSendInfo> clientSendInfo = new Dictionary<uint, ClientSendInfo>();
 
+    # region new vars
     private const string POS_CHANNEL = "MLAPI_POSITION_UPDATE";
+    private Vector3 posOnLastReceive;
+    private Quaternion rotOnLastReceive;
+    private InterpBuffer<Vector3> position_buffer = new InterpBuffer<Vector3>();
+    private InterpBuffer<Quaternion> rotation_buffer = new InterpBuffer<Quaternion>();
+    [Tooltip("The delay in seconds buffered for interpolation")]
+    public float interp_delay = 0.1f;
+    # endregion
 
     /// <summary>
     /// The delegate used to check if a move is valid
@@ -119,6 +128,9 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
     /// Registers message handlers
     /// </summary>
     public override void NetworkStart() {
+        posOnLastReceive = transform.position;
+        rotOnLastReceive = transform.rotation;
+
         lastSentRot = transform.rotation;
         lastSentPos = transform.position;
 
@@ -157,7 +169,7 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
         else {
             //If we are server and interpolation is turned on for server OR we are not server and interpolation is turned on
             if ((isServer && InterpolateServer && InterpolatePosition) || (!isServer && InterpolatePosition)) {
-                if (Vector3.Distance(transform.position, lerpEndPos) > SnapDistance) {
+                /*if (Vector3.Distance(transform.position, lerpEndPos) > SnapDistance) {
                     //Snap, set T to 1 (100% of the lerp)
                     lerpT = 1f;
                 }
@@ -173,7 +185,11 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
                 if (ExtrapolatePosition && Time.time - lastRecieveTime < sendDelay * MaxSendsToExtrapolate)
                     transform.rotation = Quaternion.SlerpUnclamped(lerpStartRot, lerpEndRot, lerpT);
                 else
-                    transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);
+                    transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);*/
+
+                float interp_time = Time.time - interp_delay;
+                transform.position = position_buffer.Interpolate(interp_time, posOnLastReceive, FixedSendsPerSecond, Vector3.Lerp);
+                transform.rotation = rotation_buffer.Interpolate(interp_time, rotOnLastReceive, FixedSendsPerSecond, Quaternion.Slerp);
             }
         }
 
@@ -200,6 +216,14 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
                 lerpEndPos = new Vector3(xPos, yPos, zPos);
                 lerpEndRot = Quaternion.Euler(xRot, yRot, zRot);
                 lerpT = 0;
+
+                posOnLastReceive = transform.position;
+                rotOnLastReceive = transform.rotation;
+                /*Debug.Log("Time: " + lastRecieveTime.ToString());
+                Debug.Log("Attempting to insert pos: " + new Vector3(xPos, yPos, zPos).ToString());
+                Debug.Log("Attempting to insert rot: " + Quaternion.Euler(xRot, yRot, zRot).ToString());*/
+                position_buffer.Insert(lastRecieveTime, new Vector3(xPos, yPos, zPos));
+                rotation_buffer.Insert(lastRecieveTime, Quaternion.Euler(xRot, yRot, zRot));
             }
             else {
                 transform.position = new Vector3(xPos, yPos, zPos);
@@ -330,3 +354,79 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
     }
 }
 
+public class InterpBuffer<T> {
+    private class BufferEntry {
+        public float time;
+        public T value;
+
+        public BufferEntry(float time, T value) {
+            this.time = time;
+            this.value = value;
+        }
+    }
+
+    private List<BufferEntry> buffer;
+    public InterpBuffer() {
+        buffer = new List<BufferEntry>();
+    }
+
+    public void Insert(float time, T value) {
+        BufferEntry entry = new BufferEntry(time, value);
+        // Hardcode a limit on the buffer for now to prevent a leak
+        if (buffer.Count > 20) {
+            buffer.RemoveAt(0);
+        }
+        // Check the end to see if we should just append early
+        if (buffer.Count == 0 || buffer.Last().time <= time) {
+            buffer.Add(entry);
+        }
+        // Otherwise find where we need to insert this frame
+        else {
+            int idx = buffer.FindIndex((BufferEntry it) => { return it.time > time; });
+            if (idx == -1) {
+                buffer.Add(entry);
+            }
+            else {
+                buffer.Insert(idx, entry);
+            }
+        }
+    }
+
+    public T Interpolate(float time, Func<T, T, float, T> interp_function) {
+        if (buffer.Count == 0) {
+            return default(T);
+        }
+        int upperboundidx = buffer.FindIndex((BufferEntry it) => { return it.time > time; });
+        if (upperboundidx == -1) {
+            return buffer.Last().value;
+        }
+        else if (upperboundidx == 0) {
+            return buffer.First().value;
+        }
+        BufferEntry upper = buffer[upperboundidx];
+        BufferEntry lower = buffer[upperboundidx - 1];
+        return interp_function(lower.value, upper.value, (time - lower.time) / (upper.time - lower.time));
+    }
+
+    public T Interpolate(float time, T value, float rate, Func<T, T, float, T> interp_function) {
+        // If the buffers empty, just return the current value
+        if (buffer.Count == 0) {
+            return value;
+        }
+        int upperboundidx = buffer.FindIndex((BufferEntry it) => { return it.time > time; });
+        // If the current value occurs after all values in the buffer, return it
+        if (upperboundidx == -1) {
+            return value;
+        }
+        // If the current value occurs before all values in the buffer, interpolate
+        // towards the first value from the current value using the expected rate.
+        else if (upperboundidx == 0) {
+            BufferEntry entry = buffer.First();
+            return interp_function(value, entry.value, (entry.time - time) * rate);
+        }
+        // Otherwise interpolate between the two values surrounding the current value at the current time
+        BufferEntry upper = buffer[upperboundidx];
+        BufferEntry lower = buffer[upperboundidx - 1];
+        return interp_function(lower.value, upper.value, (time - lower.time) / (upper.time - lower.time));
+    }
+}

@@ -46,7 +46,6 @@ public class PlayerController : NetworkedBehaviour {
     public bool ShortHopEnabled;
     public bool JumpBoostEnabled;
     public bool ToggleCrouch;
-    [HideInInspector]
     public Vector3 current_velocity;
     public bool debug_mode = false;
 
