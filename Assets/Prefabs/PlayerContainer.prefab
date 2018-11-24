@@ -537,7 +537,7 @@ GameObject:
   - component: {fileID: 3889923146922603631}
   - component: {fileID: 3857515276327892747}
   - component: {fileID: 1028557241}
-  - component: {fileID: 3084734307438050197}
+  - component: {fileID: 8208969367719437792}
   m_Layer: 2
   m_Name: StickPlayer
   m_TagString: Untagged
@@ -707,7 +707,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d42371711e0a4cc8b8a6bd6dbdc7fe5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &3084734307438050197
+--- !u!114 &8208969367719437792
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -716,7 +716,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 3754296374550706765}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: -410691123, guid: 66c1ef50f50774948b27183d7d3c79c8, type: 3}
+  m_Script: {fileID: 11500000, guid: 14526a3308ad7a54eaad6e8aec63ea4f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   FixedSendsPerSecond: 20
