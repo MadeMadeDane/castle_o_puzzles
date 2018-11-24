@@ -84,6 +84,8 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
     public AnimationCurve DistanceSendrate = AnimationCurve.Constant(0, 500, 20);
     private readonly Dictionary<uint, ClientSendInfo> clientSendInfo = new Dictionary<uint, ClientSendInfo>();
 
+    private const string POS_CHANNEL = "MLAPI_POSITION_UPDATE";
+
     /// <summary>
     /// The delegate used to check if a move is valid
     /// </summary>
@@ -144,9 +146,9 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
                         writer.WriteSinglePacked(transform.rotation.eulerAngles.z);
 
                         if (isServer)
-                            InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, stream);
+                            InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, stream, channel: POS_CHANNEL);
                         else
-                            InvokeServerRpc(SubmitTransform, stream);
+                            InvokeServerRpc(SubmitTransform, stream, channel: POS_CHANNEL);
                     }
                 }
 
@@ -256,7 +258,7 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
                                 info.lastMissedPosition = null;
                                 info.lastMissedRotation = null;
 
-                                InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, writeStream);
+                                InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, writeStream, channel: POS_CHANNEL);
                             }
                             else {
                                 info.lastMissedPosition = new Vector3(xPos, yPos, zPos);
@@ -265,7 +267,7 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
                         }
                     }
                     else {
-                        InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, writeStream);
+                        InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, writeStream, channel: POS_CHANNEL);
                     }
                 }
             }
@@ -305,7 +307,7 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
                         writer.WriteSinglePacked(rot.y);
                         writer.WriteSinglePacked(rot.z);
 
-                        InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, stream);
+                        InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, stream, channel: POS_CHANNEL);
                     }
                 }
             }
