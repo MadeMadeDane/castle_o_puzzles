@@ -225,4 +225,8 @@ public class FloatBuffer {
         queue = new Queue<float>(Enumerable.Repeat<float>(0f, size));
         accum = 0f;
     }
+
+    public int Size() {
+        return size;
+    }
 }

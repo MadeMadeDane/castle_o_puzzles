@@ -91,6 +91,9 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
     private Quaternion rotOnLastReceive;
     private InterpBuffer<Vector3> position_buffer = new InterpBuffer<Vector3>();
     private InterpBuffer<Quaternion> rotation_buffer = new InterpBuffer<Quaternion>();
+    private FloatBuffer latency_buffer = new FloatBuffer(20);
+    private Dictionary<uint, float> latency = new Dictionary<uint, float>();
+    private float lastRecieveClientTime;
     [Tooltip("The delay in seconds buffered for interpolation")]
     public float interp_delay = 0.1f;
     # endregion
@@ -149,7 +152,7 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
                 lastSentRot = transform.rotation;
                 using (PooledBitStream stream = PooledBitStream.Get()) {
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream)) {
-                        TransformPacket.WritePacket(transform.position, transform.rotation, writer);
+                        TransformPacket.WritePacket(Time.time, transform.position, transform.rotation, writer);
 
                         if (isServer)
                             InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, stream, channel: POS_CHANNEL);
@@ -181,7 +184,10 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
                 else
                     transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);*/
 
-                float interp_time = Time.time - interp_delay;
+                float client_latency;
+                latency.TryGetValue(OwnerClientId, out client_latency);
+                Debug.Log("Got client " + OwnerClientId.ToString() + " latency: " + client_latency.ToString());
+                float interp_time = Time.time - client_latency - interp_delay;
                 transform.position = position_buffer.Interpolate(interp_time, posOnLastReceive, FixedSendsPerSecond, Vector3.Lerp);
                 transform.rotation = rotation_buffer.Interpolate(interp_time, rotOnLastReceive, FixedSendsPerSecond, Quaternion.Slerp);
             }
@@ -197,12 +203,17 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
 
         if (InterpolatePosition) {
             lastRecieveTime = Time.time;
+            if (received_transform.timestamp < lastRecieveClientTime) {
+                Debug.Log("OUT OF ORDER PACKET DETECTED");
+            }
+            lastRecieveClientTime = received_transform.timestamp;
 
             posOnLastReceive = transform.position;
             rotOnLastReceive = transform.rotation;
 
-            position_buffer.Insert(lastRecieveTime, received_transform.position);
-            rotation_buffer.Insert(lastRecieveTime, received_transform.rotation);
+            latency[OwnerClientId] = latency_buffer.Accumulate(lastRecieveTime - lastRecieveClientTime) / latency_buffer.Size();
+            position_buffer.Insert(lastRecieveClientTime, received_transform.position);
+            rotation_buffer.Insert(lastRecieveClientTime, received_transform.rotation);
         }
         else {
             transform.position = received_transform.position;
@@ -286,7 +297,7 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
                 Debug.Log("Resending info...");
                 using (PooledBitStream stream = PooledBitStream.Get()) {
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream)) {
-                        TransformPacket.WritePacket(pos, rot, writer);
+                        TransformPacket.WritePacket(info.lastSent, pos, rot, writer);
 
                         InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, stream, channel: POS_CHANNEL);
                     }
@@ -312,18 +323,19 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
 }
 
 public struct TransformPacket {
-    //public float timestamp;
+    public float timestamp;
     public Vector3 position;
     public Quaternion rotation;
 
-    public TransformPacket(Vector3 position, Quaternion rotation) {
-        //this.timestamp = timestamp;
+    public TransformPacket(float timestamp, Vector3 position, Quaternion rotation) {
+        this.timestamp = timestamp;
         this.position = position;
         this.rotation = rotation;
     }
 
     public static TransformPacket FromStream(Stream stream) {
         using (PooledBitReader reader = PooledBitReader.Get(stream)) {
+            float time = reader.ReadSinglePacked();
             float xPos = reader.ReadSinglePacked();
             float yPos = reader.ReadSinglePacked();
             float zPos = reader.ReadSinglePacked();
@@ -332,11 +344,13 @@ public struct TransformPacket {
             float yRot = reader.ReadSinglePacked();
             float zRot = reader.ReadSinglePacked();
 
-            return new TransformPacket(new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
+            return new TransformPacket(time, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
         }
     }
 
     public void Write(PooledBitWriter writer) {
+        writer.WriteSinglePacked(timestamp);
+
         writer.WriteSinglePacked(position.x);
         writer.WriteSinglePacked(position.y);
         writer.WriteSinglePacked(position.z);
@@ -346,8 +360,8 @@ public struct TransformPacket {
         writer.WriteSinglePacked(rotation.eulerAngles.z);
     }
 
-    public static void WritePacket(Vector3 position, Quaternion rotation, PooledBitWriter writer) {
-        new TransformPacket(position, rotation).Write(writer);
+    public static void WritePacket(float timestamp, Vector3 position, Quaternion rotation, PooledBitWriter writer) {
+        new TransformPacket(timestamp, position, rotation).Write(writer);
     }
 }
 
