@@ -86,7 +86,7 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
     private readonly Dictionary<uint, ClientSendInfo> clientSendInfo = new Dictionary<uint, ClientSendInfo>();
 
     # region new vars
-    private const string POS_CHANNEL = "MLAPI_POSITION_UPDATE";
+    private const string POS_CHANNEL = "MLAPI_DEFAULT_MESSAGE";
     private Vector3 posOnLastReceive;
     private Quaternion rotOnLastReceive;
     private InterpBuffer<Vector3> position_buffer = new InterpBuffer<Vector3>();
@@ -144,23 +144,23 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
         lerpEndPos = transform.position;
         lerpEndRot = transform.rotation;
 
-        InvokeRepeating("TransmitPosition", 0f, (1f / FixedSendsPerSecond));
+        if (isOwner) {
+            InvokeRepeating("TransmitPosition", 0f, (1f / FixedSendsPerSecond));
+        }
     }
 
     private void TransmitPosition() {
-        if (isOwner && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees)) {
-            lastSendTime = NetworkingManager.singleton.NetworkTime;
-            lastSentPos = transform.position;
-            lastSentRot = transform.rotation;
-            using (PooledBitStream stream = PooledBitStream.Get()) {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream)) {
-                    TransformPacket.WritePacket(Time.time, transform.position, transform.rotation, writer);
+        lastSendTime = NetworkingManager.singleton.NetworkTime;
+        lastSentPos = transform.position;
+        lastSentRot = transform.rotation;
+        using (PooledBitStream stream = PooledBitStream.Get()) {
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream)) {
+                TransformPacket.WritePacket(Time.time, transform.position, transform.rotation, writer);
 
-                    if (isServer)
-                        InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, stream, channel: POS_CHANNEL);
-                    else
-                        InvokeServerRpc(SubmitTransform, stream, channel: POS_CHANNEL);
-                }
+                if (isServer)
+                    InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, stream, channel: POS_CHANNEL);
+                else
+                    InvokeServerRpc(SubmitTransform, stream, channel: POS_CHANNEL);
             }
         }
     }
