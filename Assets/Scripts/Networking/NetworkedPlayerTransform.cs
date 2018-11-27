@@ -149,13 +149,7 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
                 lastSentRot = transform.rotation;
                 using (PooledBitStream stream = PooledBitStream.Get()) {
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream)) {
-                        writer.WriteSinglePacked(transform.position.x);
-                        writer.WriteSinglePacked(transform.position.y);
-                        writer.WriteSinglePacked(transform.position.z);
-
-                        writer.WriteSinglePacked(transform.rotation.eulerAngles.x);
-                        writer.WriteSinglePacked(transform.rotation.eulerAngles.y);
-                        writer.WriteSinglePacked(transform.rotation.eulerAngles.z);
+                        TransformPacket.WritePacket(transform.position, transform.rotation, writer);
 
                         if (isServer)
                             InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, stream, channel: POS_CHANNEL);
@@ -193,106 +187,75 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
             }
         }
 
-        if (isServer && EnableRange && EnableNonProvokedResendChecks) CheckForMissedSends();
+        //if (isServer && EnableRange && EnableNonProvokedResendChecks) CheckForMissedSends();
     }
 
     [ClientRPC]
     private void ApplyTransform(uint clientId, Stream stream) {
         if (!enabled) return;
-        using (PooledBitReader reader = PooledBitReader.Get(stream)) {
+        TransformPacket received_transform = TransformPacket.FromStream(stream);
 
-            float xPos = reader.ReadSinglePacked();
-            float yPos = reader.ReadSinglePacked();
-            float zPos = reader.ReadSinglePacked();
+        if (InterpolatePosition) {
+            lastRecieveTime = Time.time;
 
-            float xRot = reader.ReadSinglePacked();
-            float yRot = reader.ReadSinglePacked();
-            float zRot = reader.ReadSinglePacked();
+            posOnLastReceive = transform.position;
+            rotOnLastReceive = transform.rotation;
 
-            if (InterpolatePosition) {
-                lastRecieveTime = Time.time;
-                lerpStartPos = transform.position;
-                lerpStartRot = transform.rotation;
-                lerpEndPos = new Vector3(xPos, yPos, zPos);
-                lerpEndRot = Quaternion.Euler(xRot, yRot, zRot);
-                lerpT = 0;
-
-                posOnLastReceive = transform.position;
-                rotOnLastReceive = transform.rotation;
-                /*Debug.Log("Time: " + lastRecieveTime.ToString());
-                Debug.Log("Attempting to insert pos: " + new Vector3(xPos, yPos, zPos).ToString());
-                Debug.Log("Attempting to insert rot: " + Quaternion.Euler(xRot, yRot, zRot).ToString());*/
-                position_buffer.Insert(lastRecieveTime, new Vector3(xPos, yPos, zPos));
-                rotation_buffer.Insert(lastRecieveTime, Quaternion.Euler(xRot, yRot, zRot));
-            }
-            else {
-                transform.position = new Vector3(xPos, yPos, zPos);
-                transform.rotation = Quaternion.Euler(new Vector3(xRot, yRot, zRot));
-            }
+            position_buffer.Insert(lastRecieveTime, received_transform.position);
+            rotation_buffer.Insert(lastRecieveTime, received_transform.rotation);
+        }
+        else {
+            transform.position = received_transform.position;
+            transform.rotation = received_transform.rotation;
         }
     }
 
     [ServerRPC]
     private void SubmitTransform(uint clientId, Stream stream) {
         if (!enabled) return;
-        using (PooledBitReader reader = PooledBitReader.Get(stream)) {
+        TransformPacket received_transform = TransformPacket.FromStream(stream);
 
-            float xPos = reader.ReadSinglePacked();
-            float yPos = reader.ReadSinglePacked();
-            float zPos = reader.ReadSinglePacked();
+        if (IsMoveValidDelegate != null && !IsMoveValidDelegate(lerpEndPos, received_transform.position)) {
+            //Invalid move!
+            //TODO: Add rubber band (just a message telling them to go back)
+            return;
+        }
 
-            float xRot = reader.ReadSinglePacked();
-            float yRot = reader.ReadSinglePacked();
-            float zRot = reader.ReadSinglePacked();
+        using (PooledBitStream writeStream = PooledBitStream.Get()) {
+            using (PooledBitWriter writer = PooledBitWriter.Get(writeStream)) {
+                received_transform.Write(writer);
 
-            if (IsMoveValidDelegate != null && !IsMoveValidDelegate(lerpEndPos, new Vector3(xPos, yPos, zPos))) {
-                //Invalid move!
-                //TODO: Add rubber band (just a message telling them to go back)
-                return;
-            }
+                if (EnableRange) {
+                    for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++) {
+                        if (!clientSendInfo.ContainsKey(NetworkingManager.singleton.ConnectedClientsList[i].ClientId)) {
+                            clientSendInfo.Add(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, new ClientSendInfo()
+                            {
+                                clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId,
+                                lastMissedPosition = null,
+                                lastMissedRotation = null,
+                                lastSent = 0
+                            });
+                        }
 
-            using (PooledBitStream writeStream = PooledBitStream.Get()) {
-                using (PooledBitWriter writer = PooledBitWriter.Get(writeStream)) {
-                    writer.WriteSinglePacked(xPos);
-                    writer.WriteSinglePacked(yPos);
-                    writer.WriteSinglePacked(zPos);
+                        ClientSendInfo info = clientSendInfo[NetworkingManager.singleton.ConnectedClientsList[i].ClientId];
+                        Vector3 receiverPosition = NetworkingManager.singleton.ConnectedClientsList[i].PlayerObject.transform.position;
+                        Vector3 senderPosition = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
 
-                    writer.WriteSinglePacked(xRot);
-                    writer.WriteSinglePacked(yRot);
-                    writer.WriteSinglePacked(zRot);
+                        if (NetworkingManager.singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition, senderPosition)) {
+                            info.lastSent = NetworkingManager.singleton.NetworkTime;
+                            info.lastMissedPosition = null;
+                            info.lastMissedRotation = null;
 
-                    if (EnableRange) {
-                        for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++) {
-                            if (!clientSendInfo.ContainsKey(NetworkingManager.singleton.ConnectedClientsList[i].ClientId)) {
-                                clientSendInfo.Add(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, new ClientSendInfo()
-                                {
-                                    clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId,
-                                    lastMissedPosition = null,
-                                    lastMissedRotation = null,
-                                    lastSent = 0
-                                });
-                            }
-
-                            ClientSendInfo info = clientSendInfo[NetworkingManager.singleton.ConnectedClientsList[i].ClientId];
-                            Vector3 receiverPosition = NetworkingManager.singleton.ConnectedClientsList[i].PlayerObject.transform.position;
-                            Vector3 senderPosition = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
-
-                            if (NetworkingManager.singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition, senderPosition)) {
-                                info.lastSent = NetworkingManager.singleton.NetworkTime;
-                                info.lastMissedPosition = null;
-                                info.lastMissedRotation = null;
-
-                                InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, writeStream, channel: POS_CHANNEL);
-                            }
-                            else {
-                                info.lastMissedPosition = new Vector3(xPos, yPos, zPos);
-                                info.lastMissedRotation = Quaternion.Euler(xRot, yRot, zRot);
-                            }
+                            InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, writeStream, channel: POS_CHANNEL);
+                        }
+                        else {
+                            info.lastMissedPosition = received_transform.position;
+                            info.lastMissedRotation = received_transform.rotation;
                         }
                     }
-                    else {
-                        InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, writeStream, channel: POS_CHANNEL);
-                    }
+                }
+                else {
+                    InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, writeStream, channel: POS_CHANNEL);
                 }
             }
         }
@@ -315,21 +278,15 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
 
             if (NetworkingManager.singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition, senderPosition)) {
                 Vector3 pos = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
-                Vector3 rot = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.rotation.eulerAngles;
+                Quaternion rot = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.rotation;
 
                 info.lastSent = NetworkingManager.singleton.NetworkTime;
                 info.lastMissedPosition = null;
                 info.lastMissedRotation = null;
-
+                Debug.Log("Resending info...");
                 using (PooledBitStream stream = PooledBitStream.Get()) {
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream)) {
-                        writer.WriteSinglePacked(pos.x);
-                        writer.WriteSinglePacked(pos.y);
-                        writer.WriteSinglePacked(pos.z);
-
-                        writer.WriteSinglePacked(rot.x);
-                        writer.WriteSinglePacked(rot.y);
-                        writer.WriteSinglePacked(rot.z);
+                        TransformPacket.WritePacket(pos, rot, writer);
 
                         InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, stream, channel: POS_CHANNEL);
                     }
@@ -351,6 +308,46 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
             lerpEndRot = rotation;
             lerpT = 0;
         }
+    }
+}
+
+public struct TransformPacket {
+    //public float timestamp;
+    public Vector3 position;
+    public Quaternion rotation;
+
+    public TransformPacket(Vector3 position, Quaternion rotation) {
+        //this.timestamp = timestamp;
+        this.position = position;
+        this.rotation = rotation;
+    }
+
+    public static TransformPacket FromStream(Stream stream) {
+        using (PooledBitReader reader = PooledBitReader.Get(stream)) {
+            float xPos = reader.ReadSinglePacked();
+            float yPos = reader.ReadSinglePacked();
+            float zPos = reader.ReadSinglePacked();
+
+            float xRot = reader.ReadSinglePacked();
+            float yRot = reader.ReadSinglePacked();
+            float zRot = reader.ReadSinglePacked();
+
+            return new TransformPacket(new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
+        }
+    }
+
+    public void Write(PooledBitWriter writer) {
+        writer.WriteSinglePacked(position.x);
+        writer.WriteSinglePacked(position.y);
+        writer.WriteSinglePacked(position.z);
+
+        writer.WriteSinglePacked(rotation.eulerAngles.x);
+        writer.WriteSinglePacked(rotation.eulerAngles.y);
+        writer.WriteSinglePacked(rotation.eulerAngles.z);
+    }
+
+    public static void WritePacket(Vector3 position, Quaternion rotation, PooledBitWriter writer) {
+        new TransformPacket(position, rotation).Write(writer);
     }
 }
 
