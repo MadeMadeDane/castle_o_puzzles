@@ -59,7 +59,6 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
     /// </summary>
     public float MaxSendsToExtrapolate = 5;
 
-    private float lerpT;
     private Vector3 lerpStartPos;
     private Quaternion lerpStartRot;
     private Vector3 lerpEndPos;
@@ -96,7 +95,6 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
     private float lastRecieveClientTime;
     [Tooltip("The delay in seconds buffered for interpolation")]
     public float interp_delay = 0.1f;
-    public static string current_interp = "Nothing";
     # endregion
 
     /// <summary>
@@ -169,37 +167,15 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
         if (!isOwner) {
             //If we are server and interpolation is turned on for server OR we are not server and interpolation is turned on
             if ((isServer && InterpolateServer && InterpolatePosition) || (!isServer && InterpolatePosition)) {
-                /*if (Vector3.Distance(transform.position, lerpEndPos) > SnapDistance) {
-                    //Snap, set T to 1 (100% of the lerp)
-                    lerpT = 1f;
-                }
-
-                float sendDelay = (isServer || !EnableRange || !AssumeSyncedSends) ? (1f / FixedSendsPerSecond) : GetTimeForLerp(transform.position, NetworkingManager.singleton.ConnectedClients[NetworkingManager.singleton.LocalClientId].PlayerObject.transform.position);
-                lerpT = (Time.time - lastRecieveTime) / sendDelay;
-
-                if (ExtrapolatePosition && Time.time - lastRecieveTime < sendDelay * MaxSendsToExtrapolate)
-                    transform.position = Vector3.LerpUnclamped(lerpStartPos, lerpEndPos, lerpT);
-                else
-                    transform.position = Vector3.Lerp(lerpStartPos, lerpEndPos, lerpT);
-
-                if (ExtrapolatePosition && Time.time - lastRecieveTime < sendDelay * MaxSendsToExtrapolate)
-                    transform.rotation = Quaternion.SlerpUnclamped(lerpStartRot, lerpEndRot, lerpT);
-                else
-                    transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);*/
-
-                //Debug.Log("Got client " + OwnerClientId.ToString() + " latency: " + client_latency.ToString());
                 float interp_time = Time.time - latency - interp_delay;
                 Vector3 new_pos = position_buffer.Interpolate(interp_time, posOnLastReceive, FixedSendsPerSecond, Vector3.Lerp);
                 if ((transform.position - new_pos).magnitude > 2f) {
                     Debug.Log("LARGE DIFF IN DISTANCE!");
                 }
-                Debug.Log("Buffer status: " + current_interp.ToString());
                 transform.position = new_pos;
                 transform.rotation = rotation_buffer.Interpolate(interp_time, rotOnLastReceive, FixedSendsPerSecond, Quaternion.Slerp);
             }
         }
-
-        //if (isServer && EnableRange && EnableNonProvokedResendChecks) CheckForMissedSends();
     }
 
     [ClientRPC]
@@ -278,40 +254,6 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
         }
     }
 
-    private void CheckForMissedSends() {
-        for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++) {
-            if (!clientSendInfo.ContainsKey(NetworkingManager.singleton.ConnectedClientsList[i].ClientId)) {
-                clientSendInfo.Add(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, new ClientSendInfo()
-                {
-                    clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId,
-                    lastMissedPosition = null,
-                    lastMissedRotation = null,
-                    lastSent = 0
-                });
-            }
-            ClientSendInfo info = clientSendInfo[NetworkingManager.singleton.ConnectedClientsList[i].ClientId];
-            Vector3 receiverPosition = NetworkingManager.singleton.ConnectedClientsList[i].PlayerObject.transform.position;
-            Vector3 senderPosition = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
-
-            if (NetworkingManager.singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition, senderPosition)) {
-                Vector3 pos = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
-                Quaternion rot = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.rotation;
-
-                info.lastSent = NetworkingManager.singleton.NetworkTime;
-                info.lastMissedPosition = null;
-                info.lastMissedRotation = null;
-                Debug.Log("Resending info...");
-                using (PooledBitStream stream = PooledBitStream.Get()) {
-                    using (PooledBitWriter writer = PooledBitWriter.Get(stream)) {
-                        TransformPacket.WritePacket(info.lastSent, pos, rot, writer);
-
-                        InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, stream, channel: POS_CHANNEL);
-                    }
-                }
-            }
-        }
-    }
-
     /// <summary>
     /// Teleports the transform to the given position and rotation
     /// </summary>
@@ -323,7 +265,6 @@ public class NetworkedPlayerTransform : NetworkedBehaviour {
             lerpStartRot = rotation;
             lerpEndPos = position;
             lerpEndRot = rotation;
-            lerpT = 0;
         }
     }
 }
@@ -428,24 +369,20 @@ public class InterpBuffer<T> {
     public T Interpolate(float time, T value, float rate, Func<T, T, float, T> interp_function) {
         // If the buffers empty, just return the current value
         if (buffer.Count == 0) {
-            NetworkedPlayerTransform.current_interp = "Buffer empty";
             return value;
         }
         int upperboundidx = buffer.FindIndex((BufferEntry it) => { return it.time > time; });
         // If the current value occurs after all values in the buffer, return it
         if (upperboundidx == -1) {
-            NetworkedPlayerTransform.current_interp = "Buffer too slow";
             return value;
         }
         // If the current value occurs before all values in the buffer, interpolate
         // towards the first value from the current value using the expected rate.
         else if (upperboundidx == 0) {
-            NetworkedPlayerTransform.current_interp = "Buffer too quick";
             BufferEntry entry = buffer.First();
             return interp_function(value, entry.value, (entry.time - time) * rate);
         }
         // Otherwise interpolate between the two values surrounding the current value at the current time
-        NetworkedPlayerTransform.current_interp = "Buffer on time";
         BufferEntry upper = buffer[upperboundidx];
         BufferEntry lower = buffer[upperboundidx - 1];
         return interp_function(lower.value, upper.value, (time - lower.time) / (upper.time - lower.time));

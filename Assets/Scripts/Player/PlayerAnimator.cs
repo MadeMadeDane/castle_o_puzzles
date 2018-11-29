@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerAnimator : MonoBehaviour
-{
+public class PlayerAnimator : MonoBehaviour {
     public CharacterController cc;
     public PlayerController pc;
     public Animator animator;
@@ -20,8 +19,11 @@ public class PlayerAnimator : MonoBehaviour
     public float sprintMinSpeed = 12;
 
     // Use this for initialization
-    void Start ()
-    {
+    void Start() {
+        cc = GetComponent<CharacterController>();
+        pc = GetComponent<PlayerController>();
+        animator = GetComponent<Animator>();
+
         isWalking = false;
         //isSideStepping = false;
         isJumping = false;
@@ -30,51 +32,42 @@ public class PlayerAnimator : MonoBehaviour
         //isClimbing = false;
         isSliding = false;
         //isRolling = false;
-	}
-	
-	// Update is called once per frame
-	void Update ()
-    {
+    }
+
+    // Update is called once per frame
+    void Update() {
         HandleAnimations();
-	}
-    private void HandleAnimations ()
-    {
+    }
+    private void HandleAnimations() {
         float velocity_mag = cc.velocity.magnitude;
 
-        if (Input.GetKey(KeyCode.Q))
-        {
+        if (Input.GetKey(KeyCode.Q)) {
             isSliding = true;
             isWalking = false;
             isRunning = false;
             isJumping = false;
         }
-        else
-        {
+        else {
             isSliding = false;
-            if(pc.OnGround() && velocity_mag < .2)
-            {
+            if (pc.OnGround() && velocity_mag < .2) {
                 isWalking = false;
                 isRunning = false;
             }
-            else if (pc.OnGround() && velocity_mag < walkMaxSpeed)
-            {
+            else if (pc.OnGround() && velocity_mag < walkMaxSpeed) {
                 isWalking = true;
                 isRunning = false;
             }
-            else if(pc.OnGround() && velocity_mag > runMinSpeed)
-            {
+            else if (pc.OnGround() && velocity_mag > runMinSpeed) {
                 isRunning = true;
                 isWalking = false;
             }
 
-            if (!pc.OnGround())
-            {
+            if (!pc.OnGround()) {
                 isJumping = true;
                 isWalking = false;
                 isRunning = false;
             }
-            else
-            {
+            else {
                 isJumping = false;
             }
             if (pc.IsHanging()) {
@@ -82,7 +75,8 @@ public class PlayerAnimator : MonoBehaviour
                 isWalking = false;
                 isRunning = false;
                 isHanging = true;
-            } else {
+            }
+            else {
                 isHanging = false;
             }
         }

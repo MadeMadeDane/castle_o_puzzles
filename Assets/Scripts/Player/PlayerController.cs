@@ -12,7 +12,6 @@ public class PlayerController : NetworkedBehaviour {
     [Header("Linked Components")]
     public GameObject player_container;
     public CharacterController cc;
-    public Collider WallRunCollider;
     [HideInInspector]
     public CameraController player_camera;
     [Header("Movement constants")]
@@ -130,9 +129,16 @@ public class PlayerController : NetworkedBehaviour {
     private Dictionary<string, Text> debugtext;
 
     private void Setup() {
+        player_container = transform.parent.gameObject;
         input_manager = InputManager.Instance;
         utils = Utilities.Instance;
-        wall_run_collider = GetComponent<CapsuleCollider>();
+        cc = GetComponent<CharacterController>();
+        wall_run_collider = gameObject.AddComponent<CapsuleCollider>();
+        wall_run_collider.isTrigger = true;
+        // x=0, y=1, z=2
+        wall_run_collider.direction = 1;
+        wall_run_collider.height = 5.5f;
+        wall_run_collider.radius = 0.75f;
         recovery_collider = GetComponentInChildren<CollisionRecovery>().GetComponent<CapsuleCollider>();
         cc_standHeight = cc.height;
         cc_standCenter = cc.center.y;
@@ -242,7 +248,7 @@ public class PlayerController : NetworkedBehaviour {
         if (physhandler == null) {
             throw new Exception("Could not find physics prop handler");
         }
-        Physics.IgnoreCollision(WallRunCollider, cc);
+        Physics.IgnoreCollision(wall_run_collider, cc);
     }
 
     private void SetShooterVars() {

@@ -13,6 +13,7 @@ public class CollisionRecovery : NetworkedBehaviour {
         foreach (Collider col in GetComponentsInParent<Collider>()) {
             Physics.IgnoreCollision(my_collider, col);
         }
+        player = GetComponentInParent<PlayerController>();
     }
 
     private void OnTriggerStay(Collider other) {
