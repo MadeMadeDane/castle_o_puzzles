@@ -11,14 +11,18 @@ public class MenuHandler : MonoBehaviour {
 
     private InputManager im;
     // Use this for initialization
-    void Awake () {
+    void Awake() {
         im = InputManager.Instance;
-        if (gameObject.GetComponent<HeadsUpDisplay>() == null){
+        cam_controller = GetComponentInChildren<CameraController>();
+        if (gameObject.GetComponent<HeadsUpDisplay>() == null) {
             hud = gameObject.AddComponent<HeadsUpDisplay>();
         }
-        if (gameObject.GetComponent<StartMenu>() == null){
+        if (gameObject.GetComponent<StartMenu>() == null) {
             start_menu = gameObject.AddComponent<StartMenu>();
         }
+    }
+
+    void Start() {
         hud.cam_controller = cam_controller;
         hud.prefab = hud_obj;
         hud.open();
@@ -27,17 +31,15 @@ public class MenuHandler : MonoBehaviour {
         start_menu.cam_controller = cam_controller;
         start_menu.prefab = start_menu_obj;
     }
-    void Start () {
-       
-    }
-	
-	// Update is called once per frame
-	void Update () {
+
+    // Update is called once per frame
+    void Update() {
         if (im.GetStart()) {
             start_menu.is_open = !start_menu.is_open;
-            if(start_menu.is_open) {
+            if (start_menu.is_open) {
                 start_menu.open();
-            } else {
+            }
+            else {
                 start_menu.close();
             }
         }

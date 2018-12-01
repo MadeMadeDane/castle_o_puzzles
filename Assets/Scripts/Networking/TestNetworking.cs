@@ -1,17 +1,30 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
+using UnityEngine.UI;
 using MLAPI;
 
 public class TestNetworking : NetworkedBehaviour {
     public bool makemehost;
 
-    private void Start() {
+    void Start() {
         if (makemehost) {
             NetworkingManager.singleton.StartHost();
+            Destroy(gameObject);
         }
-        else {
-            NetworkingManager.singleton.StartClient();
-        }
+        var input = gameObject.GetComponent<InputField>();
+        var se = new InputField.SubmitEvent();
+        se.AddListener(SubmitName);
+        input.onEndEdit = se;
+
+        //or simply use the line below, 
+        //input.onEndEdit.AddListener(SubmitName);  // This also works
+    }
+
+    private void SubmitName(string ip) {
+        NetworkingManager.singleton.NetworkConfig.ConnectAddress = ip;
+        NetworkingManager.singleton.StartClient();
+        Destroy(gameObject);
     }
 }

@@ -19,7 +19,6 @@ public class CameraController : NetworkedBehaviour {
     private static string ZOOM_TIMER = "CameraZoom";
     private static string IDLE_TIMER = "CameraIdle";
     [Header("Linked Components")]
-    public GameObject player_container;
     public Camera controlled_camera;
     public GameObject home;
     [Header("Camera Settings")]
@@ -35,6 +34,7 @@ public class CameraController : NetworkedBehaviour {
     private ViewMode view_mode;
     private PlayerController current_player;
 
+    private GameObject player_container;
     private Vector2 mouseAccumulator = Vector2.zero;
     private Vector2 idleOrientation = Vector2.zero;
     private CameraMovementFunction handleCameraMove;
@@ -60,6 +60,10 @@ public class CameraController : NetworkedBehaviour {
         // Application.targetFrameRate = 45;
         transparency_divider = 4;
         fully_translucent_threshold = 1;
+        if (home == null) {
+            home = transform.parent.gameObject;
+        }
+        player_container = home.transform.parent.gameObject;
         yaw_pivot = new GameObject("yaw_pivot");
         yaw_pivot.transform.parent = player_container.transform;
         pitch_pivot = new GameObject("pitch_pivot");
@@ -484,6 +488,7 @@ public class CameraController : NetworkedBehaviour {
             idleOrientation = mouseAccumulator;
         }
     }
+
     public ViewMode GetViewMode() {
         return view_mode;
     }

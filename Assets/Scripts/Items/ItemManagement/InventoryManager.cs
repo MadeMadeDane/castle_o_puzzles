@@ -22,6 +22,9 @@ public class InventoryManager : NetworkedBehaviour {
         utils = Utilities.Instance;
         im = InputManager.Instance;
         amazon = new ItemCatalogue();
+        actionSlots = gameObject.AddComponent<ActionSlots>();
+        actionSlots.mh = GetComponent<MenuHandler>();
+        cam_controller = GetComponentInChildren<CameraController>();
     }
 
     void Start() {
