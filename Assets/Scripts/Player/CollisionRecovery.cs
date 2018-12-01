@@ -18,8 +18,11 @@ public class CollisionRecovery : NetworkedBehaviour {
 
     private void OnTriggerStay(Collider other) {
         if (!isOwner) return;
-        if (!other.isTrigger) {
-            player.Recover(other);
-        }
+        // Don't recover on collision with triggers because they won't constrain us
+        if (other.isTrigger) return;
+        // Don't recover on collision with networked players
+        if (other.GetComponent<NetworkedPlayerTransform>()) return;
+
+        player.Recover(other);
     }
 }

@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class StartMenu : Menu {
-    
 
-    // Use this for initialization
-    void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+    public override void open() {
+        base.open();
+        Cursor.visible = true;
+        Cursor.lockState = CursorLockMode.Confined;
+    }
+
+    public override void close() {
+        base.close();
+        ui_instance = null;
+        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = false;
+    }
 }

@@ -9,12 +9,12 @@ public class PlayerBuilder : NetworkedBehaviour {
     public GameObject hud_prefab;
     public GameObject startmenu_prefab;
     public Sprite ExampleImage;
-    // Start is called before the first frame update
-    private void Start() {
+
+    public override void NetworkStart() {
         if (!isOwner) return;
+
         gameObject.AddComponent<PlayerController>();
         gameObject.AddComponent<PhysicsPropHandler>();
-        gameObject.AddComponent<PlayerAnimator>();
         GameObject camera = Instantiate(camera_prefab);
         camera.transform.parent = transform;
         GameObject recover = Instantiate(recover_prefab);
