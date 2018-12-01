@@ -380,7 +380,7 @@ public class CameraController : NetworkedBehaviour {
                 desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
             }
         }
-        if (desired_move != Vector3.zero && !input_manager.GetCenterCameraHold() && !input_manager.GetCenterCameraRelease()) {
+        if (desired_move != Vector3.zero && (current_player.IsHanging() || !input_manager.GetCenterCameraHold() && !input_manager.GetCenterCameraRelease())) {
             RotatePlayerToward(direction: desired_move, lerp_factor: 0.1f * interp_multiplier);
         }
 
