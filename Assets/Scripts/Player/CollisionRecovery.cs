@@ -23,6 +23,8 @@ public class CollisionRecovery : NetworkedBehaviour {
         // Don't recover on collision with networked players
         if (other.GetComponent<NetworkedPlayerTransform>()) return;
 
-        player.Recover(other);
+        if (player != null) {
+            player.Recover(other);
+        }
     }
 }

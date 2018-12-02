@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MovingGeneric : IOEntity {
-    public Vector3 velocity;
+public class MovingGeneric : NetworkedObjectTransform {
     public Vector3 player_velocity;
 }

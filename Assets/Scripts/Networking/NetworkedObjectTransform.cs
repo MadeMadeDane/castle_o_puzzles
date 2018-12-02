@@ -43,18 +43,6 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     /// The min degrees to rotate before a send it sent
     /// </summary>
     public float MinDegrees = 1.5f;
-
-    private Vector3 lerpStartPos;
-    private Quaternion lerpStartRot;
-    private Vector3 lerpEndPos;
-    private Quaternion lerpEndRot;
-
-    private float lastSendTime;
-    private Vector3 lastSentPos;
-    private Quaternion lastSentRot;
-
-    private float lastRecieveTime;
-
     /// <summary>
     /// The curve to use to calculate the send rate
     /// </summary>
@@ -64,8 +52,10 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     private const string POS_CHANNEL = "MLAPI_DEFAULT_MESSAGE";
     private Vector3 posOnLastReceive;
     private Quaternion rotOnLastReceive;
-    private Vector3 lastRecievedPosition;
-    private InterpBuffer<Vector3> position_buffer = new InterpBuffer<Vector3>();
+    private Vector3 lastReceivedPosition;
+    private float lastRecieveTime;
+    private uint lastRecievedParentId = 0;
+    private InterpBuffer<Vector3> position_buffer = new InterpBuffer<Vector3>(transform_function: (Transform t, Vector3 v) => { return t.TransformPoint(v); });
     private InterpBuffer<Quaternion> rotation_buffer = new InterpBuffer<Quaternion>();
     private FloatBuffer latency_buffer = new FloatBuffer(20);
     private float latency = 0f;
@@ -109,27 +99,17 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
         posOnLastReceive = transform.position;
         rotOnLastReceive = transform.rotation;
 
-        lastSentRot = transform.rotation;
-        lastSentPos = transform.position;
-
-        lerpStartPos = transform.position;
-        lerpStartRot = transform.rotation;
-
-        lerpEndPos = transform.position;
-        lerpEndRot = transform.rotation;
-
         if (isOwner) {
             InvokeRepeating("TransmitPosition", 0f, (1f / FixedSendsPerSecond));
         }
     }
 
     private void TransmitPosition() {
-        lastSendTime = NetworkingManager.singleton.NetworkTime;
-        lastSentPos = transform.position;
-        lastSentRot = transform.rotation;
+        uint parentId = GetParentNetworkedObjectId();
+
         using (PooledBitStream stream = PooledBitStream.Get()) {
             using (PooledBitWriter writer = PooledBitWriter.Get(stream)) {
-                TransformPacket.WritePacket(Time.time, transform.position, transform.rotation, writer);
+                TransformPacket.WritePacket(Time.time, GetRelativePosition(transform.position, parentId), transform.rotation, parentId, writer);
 
                 if (isServer)
                     InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, stream, channel: POS_CHANNEL);
@@ -137,6 +117,18 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
                     InvokeServerRpc(SubmitTransform, stream, channel: POS_CHANNEL);
             }
         }
+    }
+
+    private uint GetParentNetworkedObjectId() {
+        Transform network_parent = networkedObject.transform.parent;
+        if (network_parent != null) {
+            // Get the networkId of any parent to our NetworkedObject
+            NetworkedObject parent_netobj = network_parent.GetComponentInParent<NetworkedObject>();
+            if (parent_netobj != null) {
+                return parent_netobj.NetworkId;
+            }
+        }
+        return 0;
     }
 
     private void Update() {
@@ -164,15 +156,25 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
             if (received_transform.timestamp < lastRecieveClientTime) {
                 Debug.Log("OUT OF ORDER PACKET DETECTED");
             }
-            velocity = (received_transform.position - lastRecievedPosition) / (received_transform.timestamp - lastRecieveClientTime);
-            lastRecievedPosition = received_transform.position;
+            Vector3 world_pos = GetWorldPosition(received_transform.position, received_transform.parentId);
+            Vector3 prev_world_pos = GetWorldPosition(lastReceivedPosition, lastRecievedParentId);
+            // Use local velocity if we are on the same parent as the previous packet
+            if (lastRecievedParentId == received_transform.parentId) {
+                velocity = (received_transform.position - lastReceivedPosition) / (received_transform.timestamp - lastRecieveClientTime);
+            }
+            else {
+                velocity = (world_pos - prev_world_pos) / (received_transform.timestamp - lastRecieveClientTime);
+            }
+            lastReceivedPosition = received_transform.position;
             lastRecieveClientTime = received_transform.timestamp;
+            lastRecievedParentId = received_transform.parentId;
 
             posOnLastReceive = transform.position;
             rotOnLastReceive = transform.rotation;
 
             latency = latency_buffer.Accumulate(lastRecieveTime - lastRecieveClientTime) / latency_buffer.Size();
-            position_buffer.Insert(lastRecieveClientTime, received_transform.position);
+            Transform parent_transform = GetNetworkedObjectTransform(received_transform.parentId);
+            position_buffer.Insert(lastRecieveClientTime, received_transform.position, parent_transform);
             rotation_buffer.Insert(lastRecieveClientTime, received_transform.rotation);
         }
         else {
@@ -181,12 +183,45 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
         }
     }
 
+    private Transform GetNetworkedObjectTransform(uint netId) {
+        if (netId == 0) return null;
+        NetworkedObject netobj = GetNetworkedObject(netId);
+        if (netobj != null) {
+            return netobj.transform;
+        }
+        return null;
+    }
+
+    private Vector3 GetWorldPosition(Vector3 relative_pos, uint parentId) {
+        // 0 parentId indicates that there is no parent
+        if (parentId == 0) return relative_pos;
+        // try and get the world position converted from the parent networked objects local space
+        NetworkedObject parent_netobj = GetNetworkedObject(parentId);
+        if (parent_netobj != null) {
+            return parent_netobj.transform.TransformPoint(relative_pos);
+        }
+        // if we fail, just return the relative position
+        return relative_pos;
+    }
+
+    private Vector3 GetRelativePosition(Vector3 world_pos, uint parentId) {
+        // 0 parentId indicates that there is no parent
+        if (parentId == 0) return world_pos;
+        // try and get the relative position to the parent networked object
+        NetworkedObject parent_netobj = GetNetworkedObject(parentId);
+        if (parent_netobj != null) {
+            return parent_netobj.transform.InverseTransformPoint(world_pos);
+        }
+        // if we fail, just return the world position
+        return world_pos;
+    }
+
     [ServerRPC]
     private void SubmitTransform(uint clientId, Stream stream) {
         if (!enabled) return;
         TransformPacket received_transform = TransformPacket.FromStream(stream);
 
-        if (IsMoveValidDelegate != null && !IsMoveValidDelegate(lerpEndPos, received_transform.position)) {
+        if (IsMoveValidDelegate != null && !IsMoveValidDelegate(transform.position, received_transform.position)) {
             //Invalid move!
             //TODO: Add rubber band (just a message telling them to go back)
             return;
@@ -207,10 +242,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     /// <param name="rotation">The rotation to teleport to</param>
     public void Teleport(Vector3 position, Quaternion rotation) {
         if (InterpolateServer && isServer || isClient) {
-            lerpStartPos = position;
-            lerpStartRot = rotation;
-            lerpEndPos = position;
-            lerpEndRot = rotation;
+            // Implement when needed
         }
     }
 }
@@ -219,11 +251,13 @@ public struct TransformPacket {
     public float timestamp;
     public Vector3 position;
     public Quaternion rotation;
+    public uint parentId;
 
-    public TransformPacket(float timestamp, Vector3 position, Quaternion rotation) {
+    public TransformPacket(float timestamp, Vector3 position, Quaternion rotation, uint parentId) {
         this.timestamp = timestamp;
         this.position = position;
         this.rotation = rotation;
+        this.parentId = parentId;
     }
 
     public static TransformPacket FromStream(Stream stream) {
@@ -238,7 +272,9 @@ public struct TransformPacket {
             float yRot = reader.ReadSinglePacked();
             float zRot = reader.ReadSinglePacked();
 
-            return new TransformPacket(time, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
+            uint pId = reader.ReadUInt32Packed();
+
+            return new TransformPacket(time, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), pId);
         }
     }
 
@@ -252,10 +288,12 @@ public struct TransformPacket {
         writer.WriteSinglePacked(rotation.eulerAngles.x);
         writer.WriteSinglePacked(rotation.eulerAngles.y);
         writer.WriteSinglePacked(rotation.eulerAngles.z);
+
+        writer.WriteUInt32Packed(parentId);
     }
 
-    public static void WritePacket(float timestamp, Vector3 position, Quaternion rotation, PooledBitWriter writer) {
-        new TransformPacket(timestamp, position, rotation).Write(writer);
+    public static void WritePacket(float timestamp, Vector3 position, Quaternion rotation, uint parentId, PooledBitWriter writer) {
+        new TransformPacket(timestamp, position, rotation, parentId).Write(writer);
     }
 }
 
@@ -263,20 +301,24 @@ public class InterpBuffer<T> {
     private class BufferEntry {
         public float time;
         public T value;
+        public Transform parent;
 
-        public BufferEntry(float time, T value) {
+        public BufferEntry(float time, T value, Transform parent) {
             this.time = time;
             this.value = value;
+            this.parent = parent;
         }
     }
 
     private List<BufferEntry> buffer;
-    public InterpBuffer() {
+    private Func<Transform, T, T> transform_function;
+    public InterpBuffer(Func<Transform, T, T> transform_function = null) {
         buffer = new List<BufferEntry>();
+        this.transform_function = transform_function;
     }
 
-    public void Insert(float time, T value) {
-        BufferEntry entry = new BufferEntry(time, value);
+    public void Insert(float time, T value, Transform parent = null) {
+        BufferEntry entry = new BufferEntry(time, value, parent);
         // Hardcode a limit on the buffer for now to prevent a leak
         if (buffer.Count > 20) {
             buffer.RemoveAt(0);
@@ -303,14 +345,14 @@ public class InterpBuffer<T> {
         }
         int upperboundidx = buffer.FindIndex((BufferEntry it) => { return it.time > time; });
         if (upperboundidx == -1) {
-            return buffer.Last().value;
+            return ComputeWorldValue(buffer.Last());
         }
         else if (upperboundidx == 0) {
-            return buffer.First().value;
+            return ComputeWorldValue(buffer.First());
         }
         BufferEntry upper = buffer[upperboundidx];
         BufferEntry lower = buffer[upperboundidx - 1];
-        return interp_function(lower.value, upper.value, (time - lower.time) / (upper.time - lower.time));
+        return interp_function(ComputeWorldValue(lower), ComputeWorldValue(upper), (time - lower.time) / (upper.time - lower.time));
     }
 
     public T Interpolate(float time, T value, float rate, Func<T, T, float, T> interp_function) {
@@ -327,11 +369,19 @@ public class InterpBuffer<T> {
         // towards the first value from the current value using the expected rate.
         else if (upperboundidx == 0) {
             BufferEntry entry = buffer.First();
-            return interp_function(value, entry.value, (entry.time - time) * rate);
+            return interp_function(value, ComputeWorldValue(entry), (entry.time - time) * rate);
         }
         // Otherwise interpolate between the two values surrounding the current value at the current time
         BufferEntry upper = buffer[upperboundidx];
         BufferEntry lower = buffer[upperboundidx - 1];
-        return interp_function(lower.value, upper.value, (time - lower.time) / (upper.time - lower.time));
+        return interp_function(ComputeWorldValue(lower), ComputeWorldValue(upper), (time - lower.time) / (upper.time - lower.time));
+    }
+
+    private T ComputeWorldValue(BufferEntry entry) {
+        T world_value = entry.value;
+        if (entry.parent != null && transform_function != null) {
+            world_value = transform_function(entry.parent, world_value);
+        }
+        return world_value;
     }
 }
