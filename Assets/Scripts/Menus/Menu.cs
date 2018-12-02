@@ -10,28 +10,12 @@ public class Menu : MonoBehaviour {
     public GameObject ui_instance;
     public delegate bool getbutton();
     public int hierarchy;
-    
-    // Use this for initialization
-    void Start () {
-		
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
 
-    public void open()
-    {
+    public virtual void open() {
         ui_instance = Instantiate(prefab);
-        Cursor.visible = true;
-        Cursor.lockState = CursorLockMode.Confined;
     }
-    public void close()
-    {
+
+    public virtual void close() {
         Destroy(ui_instance);
-        ui_instance = null;
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
     }
 }

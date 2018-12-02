@@ -459,6 +459,7 @@ GameObject:
   - component: {fileID: 3809476801668544939}
   - component: {fileID: 8208969367719437792}
   - component: {fileID: 3090761424479457958}
+  - component: {fileID: 5244926520790194819}
   m_Layer: 2
   m_Name: StickPlayer
   m_TagString: Untagged
@@ -554,10 +555,6 @@ MonoBehaviour:
   InterpolateServer: 1
   MinMeters: 0.15
   MinDegrees: 1.5
-  ExtrapolatePosition: 0
-  MaxSendsToExtrapolate: 5
-  EnableRange: 0
-  EnableNonProvokedResendChecks: 0
   DistanceSendrate:
     serializedVersion: 2
     m_Curve:
@@ -603,6 +600,25 @@ MonoBehaviour:
   startmenu_prefab: {fileID: 1017251309002048, guid: 389df50013eab6b47b525e01dc31c083,
     type: 3}
   ExampleImage: {fileID: 21300000, guid: ef9af3ff2eb5cb841abf2d948d180005, type: 3}
+--- !u!114 &5244926520790194819
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3754296374550706765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94ebc8f99726c704093f674bcc4b94fc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cc: {fileID: 0}
+  pc: {fileID: 0}
+  animator: {fileID: 3840802101551939593}
+  runMinSpeed: 4.5
+  walkMaxSpeed: 4
+  sprintMinSpeed: 12
+  FixedSendsPerSecond: 20
 --- !u!1 &3754310118493782233
 GameObject:
   m_ObjectHideFlags: 0

@@ -11,6 +11,7 @@ public class TestNetworking : NetworkedBehaviour {
     void Start() {
         if (makemehost) {
             NetworkingManager.singleton.StartHost();
+            Destroy(transform.parent.gameObject, 1f);
             Destroy(gameObject);
         }
         var input = gameObject.GetComponent<InputField>();
@@ -25,6 +26,7 @@ public class TestNetworking : NetworkedBehaviour {
     private void SubmitName(string ip) {
         NetworkingManager.singleton.NetworkConfig.ConnectAddress = ip;
         NetworkingManager.singleton.StartClient();
+        Destroy(transform.parent.gameObject, 1f);
         Destroy(gameObject);
     }
 }
