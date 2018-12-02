@@ -89,28 +89,39 @@ public class ActionSlots : MonoBehaviour {
         }
     }
 
-    public void AddUseItem (UseItem item)
+    public void ChangeUseItem (UseItem item)
     {
-        if (use_item == null) {
-            use_item = item;
-            ItemBar item_bar = mh.hud.ui_instance.GetComponentInChildren<ItemBar>();
-            if (item_bar != null) {
-                item_bar.use_slot.sprite = item.menu_form;
-            }
+        if (use_item != null) {
+            use_item.Destroy();
+        }
+        use_item = item;
+        use_item.Start();
+        ItemBar item_bar = mh.hud.ui_instance.GetComponentInChildren<ItemBar>();
+        if (item_bar != null) {
+            item_bar.use_slot.sprite = item.menu_form;
         }
     }
 
-    public void AddAbilityItem(int slot, AbilityItem item)
+    public void ChangeAbilityItem(int slot, string item_name)
     {
         if (slot < 4 && slot >= 0) {
         Debug.Log("Adding Ability Item " + slot );
-            if (!ability_items.AddItem(item.GetName(), item, slot)) {
+            (AbilityItem aItem, int count) = ability_items.GetFirstOwnedItem(slot);
+            if(count > 0)
+            {
+                if (slot == active_slot) {
+                    aItem.Destroy();
+                }
+                ability_items.RevokeItem(aItem.GetName(),slot, true);
+            }
+            if (!ability_items.RequestItem(item_name, slot, out aItem)) {
                 if (item_bar != null) {
-                    item_bar.ability_slots[slot].sprite = item.menu_form;
+                    item_bar.ability_slots[slot].sprite = aItem.menu_form;
                 }
             }
             if (slot == active_slot) {
-                ability_item = item;
+                Debug.Log("starting item");
+                ability_item = aItem;
                 ability_item.Start();
             }
         }

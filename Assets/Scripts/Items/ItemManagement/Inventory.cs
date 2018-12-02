@@ -157,7 +157,7 @@ public class Inventory<T_ITEM>
         return AddReference(foundItem, owner);
     }
 
-    public bool RequestItem(string item_name, int owner, out T_ITEM item, bool all = true)
+    public bool RequestItem(string item_name, int owner, out T_ITEM item, bool all = false)
     {
         InventoryItem foundItem;
         item = default(T_ITEM);
@@ -180,6 +180,29 @@ public class Inventory<T_ITEM>
             if (!result) {
                 item = foundItem.Value;
             }
+            return result;
+        }
+        return true;
+    }
+
+    public bool RevokeItem(string item_name, int owner, bool all = false)
+    {
+        InventoryItem foundItem;
+        if (stacks.TryGetValue(item_name, out foundItem)) {
+            int num = all ? foundItem.GetRefCount(owner) : 1;
+            bool result = foundItem.RemoveReference(owner, num);
+            UpdateOwnerList(owner, foundItem);
+            return result;
+        }
+        return true;
+    }
+
+    public bool RevokeItem(string item_name, int owner, int num)
+    {
+        InventoryItem foundItem;
+        if (stacks.TryGetValue(item_name, out foundItem)) {
+            bool result = foundItem.RemoveReference(owner, num);
+            UpdateOwnerList(owner, foundItem);
             return result;
         }
         return true;
@@ -268,10 +291,7 @@ public class Inventory<T_ITEM>
         public int GetTotalRefs() {
             return ref_list.Count;
         }
-        /* 
-        * The return of this function tells the caller 
-        * whether the owner was already in the ref_list
-        */
+
         public bool SetReference(int owner, int count)
         {
             int new_total = count + ref_list.Where(reff => {return !reff.Key.Equals(owner);}).Select((reff) => reff.Value).Sum();
@@ -282,10 +302,7 @@ public class Inventory<T_ITEM>
             }
             return true;
         }
-        /* 
-        * The return of this function tells the caller 
-        * whether the owner was already in the ref_list
-        */
+        
         public bool SetReference(int owner)
         {
             return SetReference(owner, 1);
@@ -293,10 +310,6 @@ public class Inventory<T_ITEM>
         
 
 
-/* 
-        * The return of this function tells the caller 
-        * whether the owner was already in the ref_list
-        */
         public bool RemoveReference(int owner, int count)
         {
             if (ref_list[owner] >= count) {
@@ -304,9 +317,9 @@ public class Inventory<T_ITEM>
                 if (ref_list[owner] <= 0) {
                     ref_list.Remove(owner);
                 }
-                return true;
+                return false;
             }
-            return false;
+            return true;
         }
 
         public bool RemoveReference(int owner)

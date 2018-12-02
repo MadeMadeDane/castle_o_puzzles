@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 0}
-  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_IndirectSpecularColor: {r: 0.37311947, g: 0.38074005, b: 0.35872722, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -51,8 +51,8 @@ LightmapSettings:
     m_IndirectOutputScale: 1
     m_AlbedoBoost: 1
     m_EnvironmentLightingMode: 0
-    m_EnableBakedLightmaps: 1
-    m_EnableRealtimeLightmaps: 1
+    m_EnableBakedLightmaps: 0
+    m_EnableRealtimeLightmaps: 0
   m_LightmapEditorSettings:
     serializedVersion: 10
     m_Resolution: 2
@@ -3012,6 +3012,16 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 8864067637227507500, guid: dbc7b6694ba3a4d38994649d8fd2b358,
+        type: 3}
+      propertyPath: m_Name
+      value: PracticeLoader
+      objectReference: {fileID: 0}
+    - target: {fileID: 8864067637227507488, guid: dbc7b6694ba3a4d38994649d8fd2b358,
+        type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 356770952}
     - target: {fileID: 8864067637227507489, guid: dbc7b6694ba3a4d38994649d8fd2b358,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -3067,16 +3077,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8864067637227507500, guid: dbc7b6694ba3a4d38994649d8fd2b358,
-        type: 3}
-      propertyPath: m_Name
-      value: PracticeLoader
-      objectReference: {fileID: 0}
-    - target: {fileID: 8864067637227507488, guid: dbc7b6694ba3a4d38994649d8fd2b358,
-        type: 3}
-      propertyPath: m_Mesh
-      value: 
-      objectReference: {fileID: 356770952}
     - target: {fileID: 8864067637227507501, guid: dbc7b6694ba3a4d38994649d8fd2b358,
         type: 3}
       propertyPath: m_Mesh
