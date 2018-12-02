@@ -75,7 +75,7 @@ public class InventoryManager : NetworkedBehaviour {
             actionSlots.AddUseItem((UseItem)shipped_item);
         }
         if (AbilityItem.isAbilityItem(shipped_item)) {
-            actionSlots.AddAbilityItem(actionSlots.ability_items.contents.Count, (AbilityItem)shipped_item);
+            actionSlots.AddAbilityItem(actionSlots.ability_items.GetStackCount(), (AbilityItem)shipped_item);
         }
         GameObject.Destroy(request.gameObject);
     }

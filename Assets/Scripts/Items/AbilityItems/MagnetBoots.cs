@@ -19,6 +19,7 @@ public class MagnetBoots : AbilityItem {
         im = InputManager.Instance;
         outputLogs("Added Actions to Magnet Boots");
     }
+
     public override void Update()
     {
         if (saycheck()) {
