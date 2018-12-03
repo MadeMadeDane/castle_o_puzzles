@@ -30,6 +30,7 @@ public class InventoryManager : NetworkedBehaviour {
         actionSlots = gameObject.AddComponent<ActionSlots>();
         actionSlots.mh = GetComponent<MenuHandler>();
         cam_controller = GetComponentInChildren<CameraController>();
+        netowrkInv = new Inventory<NetworkUseItem>();
     }
 
     void Start() {
@@ -76,6 +77,7 @@ public class InventoryManager : NetworkedBehaviour {
         if (UseItem.isUseItem(shipped_item)) {
             Debug.Log("Stuff");
             if (!isServer) {
+                Debug.Log("RPC to server");
                 InvokeServerRpc(RPC_AddAndEquipUseItem, NetworkingManager.singleton.LocalClientId, request.item_name, 1, channel: INVMANG_CHANNEL);
             }
             else {
@@ -89,6 +91,8 @@ public class InventoryManager : NetworkedBehaviour {
             }
         }
         if (AbilityItem.isAbilityItem(shipped_item)) {
+            shipped_item.ctx = this;
+            shipped_item.menu_form = image;
             actionSlots.ability_items[shipped_item.GetName()] = (AbilityItem) shipped_item;
             actionSlots.ChangeAbilityItem(actionSlots.ability_items.GetStackCount(), shipped_item.GetName());
         }
