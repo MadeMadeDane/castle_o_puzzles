@@ -33,6 +33,10 @@ public class InventoryManager : NetworkedBehaviour {
         netowrkInv = new Inventory<NetworkUseItem>();
     }
 
+    public void AddMenuHandler(MenuHandler mh) {
+        actionSlots.mh = mh;
+    }
+
     void Start() {
         if (!isOwner) return;
         Setup();
@@ -78,7 +82,7 @@ public class InventoryManager : NetworkedBehaviour {
             Debug.Log("Stuff");
             if (!isServer) {
                 Debug.Log("RPC to server");
-                InvokeServerRpc(RPC_AddAndEquipUseItem, NetworkingManager.singleton.LocalClientId, request.item_name, 1, channel: INVMANG_CHANNEL);
+                InvokeServerRpc(RPC_AddAndEquipUseItem, NetworkingManager.singleton.LocalClientId, request.item_name, 1);
             }
             else {
                 string item_name = request.item_name;
@@ -104,6 +108,7 @@ public class InventoryManager : NetworkedBehaviour {
     {
         NetworkUseItem netItem = new NetworkUseItem(item_name);
         Debug.Log("Swapping Use Item");
+        
         if (!netowrkInv.AddItemStack(item_name, netItem, (int) clientId, num)) {
             InvokeClientRpcOnEveryone(RPC_SwapUseItem, item_name, channel: INVMANG_CHANNEL);
         }
@@ -114,7 +119,7 @@ public class InventoryManager : NetworkedBehaviour {
         UseItem shipped_item = (UseItem) amazon.RequestItem(item_name);
         shipped_item.ctx = this;
         shipped_item.menu_form = image;
-        Debug.Log("Swapping Use Item");
+        Debug.Log("Stuffff Swapping Use Item");
         actionSlots.ChangeUseItem(shipped_item);
     }
 }

@@ -20,7 +20,9 @@ public class ActionSlots : MonoBehaviour {
     void Start () {
         ability_items = new Inventory<AbilityItem>();
         active_slot = 0;
-        item_bar = mh.hud.ui_instance.GetComponentInChildren<ItemBar>();
+        if(mh != null) {
+            item_bar = mh.hud.ui_instance.GetComponentInChildren<ItemBar>();
+        }
     }
 	
 	// Update is called once per frame
@@ -131,9 +133,24 @@ public class ActionSlots : MonoBehaviour {
     {
         for (int i = 0; i < 4; i++) {
             if (i == slot) {
-                item_bar.ability_slots[i].transform.GetChild(0).GetComponent<Image>().enabled = true;
+                if(item_bar){
+                    item_bar.ability_slots[i].transform.GetChild(0).GetComponent<Image>().enabled = true;
+                }
+                else {
+                    if(mh != null) {
+                        item_bar = mh.hud.ui_instance.GetComponentInChildren<ItemBar>();
+                    }
+                }
+                
             } else {
-                item_bar.ability_slots[i].transform.GetChild(0).GetComponent<Image>().enabled = false;
+                if (item_bar) {
+                    item_bar.ability_slots[i].transform.GetChild(0).GetComponent<Image>().enabled = false;
+                }
+                else {
+                    if(mh != null) {
+                        item_bar = mh.hud.ui_instance.GetComponentInChildren<ItemBar>();
+                    }
+                }
             }
         }
         

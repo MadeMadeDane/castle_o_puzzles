@@ -24,7 +24,6 @@ public class PlayerBuilder : NetworkedBehaviour {
         MenuHandler mh = parent.AddComponent<MenuHandler>();
         mh.hud_obj = hud_prefab;
         mh.start_menu_obj = startmenu_prefab;
-        InventoryManager im = parent.AddComponent<InventoryManager>();
-        im.image = ExampleImage;
+        gameObject.GetComponent<InventoryManager>().AddMenuHandler(mh);
     }
 }
