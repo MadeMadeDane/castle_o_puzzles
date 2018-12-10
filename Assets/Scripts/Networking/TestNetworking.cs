@@ -7,10 +7,16 @@ using MLAPI;
 
 public class TestNetworking : NetworkedBehaviour {
     public bool makemehost;
+    public GameObject MapPrefab;
 
     void Start() {
         if (makemehost) {
             NetworkingManager.singleton.StartHost();
+            Debug.Log("Starting map...");
+            GameObject Map = Instantiate(MapPrefab);
+            Map.transform.position = new Vector3(30f, 0, 0);
+            Map.GetComponent<NetworkedObject>().Spawn();
+
             Destroy(transform.parent.gameObject, 1f);
             Destroy(gameObject);
         }
