@@ -6,6 +6,7 @@ using System.Linq;
 
 public class MovingCollider : MovingGeneric {
     public GameObject nextTargetObject;
+    public bool PlayerControlled = false;
     public bool Automatic = false;
     public bool ResetToHome = true;
     public float HomeResetTime = 10f;
@@ -27,7 +28,9 @@ public class MovingCollider : MovingGeneric {
     private string HOME_TIMER;
 
     // Use this for initialization
-    private void Start() {
+    public override void NetworkStart() {
+        base.NetworkStart();
+        if (!isOwner) return;
         utils = Utilities.Instance;
         HOME_TIMER = "MovingColliderHomeReset_" + gameObject.GetInstanceID().ToString();
         utils.CreateTimer(HOME_TIMER, HomeResetTime);
@@ -46,11 +49,21 @@ public class MovingCollider : MovingGeneric {
         d_Moving.initialize(moving);
         d_AtHome.initialize(at_home);
 
-        StartCoroutine(MoveToNextTarget());
+        if (nextTargetObject != null) {
+            StartCoroutine(MoveToNextTarget());
+        }
     }
 
     private void FixedUpdate() {
-        Move();
+        if (!isOwner) {
+            player_velocity = CalculatePlayerVelocity();
+            return;
+        }
+
+        if (!PlayerControlled) {
+            Move();
+        }
+
         player_velocity = CalculatePlayerVelocity();
         if (ResetToHome && !Automatic) {
             CheckHomeResetTimer();
@@ -91,10 +104,12 @@ public class MovingCollider : MovingGeneric {
     }
 
     public void Stay() {
+        if (!isOwner) return;
         utils.ResetTimer(HOME_TIMER);
     }
 
     public void GoHome() {
+        if (!isOwner) return;
         if (!moving) {
             nextTargetObject = home;
             StartCoroutine(MoveToNextTarget());
@@ -108,6 +123,7 @@ public class MovingCollider : MovingGeneric {
     }
 
     public void Trigger() {
+        if (!isOwner) return;
         StartCoroutine(MoveToNextTarget());
     }
 
@@ -117,7 +133,7 @@ public class MovingCollider : MovingGeneric {
 
     private IEnumerator MoveToNextTarget() {
         // Basic lock for coroutines. Do not allow other coroutines to run when moving
-        if (moving) {
+        if (moving || !isOwner) {
             yield break;
         }
         moving = true;
@@ -165,6 +181,7 @@ public class MovingCollider : MovingGeneric {
     }
 
     private void OnCollisionStay(Collision collision) {
+        if (!isOwner) return;
         MovingColliderRigidBody other = collision.gameObject.GetComponent<MovingColliderRigidBody>();
         if (other != null) {
             other.attach(gameObject);

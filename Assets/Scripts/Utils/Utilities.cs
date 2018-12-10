@@ -41,8 +41,11 @@ public class Utilities : UnitySingleton<Utilities> {
     }
 
     public Timer CreateTimer(string name, float period) {
-        Timer timer = new Timer(period: period);
-        Timers.Add(name, timer);
+        Timer timer = GetTimer(name);
+        if (timer == null) {
+            timer = new Timer(period: period);
+            Timers.Add(name, timer);
+        }
         return timer;
     }
 
@@ -221,5 +224,9 @@ public class FloatBuffer {
     public void Clear() {
         queue = new Queue<float>(Enumerable.Repeat<float>(0f, size));
         accum = 0f;
+    }
+
+    public int Size() {
+        return size;
     }
 }

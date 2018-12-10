@@ -4,14 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.UI;
+using MLAPI;
 
 delegate void AccelerationFunction(Vector3 direction, float desiredSpeed, float acceleration, bool grounded);
 
-public class PlayerController : MonoBehaviour {
+public class PlayerController : NetworkedBehaviour {
     [Header("Linked Components")]
     public GameObject player_container;
     public CharacterController cc;
-    public Collider WallRunCollider;
     [HideInInspector]
     public CameraController player_camera;
     [Header("Movement constants")]
@@ -45,7 +45,6 @@ public class PlayerController : MonoBehaviour {
     public bool ShortHopEnabled;
     public bool JumpBoostEnabled;
     public bool ToggleCrouch;
-    [HideInInspector]
     public Vector3 current_velocity;
     public bool debug_mode = false;
 
@@ -129,10 +128,17 @@ public class PlayerController : MonoBehaviour {
     private GameObject debugcanvas;
     private Dictionary<string, Text> debugtext;
 
-    private void Awake() {
+    private void Setup() {
+        player_container = transform.parent.gameObject;
         input_manager = InputManager.Instance;
         utils = Utilities.Instance;
-        wall_run_collider = GetComponent<CapsuleCollider>();
+        cc = GetComponent<CharacterController>();
+        wall_run_collider = gameObject.AddComponent<CapsuleCollider>();
+        wall_run_collider.isTrigger = true;
+        // x=0, y=1, z=2
+        wall_run_collider.direction = 1;
+        wall_run_collider.height = 5.5f;
+        wall_run_collider.radius = 0.75f;
         recovery_collider = GetComponentInChildren<CollisionRecovery>().GetComponent<CapsuleCollider>();
         cc_standHeight = cc.height;
         cc_standCenter = cc.center.y;
@@ -199,6 +205,8 @@ public class PlayerController : MonoBehaviour {
 
     // Use this for initialization
     private void Start() {
+        if (!isOwner) return;
+        Setup();
         // Movement values
         //SetShooterVars();
         SetThirdPersonActionVars();
@@ -240,7 +248,7 @@ public class PlayerController : MonoBehaviour {
         if (physhandler == null) {
             throw new Exception("Could not find physics prop handler");
         }
-        Physics.IgnoreCollision(WallRunCollider, cc);
+        Physics.IgnoreCollision(wall_run_collider, cc);
     }
 
     private void SetShooterVars() {
@@ -324,6 +332,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     private void Update() {
+        if (!isOwner) return;
         // If the player does not have a camera, do nothing
         if (player_camera == null) {
             return;
@@ -340,6 +349,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     private void LateUpdate() {
+        if (!isOwner) return;
         // If the player does not have a camera, do nothing
         if (player_camera == null) {
             return;
@@ -353,6 +363,7 @@ public class PlayerController : MonoBehaviour {
 
     // Fixed Update is called once per physics tick
     private void FixedUpdate() {
+        if (!isOwner) return;
         // If the player does not have a camera, do nothing
         if (player_camera == null) {
             return;
@@ -879,7 +890,7 @@ public class PlayerController : MonoBehaviour {
             }
             lastMovingPlatform = null;
         }
-        else if (InMovingCollision() && !OnMovingPlatform() && !InMovingInterior()) {
+        else if (InMovingCollision() && !OnMovingPlatform() && !InMovingInterior() && lastMovingPlatform != null) {
             moving_frame_velocity = lastMovingPlatform.player_velocity;
         }
         else if (InMovingInterior() || OnMovingPlatform()) {
@@ -958,7 +969,7 @@ public class PlayerController : MonoBehaviour {
 
     // Double check if on ground using a separate test
     public bool OnGround() {
-        return !utils.CheckTimer(LANDING_TIMER);
+        return isOwner && !utils.CheckTimer(LANDING_TIMER);
     }
 
     public bool JumpBuffered() {
@@ -1179,6 +1190,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     private void OnTriggerStay(Collider other) {
+        if (!isOwner) return;
         if (!other.isTrigger) {
             lastTrigger = other;
         }
@@ -1186,6 +1198,7 @@ public class PlayerController : MonoBehaviour {
 
     // Handle collisions on player move
     private void OnControllerColliderHit(ControllerColliderHit hit) {
+        if (!isOwner) return;
         lastHit = hit;
     }
 
@@ -1200,6 +1213,7 @@ public class PlayerController : MonoBehaviour {
     }
 
     public void Recover(Collider other) {
+        if (!isOwner) return;
         utils.ResetTimer(STUCK_TIMER);
         isHanging = false;
 

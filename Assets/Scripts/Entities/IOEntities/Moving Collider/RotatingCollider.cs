@@ -16,7 +16,7 @@ public class RotatingCollider : MovingCollider {
     }
 
     protected override Vector3 CalculatePlayerVelocity() {
-        PlayerController player = GetComponentInChildren<PlayerController>();
+        NetworkedPlayerTransform player = GetComponentInChildren<NetworkedPlayerTransform>();
         Vector3 player_pos = Vector3.zero;
         if (player != null) {
             player_pos = player.transform.position - transform.position;

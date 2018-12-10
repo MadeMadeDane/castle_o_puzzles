@@ -19,7 +19,7 @@ public class Pusher : PhysicsPlugin {
     }
 
     public override void Start() {
-        camera = player.player_camera;
+        utils.RunOnNextFrame(() => { camera = player.player_camera; });
     }
 
     public override void OnTriggerStay(Collider other, PhysicsProp prop) {

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
+using MLAPI;
 
 
 
@@ -14,11 +15,10 @@ public enum ViewMode {
 
 public delegate void CameraMovementFunction();
 
-public class CameraController : MonoBehaviour {
+public class CameraController : NetworkedBehaviour {
     private static string ZOOM_TIMER = "CameraZoom";
     private static string IDLE_TIMER = "CameraIdle";
     [Header("Linked Components")]
-    public GameObject player_container;
     public Camera controlled_camera;
     public GameObject home;
     [Header("Camera Settings")]
@@ -34,6 +34,7 @@ public class CameraController : MonoBehaviour {
     private ViewMode view_mode;
     private PlayerController current_player;
 
+    private GameObject player_container;
     private Vector2 mouseAccumulator = Vector2.zero;
     private Vector2 idleOrientation = Vector2.zero;
     private CameraMovementFunction handleCameraMove;
@@ -54,15 +55,22 @@ public class CameraController : MonoBehaviour {
     public bool show_model_in_inspection = false;
 
     // Use this for initialization
-    private void Awake() {
+    private void Setup() {
         QualitySettings.vSyncCount = 0;
         // Application.targetFrameRate = 45;
         transparency_divider = 4;
         fully_translucent_threshold = 1;
+        if (home == null) {
+            home = transform.parent.gameObject;
+        }
+        player_container = home.transform.parent.gameObject;
         yaw_pivot = new GameObject("yaw_pivot");
         yaw_pivot.transform.parent = player_container.transform;
         pitch_pivot = new GameObject("pitch_pivot");
         pitch_pivot.transform.parent = yaw_pivot.transform;
+        if (controlled_camera == null) {
+            controlled_camera = gameObject.AddComponent<Camera>();
+        }
 
         input_manager = InputManager.Instance;
         utils = Utilities.Instance;
@@ -82,6 +90,8 @@ public class CameraController : MonoBehaviour {
     }
 
     void Start() {
+        if (!isOwner) return;
+        Setup();
         // TODO: Move this mouse hiding logic somewhere else
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -180,6 +190,7 @@ public class CameraController : MonoBehaviour {
     }
 
     private void Update() {
+        if (!isOwner) return;
         handleViewToggle();
     }
 
@@ -209,6 +220,7 @@ public class CameraController : MonoBehaviour {
 
     // LateUpdate is called after update. Ensures we are operating on the latest transform changes.
     private void LateUpdate() {
+        if (!isOwner) return;
         UpdateCameraAngles();
     }
 
@@ -279,6 +291,7 @@ public class CameraController : MonoBehaviour {
     }
 
     private void FixedUpdate() {
+        if (!isOwner) return;
         SetTargetPos();
         HideHome();
         handlePlayerRotate();
@@ -367,7 +380,7 @@ public class CameraController : MonoBehaviour {
                 desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
             }
         }
-        if (desired_move != Vector3.zero && !input_manager.GetCenterCameraHold() && !input_manager.GetCenterCameraRelease()) {
+        if (desired_move != Vector3.zero && (current_player.IsHanging() || !input_manager.GetCenterCameraHold() && !input_manager.GetCenterCameraRelease())) {
             RotatePlayerToward(direction: desired_move, lerp_factor: 0.1f * interp_multiplier);
         }
 
@@ -475,6 +488,7 @@ public class CameraController : MonoBehaviour {
             idleOrientation = mouseAccumulator;
         }
     }
+
     public ViewMode GetViewMode() {
         return view_mode;
     }
