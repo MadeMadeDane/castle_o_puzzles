@@ -556,7 +556,6 @@ MonoBehaviour:
   hud_prefab: {fileID: 1782695192421542, guid: 80e0c3a6445345e45955e2fc843e9e60, type: 3}
   startmenu_prefab: {fileID: 1017251309002048, guid: 389df50013eab6b47b525e01dc31c083,
     type: 3}
-  ExampleImage: {fileID: 21300000, guid: ef9af3ff2eb5cb841abf2d948d180005, type: 3}
 --- !u!114 &5244926520790194819
 MonoBehaviour:
   m_ObjectHideFlags: 0

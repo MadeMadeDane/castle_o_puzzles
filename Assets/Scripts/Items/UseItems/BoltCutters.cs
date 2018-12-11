@@ -1,18 +1,12 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MagnetBoots : AbilityItem {
+public class BoltCutters : UseItem {
 
     private InputManager im;
-    public static string item_name = "MagnetBoots";
+    public static string item_name = "BoltCutters";
     // Use this for initialization
-        
-    void toggle_mute(string buttons)
-    {
-        AudioSource audio = physical_obj.gameObject.GetComponent<AudioSource>();
-        audio.mute = !audio.mute;
-    }
 
     public override void Start()
     {
@@ -35,11 +29,11 @@ public class MagnetBoots : AbilityItem {
 
     void log()
     {
-        Debug.Log("Stuff to print from the item: I am the Gereudo King");
+        Debug.Log("Snip... Clip...");
     }
 
     public override string GetName()
     {
-        return MagnetBoots.item_name;
+        return BoltCutters.item_name;
     }
 }

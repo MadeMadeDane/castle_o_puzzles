@@ -51,6 +51,11 @@ public class Item
 
     }
 
+    public virtual void Destroy()
+    {
+
+    }
+    
     protected void outputLogs(string msg)
     {
         if (enable_logs)
