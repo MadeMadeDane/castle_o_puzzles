@@ -9,7 +9,7 @@ public class PlayerAnimator : NetworkedBehaviour {
     public Animator animator;
     private CharacterController cc;
     private PlayerController pc;
-    private NetworkedPlayerTransform netptransform;
+    private MovingPlayer netptransform;
     private bool isWalking;
     //private bool isSideStepping;
     private bool isJumping;
@@ -30,7 +30,7 @@ public class PlayerAnimator : NetworkedBehaviour {
     private bool lastHangState;
     private bool lastSentGroundState;
     private bool lastSentHangState;
-    private FloatBuffer averageVelocity = new FloatBuffer(10);
+    private FloatBuffer averageVelocity = new FloatBuffer(5);
 
     // Use this for initialization
     void Start() {
@@ -48,7 +48,7 @@ public class PlayerAnimator : NetworkedBehaviour {
     }
 
     public override void NetworkStart() {
-        netptransform = GetComponent<NetworkedPlayerTransform>();
+        netptransform = GetComponent<MovingPlayer>();
         if (isOwner) {
             InvokeRepeating("TransmitAnimationStates", 0f, (1f / FixedSendsPerSecond));
         }
@@ -79,6 +79,8 @@ public class PlayerAnimator : NetworkedBehaviour {
             velocity_mag = netptransform.velocity.magnitude;
             previous_position = transform.position;
         }
+        // NOTE: This makes animations framerate dependent. We may want to move this into fixed update in the future.
+        velocity_mag = averageVelocity.Accumulate(velocity_mag);
 
         if (Input.GetKey(KeyCode.Q)) {
             isSliding = true;

@@ -183,7 +183,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Enter text...
+  m_Text: Enter IP to join game
 --- !u!222 &387723167
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -804,7 +804,6 @@ MonoBehaviour:
       Type: 3
     RegisteredScenes:
     - PracticeScene
-    - clientscene
     NetworkedPrefabs:
     - prefab: {fileID: 3754669400956811389, guid: b5e540b85e600e24886da56547f2f5d8,
         type: 3}
@@ -826,7 +825,7 @@ MonoBehaviour:
     SecondsHistory: 5
     HandleObjectSpawning: 1
     EnableSceneSwitching: 1
-    EnableTimeResync: 0
+    EnableTimeResync: 1
     ForceSamePrefabs: 1
     RpcHashSize: 0
     PrefabHashSize: 0

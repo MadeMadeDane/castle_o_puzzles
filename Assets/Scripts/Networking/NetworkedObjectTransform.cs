@@ -17,36 +17,14 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     [Range(0, 120)]
     public float FixedSendsPerSecond = 20f;
     /// <summary>
-    /// Is the sends per second assumed to be the same across all instances
-    /// </summary>
-    [Tooltip("This assumes that the SendsPerSecond is synced across clients")]
-    public bool AssumeSyncedSends = true;
-    /// <summary>
     /// Enable interpolation
     /// </summary>
     [Tooltip("This requires AssumeSyncedSends to be true")]
     public bool InterpolatePosition = true;
     /// <summary>
-    /// The distance before snaping to the position
-    /// </summary>
-    [Tooltip("The transform will snap if the distance is greater than this distance")]
-    public float SnapDistance = 10f;
-    /// <summary>
     /// Should the server interpolate
     /// </summary>
     public bool InterpolateServer = true;
-    /// <summary>
-    /// The min meters to move before a send is sent
-    /// </summary>
-    public float MinMeters = 0.15f;
-    /// <summary>
-    /// The min degrees to rotate before a send it sent
-    /// </summary>
-    public float MinDegrees = 1.5f;
-    /// <summary>
-    /// The curve to use to calculate the send rate
-    /// </summary>
-    public AnimationCurve DistanceSendrate = AnimationCurve.Constant(0, 500, 20);
 
     # region new vars
     private const string POS_CHANNEL = "MLAPI_DEFAULT_MESSAGE";
@@ -80,18 +58,8 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     public MoveValidationDelegate IsMoveValidDelegate = null;
 
     private void OnValidate() {
-        if (!AssumeSyncedSends && InterpolatePosition)
-            InterpolatePosition = false;
         if (InterpolateServer && !InterpolatePosition)
             InterpolateServer = false;
-        if (MinDegrees < 0)
-            MinDegrees = 0;
-        if (MinMeters < 0)
-            MinMeters = 0;
-    }
-
-    private float GetTimeForLerp(Vector3 pos1, Vector3 pos2) {
-        return 1f / DistanceSendrate.Evaluate(Vector3.Distance(pos1, pos2));
     }
 
     /// <summary>
@@ -108,13 +76,12 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     }
 
     private void TransmitPosition() {
-        uint parentId = GetParentNetworkedObjectId();
-        int movingObjectId = parentId == 0 ? -1 : GetParentMovingObjectId();
+        (uint parentId, int movingObjectId) = GetParentMovingObjectIds();
 
         using (PooledBitStream stream = PooledBitStream.Get()) {
             using (PooledBitWriter writer = PooledBitWriter.Get(stream)) {
                 TransformPacket.WritePacket(
-                    Time.time,
+                    NetworkingManager.singleton.NetworkTime,
                     GetRelativePosition(transform.position, parentId, movingObjectId),
                     transform.rotation,
                     parentId,
@@ -129,33 +96,21 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
         }
     }
 
-    private uint GetParentNetworkedObjectId() {
-        Transform network_parent = networkedObject.transform.parent;
-        if (network_parent != null) {
-            // Get the networkId of any parent to our NetworkedObject
-            NetworkedObject parent_netobj = network_parent.GetComponentInParent<NetworkedObject>();
-            if (parent_netobj != null) {
-                return parent_netobj.NetworkId;
-            }
-        }
-        return 0;
-    }
-
-    private int GetParentMovingObjectId() {
+    private (uint, int) GetParentMovingObjectIds() {
         // If we don't have a parent, there's no way we're on a moving platform
-        if (transform.parent == null) return -1;
+        if (transform.parent == null) return (0, -1);
         // Find the moving platform we are parented to. Skip ourselves if we happen to be a moving platform.
         MovingGeneric parent_moving_obj = transform.parent.GetComponentInParent<MovingGeneric>();
-        if (parent_moving_obj == null) return -1;
+        if (parent_moving_obj == null) return (0, -1);
 
-        return parent_moving_obj.GetMovingObjectIndex();
+        return (parent_moving_obj.networkId, parent_moving_obj.GetMovingObjectIndex());
     }
 
     private void Update() {
         if (!isOwner) {
             //If we are server and interpolation is turned on for server OR we are not server and interpolation is turned on
             if ((isServer && InterpolateServer && InterpolatePosition) || (!isServer && InterpolatePosition)) {
-                float interp_time = Time.time - latency - interp_delay;
+                float interp_time = NetworkingManager.singleton.NetworkTime - latency - interp_delay;
                 Vector3 new_pos = position_buffer.Interpolate(interp_time, posOnLastReceive, FixedSendsPerSecond, Vector3.Lerp);
                 if ((transform.position - new_pos).magnitude > 2f) {
                     Debug.Log("LARGE DIFF IN DISTANCE!");
@@ -176,7 +131,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
         TransformPacket received_transform = TransformPacket.FromStream(stream);
 
         if (InterpolatePosition) {
-            lastReceiveTime = Time.time;
+            lastReceiveTime = NetworkingManager.singleton.NetworkTime;
             if (received_transform.timestamp < lastRecieveClientTime) {
                 Debug.Log("OUT OF ORDER PACKET DETECTED");
             }

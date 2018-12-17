@@ -11,7 +11,7 @@ public class Grabber : PhysicsPlugin {
     public float throw_base_strength = 5f;
     public float throw_added_strength = 5f;
 
-    public Grabber(MonoBehaviour context) : base(context) { }
+    public Grabber(PhysicsPropHandler context) : base(context) { }
 
     public override void Awake() {
         base.Awake();

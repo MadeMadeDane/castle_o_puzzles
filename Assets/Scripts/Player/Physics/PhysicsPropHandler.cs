@@ -113,4 +113,8 @@ public class PhysicsPropHandler : NetworkedBehaviour {
             plugins[prop.GetType()].OnUse(prop);
         }
     }
+
+    public bool IsServer() {
+        return isServer;
+    }
 }

@@ -2,13 +2,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using MLAPI;
 
 public class PhysicsPlugin : ComponentPlugin {
     protected PlayerController player;
     protected InputManager input_manager;
     protected Utilities utils;
 
-    public PhysicsPlugin(MonoBehaviour context) : base(context) { }
+    public PhysicsPlugin(PhysicsPropHandler context) : base(context) { }
 
     public override void Awake() {
         player = context.GetComponent<PlayerController>();

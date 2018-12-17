@@ -4,7 +4,15 @@ using UnityEngine;
 using System.Linq;
 
 public class MovingGeneric : NetworkedObjectTransform {
-    public Vector3 player_velocity;
+    private Vector3 _player_velocity;
+    public Vector3 player_velocity {
+        get {
+            return CalculatePlayerVelocity();
+        }
+        set {
+            _player_velocity = value;
+        }
+    }
 
     // Dictionary that maps a networked object id to a list of it's moving objects
     // Used so that networked users can refer to a moving platform using an index in the list
@@ -19,6 +27,7 @@ public class MovingGeneric : NetworkedObjectTransform {
         // Start indexing our moving platforms as soon as the networked object is spawned.
         IndexMovingObjects();
         base.NetworkStart();
+        player_velocity = Vector3.zero;
     }
 
     private void IndexMovingObjects() {
@@ -46,5 +55,9 @@ public class MovingGeneric : NetworkedObjectTransform {
 
     public static MovingGeneric GetMovingObjectAt(uint target_networkId, int index) {
         return MovingObjectDict[target_networkId][index];
+    }
+
+    protected virtual Vector3 CalculatePlayerVelocity() {
+        return velocity;
     }
 }

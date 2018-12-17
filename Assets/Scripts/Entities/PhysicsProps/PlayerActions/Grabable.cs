@@ -15,6 +15,10 @@ public class Grabable : PhysicsProp, IUsable {
         }
         parent = grabber;
         previous_transform = transform.parent;
+        // Not a very good Back to the Future plot...
+        if (parent.transform.parent.parent == transform) {
+            parent.transform.parent.parent = null;
+        }
         transform.parent = parent.transform;
         transform.localPosition = grab_offset;
         transform.localRotation = Quaternion.identity;

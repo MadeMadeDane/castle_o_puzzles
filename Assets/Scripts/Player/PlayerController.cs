@@ -547,7 +547,7 @@ public class PlayerController : NetworkedBehaviour {
             return;
         }
 
-        MovingGeneric moving_obj = lastTrigger.GetComponent<MovingCollider>();
+        MovingEntity moving_obj = lastTrigger.GetComponent<MovingEntity>();
         if (moving_obj != null) {
             if (player_container.transform.parent != moving_obj.transform) {
                 player_container.transform.parent = moving_obj.transform;
