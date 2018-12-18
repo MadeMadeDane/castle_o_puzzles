@@ -1730,7 +1730,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 44}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -32.53742, y: -3.9584894, z: -1.2494507}
+  m_LocalPosition: {x: -32.53742, y: -4.5, z: -1.2494507}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 178}
@@ -2145,6 +2145,7 @@ MonoBehaviour:
   InterpolatePosition: 1
   InterpolateServer: 1
   interp_delay: 0.1
+  inactive_delay: 0.5
   velocity: {x: 0, y: 0, z: 0}
 --- !u!1 &45
 GameObject:
@@ -19252,6 +19253,7 @@ MonoBehaviour:
   InterpolatePosition: 1
   InterpolateServer: 1
   interp_delay: 0.1
+  inactive_delay: 0.5
   velocity: {x: 0, y: 0, z: 0}
   nextTargetObject: {fileID: 39}
   PlayerControlled: 0
@@ -20144,6 +20146,7 @@ MonoBehaviour:
   InterpolatePosition: 1
   InterpolateServer: 1
   interp_delay: 0.1
+  inactive_delay: 0.5
   velocity: {x: 0, y: 0, z: 0}
   nextTargetObject: {fileID: 61}
   PlayerControlled: 0
@@ -21044,6 +21047,7 @@ MonoBehaviour:
   InterpolatePosition: 1
   InterpolateServer: 1
   interp_delay: 0.1
+  inactive_delay: 0.5
   velocity: {x: 0, y: 0, z: 0}
   nextTargetObject: {fileID: 63}
   PlayerControlled: 0
@@ -29108,6 +29112,7 @@ MonoBehaviour:
   InterpolatePosition: 1
   InterpolateServer: 1
   interp_delay: 0.1
+  inactive_delay: 0.5
   velocity: {x: 0, y: 0, z: 0}
   nextTargetObject: {fileID: 0}
   PlayerControlled: 0

@@ -49,6 +49,10 @@ public class Utilities : UnitySingleton<Utilities> {
         return timer;
     }
 
+    public void RemoveTimer(string name) {
+        Timers.Remove(name);
+    }
+
     public bool CheckTimer(string name) {
         return Timers.ContainsKey(name) && Timers[name].done();
     }
