@@ -589,6 +589,7 @@ MonoBehaviour:
   InterpolatePosition: 1
   InterpolateServer: 1
   interp_delay: 0.1
+  inactive_delay: 30
   velocity: {x: 0, y: 0, z: 0}
 --- !u!1 &3754310118493782233
 GameObject:

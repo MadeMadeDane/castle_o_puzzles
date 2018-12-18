@@ -162,12 +162,14 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
                 Vector3 world_pos = GetWorldPosition(received_transform.position, received_transform.parentId, received_transform.movingObjectId);
                 Vector3 prev_world_pos = GetWorldPosition(lastReceivedPosition, lastReceivedParentId, lastReceivedMovingObjectId);
                 // Use local velocity if we are on the same moving platform as the previous packet
+                Vector3 new_velocity;
                 if ((lastReceivedParentId, lastReceivedMovingObjectId) == (received_transform.parentId, received_transform.movingObjectId)) {
-                    velocity = (received_transform.position - lastReceivedPosition) / (received_transform.timestamp - lastRecieveClientTime);
+                    new_velocity = (received_transform.position - lastReceivedPosition) / (received_transform.timestamp - lastRecieveClientTime);
                 }
                 else {
-                    velocity = (world_pos - prev_world_pos) / (received_transform.timestamp - lastRecieveClientTime);
+                    new_velocity = (world_pos - prev_world_pos) / (received_transform.timestamp - lastRecieveClientTime);
                 }
+                if (!float.IsNaN(new_velocity.magnitude) && !float.IsInfinity(new_velocity.magnitude)) velocity = new_velocity;
             }
 
             lastRecieveClientTime = received_transform.timestamp;
