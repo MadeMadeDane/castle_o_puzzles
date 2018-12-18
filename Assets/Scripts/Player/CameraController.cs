@@ -372,15 +372,22 @@ public class CameraController : NetworkedBehaviour {
             desired_move = Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity).normalized;
         }
 
-        if (current_player.IsWallClimbing() && current_player.CanGrabLedge()) {
+        // Rotate a player toward the last static ledge they were hanging on
+        if (current_player.IsHanging() && !current_player.InMovingCollision()) {
+            desired_move = -Vector3.ProjectOnPlane(current_player.GetLastHangingNormal(), Physics.gravity).normalized;
+        }
+        // Snap the player to the wall if they are climbing and not wall running
+        else if (current_player.IsWallClimbing() && current_player.CanGrabLedge()) {
             desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
         }
+        // Allow the player to press up against a wall
         else if (current_player.IsOnWall()) {
             if (Vector3.Dot(current_player.GetLastWallNormal(), current_player.GetMoveVector()) < -0.7f) {
                 desired_move = -Vector3.ProjectOnPlane(current_player.GetLastWallNormal(), Physics.gravity).normalized;
             }
         }
-        if (desired_move != Vector3.zero && (current_player.IsHanging() || !input_manager.GetCenterCameraHold() && !input_manager.GetCenterCameraRelease())) {
+        // If we have a valid move, rotate the player toward it
+        if (desired_move != Vector3.zero && (current_player.IsHanging() || (!input_manager.GetCenterCameraHold() && !input_manager.GetCenterCameraRelease()))) {
             RotatePlayerToward(direction: desired_move, lerp_factor: 0.1f * interp_multiplier);
         }
 

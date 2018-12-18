@@ -90,6 +90,7 @@ public class PlayerController : NetworkedBehaviour {
     // Wall related variables
     private Vector3 WallJumpReflect;
     private Vector3 PreviousWallJumpPos;
+    private Vector3 LastHangingNormal;
     private Vector3 PreviousWallNormal;
     private Vector3 PreviousWallJumpNormal;
     private Vector3 WallAxis;
@@ -606,16 +607,19 @@ public class PlayerController : NetworkedBehaviour {
 
             if (IsWallClimbing() && !isHanging) {
                 // Make sure our head is against a wall
-                if (Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), -PreviousWallNormal, out hit, cc.radius + WallScanDistance)) {
+                if (Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), transform.forward, out hit, cc.radius + WallScanDistance)) {
                     Vector3 LedgeScanVerticalPos = transform.position + transform.up * (GetHeadHeight() + cc.radius);
                     Vector3 LedgeScanHorizontalVector = (cc.radius + LedgeClimbOffset) * transform.forward;
+                    RaycastHit WallHit = hit;
                     // Make sure we don't hit a wall at the ledge height
                     if (!Physics.Raycast(origin: LedgeScanVerticalPos, direction: LedgeScanHorizontalVector.normalized, maxDistance: LedgeScanHorizontalVector.magnitude)) {
                         Vector3 LedgeScanPos = LedgeScanVerticalPos + LedgeScanHorizontalVector;
                         // Scan down for a ledge
                         if (Physics.Raycast(LedgeScanPos, -transform.up, out hit, cc.radius + LedgeClimbOffset)) {
                             if (CanGrabLedge() && Vector3.Dot(hit.normal, Physics.gravity.normalized) < -0.866f) {
-
+                                // The surface of the ledge should always be behind the ledge wall
+                                if (Vector3.Dot(WallHit.point - hit.point, WallHit.normal) < 0) return;
+                                LastHangingNormal = WallHit.normal;
                                 isHanging = true;
                             }
                         }
@@ -1034,6 +1038,10 @@ public class PlayerController : NetworkedBehaviour {
 
     public Vector3 GetLastWallNormal() {
         return PreviousWallNormal;
+    }
+
+    public Vector3 GetLastHangingNormal() {
+        return LastHangingNormal;
     }
 
     public Vector3 GetGroundVelocity() {
