@@ -460,6 +460,7 @@ GameObject:
   - component: {fileID: 3090761424479457958}
   - component: {fileID: 5244926520790194819}
   - component: {fileID: 6527275195553282519}
+  - component: {fileID: 6545534739982916336}
   m_Layer: 2
   m_Name: StickPlayer
   m_TagString: Untagged
@@ -591,6 +592,18 @@ MonoBehaviour:
   interp_delay: 0.1
   inactive_delay: 30
   velocity: {x: 0, y: 0, z: 0}
+--- !u!114 &6545534739982916336
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3754296374550706765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2d42371711e0a4cc8b8a6bd6dbdc7fe5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &3754310118493782233
 GameObject:
   m_ObjectHideFlags: 0

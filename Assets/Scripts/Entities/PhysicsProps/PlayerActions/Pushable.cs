@@ -12,7 +12,7 @@ public class Pushable : PhysicsProp {
     }
 
     [ServerRPC(RequireOwnership = false)]
-    public void rpc_PushOnServer(Vector3 push_intent) {
+    private void rpc_PushOnServer(Vector3 push_intent) {
         //Debug.Log("Got push_intent: " + push_intent.ToString());
         //Debug.Log("Current rigidbody velocity: " + rigidbody.velocity.ToString());
         Push(push_intent - rigidbody.velocity, true);

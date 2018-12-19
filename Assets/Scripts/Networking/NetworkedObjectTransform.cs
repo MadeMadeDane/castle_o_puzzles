@@ -35,7 +35,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     private float lastReceiveTime;
     private float lastRecieveClientTime;
     private InterpBuffer<Vector3> position_buffer = new InterpBuffer<Vector3>(transform_function: (Transform t, Vector3 v) => { return t.TransformPoint(v); });
-    private InterpBuffer<Quaternion> rotation_buffer = new InterpBuffer<Quaternion>();
+    private InterpBuffer<Quaternion> rotation_buffer = new InterpBuffer<Quaternion>(transform_function: (Transform t, Quaternion q) => { return q * t.rotation; });
     private FloatBuffer latency_buffer = new FloatBuffer(20);
     private float latency = 0f;
     private string UPDATE_TIMER;
@@ -67,7 +67,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     }
 
     public override void OnDestroyed() {
-        Utilities.Instance.RemoveTimer(UPDATE_TIMER);
+        if (Utilities.Instance != null) Utilities.Instance.RemoveTimer(UPDATE_TIMER);
     }
 
     /// <summary>
@@ -91,11 +91,12 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
 
         (uint parentId, int movingObjectId) = GetParentMovingObjectIds();
         Vector3 relativePos = GetRelativePosition(transform.position, parentId, movingObjectId);
+        Quaternion relativeRot = GetRelativeRotation(transform.rotation, parentId, movingObjectId);
 
         // Do not transmit if there has been no change for inactive_delay seconds
-        if (lastSentInfo != (relativePos, transform.rotation, parentId, movingObjectId)) {
+        if (lastSentInfo != (relativePos, relativeRot, parentId, movingObjectId)) {
             Utilities.Instance.ResetTimer(UPDATE_TIMER);
-            lastSentInfo = (relativePos, transform.rotation, parentId, movingObjectId);
+            lastSentInfo = (relativePos, relativeRot, parentId, movingObjectId);
         }
         if (Utilities.Instance.CheckTimer(UPDATE_TIMER)) return;
 
@@ -104,7 +105,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
                 TransformPacket.WritePacket(
                     NetworkingManager.singleton.NetworkTime,
                     relativePos,
-                    transform.rotation,
+                    relativeRot,
                     parentId,
                     movingObjectId,
                     writer);
@@ -176,7 +177,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
             latency = latency_buffer.Accumulate(lastReceiveTime - lastRecieveClientTime) / latency_buffer.Size();
             Transform parent_transform = GetNetworkedObjectTransform(received_transform.parentId, received_transform.movingObjectId);
             position_buffer.Insert(lastRecieveClientTime, received_transform.position, parent_transform);
-            rotation_buffer.Insert(lastRecieveClientTime, received_transform.rotation);
+            rotation_buffer.Insert(lastRecieveClientTime, received_transform.rotation, parent_transform);
         }
         else {
             transform.position = received_transform.position;
@@ -212,19 +213,30 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
         return parent_transform.InverseTransformPoint(world_pos);
     }
 
+    private Quaternion GetRelativeRotation(Quaternion world_rotation, uint parentId, int MovingObjectId) {
+        // 0 parentId indicates that there is no parent and -1 movingObjectId indicates no moving platform
+        if (parentId == 0 || MovingObjectId == -1) return world_rotation;
+        // try and get the relative position to the parent platform
+        Transform parent_transform = GetNetworkedObjectTransform(parentId, MovingObjectId);
+        if (parent_transform == null) return world_rotation;
+
+        return world_rotation * Quaternion.Inverse(parent_transform.rotation);
+    }
+
     [ServerRPC(RequireOwnership = false)]
     private void RequestTransform(uint clientId) {
         if (!enabled) return;
         if (isOwner) {
             (uint parentId, int movingObjectId) = GetParentMovingObjectIds();
             Vector3 relativePos = GetRelativePosition(transform.position, parentId, movingObjectId);
+            Quaternion relativeRot = GetRelativeRotation(transform.rotation, parentId, movingObjectId);
 
             using (PooledBitStream writeStream = PooledBitStream.Get()) {
                 using (PooledBitWriter writer = PooledBitWriter.Get(writeStream)) {
                     TransformPacket.WritePacket(
                         NetworkingManager.singleton.NetworkTime,
                         relativePos,
-                        transform.rotation,
+                        relativeRot,
                         parentId,
                         movingObjectId,
                         writer);
