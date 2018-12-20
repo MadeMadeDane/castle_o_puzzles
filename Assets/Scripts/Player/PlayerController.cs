@@ -1242,4 +1242,13 @@ public class PlayerController : NetworkedBehaviour {
             Teleport(StartPos);
         }
     }
+
+    public void RecoverSafe(Collider other) {
+        if (!isOwner) return;
+        utils.ResetTimer(STUCK_TIMER);
+        isHanging = false;
+
+        Vector3 path_from_center = Vector3.ProjectOnPlane(transform.position - other.bounds.center, Physics.gravity);
+        Teleport(transform.position + path_from_center.normalized * cc.radius);
+    }
 }

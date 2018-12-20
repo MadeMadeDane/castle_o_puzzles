@@ -812,10 +812,10 @@ MonoBehaviour:
       playerPrefab: 0
     PlayerPrefabName: PlayerContainer
     MessageBufferSize: 1024
-    ReceiveTickrate: 64
+    ReceiveTickrate: 100
     MaxReceiveEventsPerTickRate: 500
-    SendTickrate: 64
-    EventTickrate: 64
+    SendTickrate: 100
+    EventTickrate: 100
     MaxConnections: 100
     ConnectPort: 7777
     ConnectAddress: 107.13.57.42

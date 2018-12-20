@@ -20,11 +20,13 @@ public class CollisionRecovery : NetworkedBehaviour {
         if (!isOwner) return;
         // Don't recover on collision with triggers because they won't constrain us
         if (other.isTrigger) return;
-        // Don't recover on collision with networked players
-        if (other.GetComponent<MovingGeneric>()) return;
-
         if (player != null) {
-            player.Recover(other);
+            if (other.GetComponent<MovingGeneric>()) {
+                player.RecoverSafe(other);
+            }
+            else {
+                player.Recover(other);
+            }
         }
     }
 }

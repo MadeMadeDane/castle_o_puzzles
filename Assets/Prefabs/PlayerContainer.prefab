@@ -586,10 +586,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d0c6f98f9aeb29a449d1ee8ae6017992, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  FixedSendsPerSecond: 20
+  FixedSendsPerSecond: 100
   InterpolatePosition: 1
   InterpolateServer: 1
-  interp_delay: 0.1
+  interp_delay: 0.02
   inactive_delay: 30
   velocity: {x: 0, y: 0, z: 0}
 --- !u!114 &6545534739982916336

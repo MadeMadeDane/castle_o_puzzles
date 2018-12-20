@@ -15,7 +15,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     /// The base amount of sends per seconds to use when range is disabled
     /// </summary>
     [Range(0, 120)]
-    public float FixedSendsPerSecond = 20f;
+    public float FixedSendsPerSecond = 100f;
     /// <summary>
     /// Enable interpolation
     /// </summary>
@@ -40,7 +40,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     private float latency = 0f;
     private string UPDATE_TIMER;
     [Tooltip("The delay in seconds buffered for interpolation")]
-    public float interp_delay = 0.1f;
+    public float interp_delay = 0.02f;
     public float inactive_delay = 0.5f;
     public Vector3 velocity;
     # endregion
