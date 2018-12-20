@@ -43,6 +43,21 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     public float interp_delay = 0.02f;
     public float inactive_delay = 0.5f;
     public Vector3 velocity;
+    private NetworkedObjectTransform _networkParent = null;
+    public NetworkedObjectTransform networkParent {
+        get {
+            return _networkParent;
+        }
+        set {
+            if (value != null) {
+                networkParentLocalPosition = value.transform.InverseTransformPoint(transform.position);
+                networkParentLocalRotation = transform.rotation * Quaternion.Inverse(value.transform.rotation);
+            }
+            _networkParent = value;
+        }
+    }
+    public Vector3 networkParentLocalPosition;
+    public Quaternion networkParentLocalRotation;
     # endregion
 
     /// <summary>
@@ -120,9 +135,10 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
 
     private (uint, int) GetParentMovingObjectIds() {
         // If we don't have a parent, there's no way we're on a moving platform
-        if (transform.parent == null) return (0, -1);
+        if (transform.parent == null && networkParent == null) return (0, -1);
         // Find the moving platform we are parented to. Skip ourselves if we happen to be a moving platform.
         MovingGeneric parent_moving_obj = transform.parent.GetComponentInParent<MovingGeneric>();
+        if (parent_moving_obj == null && networkParent != null) parent_moving_obj = networkParent.GetComponent<MovingGeneric>();
         if (parent_moving_obj == null) return (0, -1);
 
         return (parent_moving_obj.networkId, parent_moving_obj.GetMovingObjectIndex());
@@ -144,6 +160,15 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
         else if (NetworkingManager.singleton.NetworkTime - lastSendTime >= (1f / FixedSendsPerSecond)) {
             lastSendTime = NetworkingManager.singleton.NetworkTime;
             TransmitPosition();
+        }
+    }
+
+    private void LateUpdate() {
+        if (isServer && isOwner) {
+            if (networkParent != null) {
+                transform.position = networkParent.transform.position + networkParentLocalPosition;
+                transform.rotation = networkParentLocalRotation * networkParent.transform.rotation;
+            }
         }
     }
 

@@ -1715,7 +1715,7 @@ GameObject:
   - component: {fileID: 401}
   - component: {fileID: 400}
   - component: {fileID: 399}
-  - component: {fileID: 445}
+  - component: {fileID: 4147877028963395756}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -2130,7 +2130,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 284844c374772574e8a247619fa43879, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &445
+--- !u!114 &4147877028963395756
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2139,7 +2139,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 44}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 434f12631efae834685ff643226c7933, type: 3}
+  m_Script: {fileID: 11500000, guid: f8810b697fab5c841afb0db9f54a809c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   FixedSendsPerSecond: 100
@@ -2148,6 +2148,8 @@ MonoBehaviour:
   interp_delay: 0.02
   inactive_delay: 0.5
   velocity: {x: 0, y: 0, z: 0}
+  networkParentLocalPosition: {x: 0, y: 0, z: 0}
+  networkParentLocalRotation: {x: 0, y: 0, z: 0, w: 0}
 --- !u!1 &45
 GameObject:
   m_ObjectHideFlags: 0
@@ -19256,6 +19258,8 @@ MonoBehaviour:
   interp_delay: 0.02
   inactive_delay: 0.5
   velocity: {x: 0, y: 0, z: 0}
+  networkParentLocalPosition: {x: 0, y: 0, z: 0}
+  networkParentLocalRotation: {x: 0, y: 0, z: 0, w: 0}
   nextTargetObject: {fileID: 39}
   PlayerControlled: 0
   Automatic: 0
@@ -20149,6 +20153,8 @@ MonoBehaviour:
   interp_delay: 0.02
   inactive_delay: 0.5
   velocity: {x: 0, y: 0, z: 0}
+  networkParentLocalPosition: {x: 0, y: 0, z: 0}
+  networkParentLocalRotation: {x: 0, y: 0, z: 0, w: 0}
   nextTargetObject: {fileID: 61}
   PlayerControlled: 0
   Automatic: 1
@@ -21050,6 +21056,8 @@ MonoBehaviour:
   interp_delay: 0.02
   inactive_delay: 0.5
   velocity: {x: 0, y: 0, z: 0}
+  networkParentLocalPosition: {x: 0, y: 0, z: 0}
+  networkParentLocalRotation: {x: 0, y: 0, z: 0, w: 0}
   nextTargetObject: {fileID: 63}
   PlayerControlled: 0
   Automatic: 0
@@ -29115,6 +29123,8 @@ MonoBehaviour:
   interp_delay: 0.02
   inactive_delay: 0.5
   velocity: {x: 0, y: 0, z: 0}
+  networkParentLocalPosition: {x: 0, y: 0, z: 0}
+  networkParentLocalRotation: {x: 0, y: 0, z: 0, w: 0}
   nextTargetObject: {fileID: 0}
   PlayerControlled: 0
   Automatic: 0
@@ -29172,7 +29182,7 @@ GameObject:
   - component: {fileID: 3576152506376061167}
   - component: {fileID: 32677648131755615}
   - component: {fileID: 7042479190705352994}
-  - component: {fileID: 4937960278386559372}
+  - component: {fileID: 6244307387764952557}
   m_Layer: 0
   m_Name: Cube (6)
   m_TagString: Untagged
@@ -29587,7 +29597,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 284844c374772574e8a247619fa43879, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &4937960278386559372
+--- !u!114 &6244307387764952557
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -29596,7 +29606,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 7256770771493405448}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 434f12631efae834685ff643226c7933, type: 3}
+  m_Script: {fileID: 11500000, guid: f8810b697fab5c841afb0db9f54a809c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   FixedSendsPerSecond: 100
@@ -29605,3 +29615,5 @@ MonoBehaviour:
   interp_delay: 0.02
   inactive_delay: 0.5
   velocity: {x: 0, y: 0, z: 0}
+  networkParentLocalPosition: {x: 0, y: 0, z: 0}
+  networkParentLocalRotation: {x: 0, y: 0, z: 0, w: 0}

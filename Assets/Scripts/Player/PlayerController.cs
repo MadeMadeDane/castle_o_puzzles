@@ -548,7 +548,8 @@ public class PlayerController : NetworkedBehaviour {
             return;
         }
 
-        MovingEntity moving_obj = lastTrigger.GetComponent<MovingEntity>();
+        // Use MovingCollider for parenting on collisions
+        MovingCollider moving_obj = lastTrigger.GetComponent<MovingCollider>();
         if (moving_obj != null) {
             if (player_container.transform.parent != moving_obj.transform) {
                 player_container.transform.parent = moving_obj.transform;
@@ -732,7 +733,8 @@ public class PlayerController : NetworkedBehaviour {
             // Buffer a jump
             willJump = true;
         }
-        MovingGeneric moving_platform = lastHit.gameObject.GetComponent<MovingGeneric>();
+        // Use MovingEntity for parenting on moving platforms
+        MovingEntity moving_platform = lastHit.gameObject.GetComponent<MovingEntity>();
         if (moving_platform != null) {
             if (player_container.transform.parent != moving_platform.transform) {
                 player_container.transform.parent = moving_platform.transform;
@@ -1249,6 +1251,6 @@ public class PlayerController : NetworkedBehaviour {
         isHanging = false;
 
         Vector3 path_from_center = Vector3.ProjectOnPlane(transform.position - other.bounds.center, Physics.gravity);
-        Teleport(transform.position + path_from_center.normalized * cc.radius);
+        Teleport(transform.position + path_from_center.normalized * cc.radius * 0.25f);
     }
 }

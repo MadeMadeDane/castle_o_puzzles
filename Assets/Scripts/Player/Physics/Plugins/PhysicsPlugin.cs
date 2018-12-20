@@ -9,6 +9,7 @@ public class PhysicsPlugin : ComponentPlugin {
     protected MovingPlayer moving_player;
     protected InputManager input_manager;
     protected Utilities utils;
+    protected NetworkedObject networkedObject;
     protected uint networkId;
     protected bool isServer;
     protected bool isOwner;
@@ -28,6 +29,7 @@ public class PhysicsPlugin : ComponentPlugin {
         isOwner = (context as PhysicsPropHandler).isOwner;
         networkId = (context as PhysicsPropHandler).networkId;
         isServer = (context as PhysicsPropHandler).IsServer();
+        networkedObject = (context as PhysicsPropHandler).networkedObject;
         enabled = true;
     }
 

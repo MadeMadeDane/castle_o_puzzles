@@ -53,6 +53,19 @@ public class PhysicsPropHandler : NetworkedBehaviour {
         }
     }
 
+    public override void OnDisabled() {
+        foreach (PhysicsPlugin plugin in plugins.Values) {
+            plugin.OnDisable();
+        }
+    }
+
+    public override void OnDestroyed() {
+        foreach (PhysicsPlugin plugin in plugins.Values) {
+            plugin.OnDisable();
+            plugin.OnDestroy();
+        }
+    }
+
     private void OnTriggerEnter(Collider other) {
         PhysicsProp[] props = other.GetComponents<PhysicsProp>();
         foreach (PhysicsProp prop in props) {
