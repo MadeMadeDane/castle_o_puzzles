@@ -47,6 +47,7 @@ public class Grabable : PhysicsProp, IUsable {
             }
         }
         rigidbody.isKinematic = true;
+        rigidbody.useGravity = false;
         is_grabbed = true;
         return true;
     }
@@ -90,6 +91,7 @@ public class Grabable : PhysicsProp, IUsable {
         }
 
         rigidbody.isKinematic = false;
+        rigidbody.useGravity = true;
         rigidbody.AddForce(velocity, ForceMode.VelocityChange);
         is_grabbed = false;
         parent = null;
@@ -125,9 +127,15 @@ public class Grabable : PhysicsProp, IUsable {
     private void FixedUpdate() {
         // If the block loses it's parent, reset it
         if (parent == null) {
-            rigidbody.isKinematic = false;
+            rigidbody.isKinematic = !isServer;
+            rigidbody.useGravity = true;
             is_grabbed = false;
             grabberId = 0;
+        }
+        // Make sure carried blocks are always kinematic
+        else {
+            rigidbody.isKinematic = true;
+            rigidbody.useGravity = false;
         }
     }
 }

@@ -58,6 +58,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     }
     public Vector3 networkParentLocalPosition;
     public Quaternion networkParentLocalRotation;
+    public bool debug_mode = false;
     # endregion
 
     /// <summary>
@@ -134,10 +135,9 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     }
 
     private (uint, int) GetParentMovingObjectIds() {
-        // If we don't have a parent, there's no way we're on a moving platform
-        if (transform.parent == null && networkParent == null) return (0, -1);
         // Find the moving platform we are parented to. Skip ourselves if we happen to be a moving platform.
-        MovingGeneric parent_moving_obj = transform.parent.GetComponentInParent<MovingGeneric>();
+        MovingGeneric parent_moving_obj = null;
+        if (transform.parent != null) parent_moving_obj = transform.parent.GetComponentInParent<MovingGeneric>();
         if (parent_moving_obj == null && networkParent != null) parent_moving_obj = networkParent.GetComponent<MovingGeneric>();
         if (parent_moving_obj == null) return (0, -1);
 
@@ -153,21 +153,25 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
                 if ((transform.position - new_pos).magnitude > 2f) {
                     Debug.Log("LARGE DIFF IN DISTANCE!");
                 }
+                Quaternion new_rot = rotation_buffer.Interpolate(interp_time, transform.rotation, FixedSendsPerSecond, Quaternion.Slerp);
+                if (debug_mode) {
+                    Debug.Log("New position: " + new_pos.ToString());
+                    Debug.Log("New rotation: " + new_rot.ToString());
+                }
                 transform.position = new_pos;
-                transform.rotation = rotation_buffer.Interpolate(interp_time, transform.rotation, FixedSendsPerSecond, Quaternion.Slerp);
+                transform.rotation = new_rot;
             }
         }
-        else if (NetworkingManager.singleton.NetworkTime - lastSendTime >= (1f / FixedSendsPerSecond)) {
-            lastSendTime = NetworkingManager.singleton.NetworkTime;
-            TransmitPosition();
-        }
-    }
-
-    private void LateUpdate() {
-        if (isServer && isOwner) {
-            if (networkParent != null) {
-                transform.position = networkParent.transform.position + networkParentLocalPosition;
-                transform.rotation = networkParentLocalRotation * networkParent.transform.rotation;
+        else {
+            if (NetworkingManager.singleton.NetworkTime - lastSendTime >= (1f / FixedSendsPerSecond)) {
+                lastSendTime = NetworkingManager.singleton.NetworkTime;
+                TransmitPosition();
+            }
+            if (isServer) {
+                if (networkParent != null) {
+                    transform.position = networkParent.transform.position + networkParentLocalPosition;
+                    transform.rotation = networkParentLocalRotation * networkParent.transform.rotation;
+                }
             }
         }
     }

@@ -22,9 +22,11 @@ public class CollisionRecovery : NetworkedBehaviour {
         if (other.isTrigger) return;
         if (player != null) {
             if (other.GetComponent<MovingGeneric>()) {
+                Debug.Log("Safe recovering...");
                 player.RecoverSafe(other);
             }
             else {
+                Debug.Log("Recovering...");
                 player.Recover(other);
             }
         }
