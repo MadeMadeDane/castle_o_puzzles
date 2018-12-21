@@ -90,6 +90,7 @@ public class PlayerController : NetworkedBehaviour {
     // Wall related variables
     private Vector3 WallJumpReflect;
     private Vector3 PreviousWallJumpPos;
+    private Vector3 LastHangingNormal;
     private Vector3 PreviousWallNormal;
     private Vector3 PreviousWallJumpNormal;
     private Vector3 WallAxis;
@@ -547,7 +548,8 @@ public class PlayerController : NetworkedBehaviour {
             return;
         }
 
-        MovingGeneric moving_obj = lastTrigger.GetComponent<MovingCollider>();
+        // Use MovingCollider for parenting on collisions
+        MovingCollider moving_obj = lastTrigger.GetComponent<MovingCollider>();
         if (moving_obj != null) {
             if (player_container.transform.parent != moving_obj.transform) {
                 player_container.transform.parent = moving_obj.transform;
@@ -606,16 +608,19 @@ public class PlayerController : NetworkedBehaviour {
 
             if (IsWallClimbing() && !isHanging) {
                 // Make sure our head is against a wall
-                if (Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), -PreviousWallNormal, out hit, cc.radius + WallScanDistance)) {
+                if (Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), transform.forward, out hit, cc.radius + WallScanDistance)) {
                     Vector3 LedgeScanVerticalPos = transform.position + transform.up * (GetHeadHeight() + cc.radius);
                     Vector3 LedgeScanHorizontalVector = (cc.radius + LedgeClimbOffset) * transform.forward;
+                    RaycastHit WallHit = hit;
                     // Make sure we don't hit a wall at the ledge height
                     if (!Physics.Raycast(origin: LedgeScanVerticalPos, direction: LedgeScanHorizontalVector.normalized, maxDistance: LedgeScanHorizontalVector.magnitude)) {
                         Vector3 LedgeScanPos = LedgeScanVerticalPos + LedgeScanHorizontalVector;
                         // Scan down for a ledge
                         if (Physics.Raycast(LedgeScanPos, -transform.up, out hit, cc.radius + LedgeClimbOffset)) {
                             if (CanGrabLedge() && Vector3.Dot(hit.normal, Physics.gravity.normalized) < -0.866f) {
-
+                                // The surface of the ledge should always be behind the ledge wall
+                                if (Vector3.Dot(WallHit.point - hit.point, WallHit.normal) < 0) return;
+                                LastHangingNormal = WallHit.normal;
                                 isHanging = true;
                             }
                         }
@@ -728,7 +733,8 @@ public class PlayerController : NetworkedBehaviour {
             // Buffer a jump
             willJump = true;
         }
-        MovingGeneric moving_platform = lastHit.gameObject.GetComponent<MovingGeneric>();
+        // Use MovingEntity for parenting on moving platforms
+        MovingEntity moving_platform = lastHit.gameObject.GetComponent<MovingEntity>();
         if (moving_platform != null) {
             if (player_container.transform.parent != moving_platform.transform) {
                 player_container.transform.parent = moving_platform.transform;
@@ -1036,6 +1042,10 @@ public class PlayerController : NetworkedBehaviour {
         return PreviousWallNormal;
     }
 
+    public Vector3 GetLastHangingNormal() {
+        return LastHangingNormal;
+    }
+
     public Vector3 GetGroundVelocity() {
         return Vector3.ProjectOnPlane(current_velocity, Physics.gravity);
     }
@@ -1233,5 +1243,14 @@ public class PlayerController : NetworkedBehaviour {
         else {
             Teleport(StartPos);
         }
+    }
+
+    public void RecoverSafe(Collider other) {
+        if (!isOwner) return;
+        utils.ResetTimer(STUCK_TIMER);
+        isHanging = false;
+
+        Vector3 path_from_center = Vector3.ProjectOnPlane(transform.position - other.bounds.center, Physics.gravity);
+        Teleport(transform.position + path_from_center.normalized * cc.radius * 0.25f);
     }
 }

@@ -34,6 +34,15 @@ public class Utilities : UnitySingleton<Utilities> {
         return StartCoroutine(RunOnNextFrameCoroutine(action));
     }
 
+    private IEnumerator WaitAndRunCoroutine(float seconds, Action action) {
+        yield return new WaitForSeconds(seconds);
+        action();
+    }
+
+    public Coroutine WaitAndRun(float seconds, Action action) {
+        return StartCoroutine(WaitAndRunCoroutine(seconds, action));
+    }
+
     public Timer GetTimer(string name) {
         Timer timer;
         Timers.TryGetValue(name, out timer);
@@ -47,6 +56,10 @@ public class Utilities : UnitySingleton<Utilities> {
             Timers.Add(name, timer);
         }
         return timer;
+    }
+
+    public void RemoveTimer(string name) {
+        Timers.Remove(name);
     }
 
     public bool CheckTimer(string name) {

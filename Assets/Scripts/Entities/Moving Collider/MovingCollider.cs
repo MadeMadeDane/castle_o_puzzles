@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 
-public class MovingCollider : MovingGeneric {
+public class MovingCollider : MovingEntity {
     public GameObject nextTargetObject;
     public bool PlayerControlled = false;
     public bool Automatic = false;
@@ -36,7 +36,6 @@ public class MovingCollider : MovingGeneric {
         utils.CreateTimer(HOME_TIMER, HomeResetTime);
 
         velocity = Vector3.zero;
-        player_velocity = Vector3.zero;
         target_velocity = Vector3.zero;
         moving = false;
         at_home = true;
@@ -55,16 +54,12 @@ public class MovingCollider : MovingGeneric {
     }
 
     private void FixedUpdate() {
-        if (!isOwner) {
-            player_velocity = CalculatePlayerVelocity();
-            return;
-        }
+        if (!isOwner) return;
 
         if (!PlayerControlled) {
             Move();
         }
 
-        player_velocity = CalculatePlayerVelocity();
         if (ResetToHome && !Automatic) {
             CheckHomeResetTimer();
         }
@@ -88,10 +83,6 @@ public class MovingCollider : MovingGeneric {
         velocity = Vector3.Lerp(velocity, target_velocity, 0.1f);
         transform.Translate(velocity * Time.deltaTime, Space.World);
         a_Velocity.state = velocity.magnitude;
-    }
-
-    protected virtual Vector3 CalculatePlayerVelocity() {
-        return velocity;
     }
 
     private void CheckHomeResetTimer() {

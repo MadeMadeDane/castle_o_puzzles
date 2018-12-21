@@ -2,21 +2,35 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using MLAPI;
 
 public class PhysicsPlugin : ComponentPlugin {
     protected PlayerController player;
+    protected MovingPlayer moving_player;
     protected InputManager input_manager;
     protected Utilities utils;
+    protected NetworkedObject networkedObject;
+    protected uint networkId;
+    protected bool isServer;
+    protected bool isOwner;
+    public bool enabled = false;
 
-    public PhysicsPlugin(MonoBehaviour context) : base(context) { }
+    public PhysicsPlugin(PhysicsPropHandler context) : base(context) { }
 
     public override void Awake() {
-        player = context.GetComponent<PlayerController>();
-        if (player == null) {
-            throw new Exception("Could not find player controller");
-        }
         input_manager = InputManager.Instance;
         utils = Utilities.Instance;
+    }
+
+    public virtual void NetworkStart() {
+        player = context.GetComponent<PlayerController>();
+        moving_player = context.GetComponent<MovingPlayer>();
+
+        isOwner = (context as PhysicsPropHandler).isOwner;
+        networkId = (context as PhysicsPropHandler).networkId;
+        isServer = (context as PhysicsPropHandler).IsServer();
+        networkedObject = (context as PhysicsPropHandler).networkedObject;
+        enabled = true;
     }
 
     public virtual void OnTriggerEnter(Collider other, PhysicsProp prop) { }

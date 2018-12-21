@@ -14,7 +14,6 @@ public class PlayerBuilder : NetworkedBehaviour {
         if (!isOwner) return;
 
         gameObject.AddComponent<PlayerController>();
-        gameObject.AddComponent<PhysicsPropHandler>();
         GameObject camera = Instantiate(camera_prefab);
         camera.transform.parent = transform;
         GameObject recover = Instantiate(recover_prefab);

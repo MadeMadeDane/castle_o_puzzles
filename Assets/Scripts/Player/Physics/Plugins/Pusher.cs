@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using MLAPI;
 
 public class Pusher : PhysicsPlugin {
     private float pushtarget = 0f;
@@ -10,19 +11,25 @@ public class Pusher : PhysicsPlugin {
     private string PUSH_TIMER = "PushTimer";
     private string PUSH_START_TIMER = "PushStartTimer";
 
-    public Pusher(MonoBehaviour context) : base(context) { }
+    public Pusher(PhysicsPropHandler context) : base(context) { }
 
-    public override void Awake() {
-        base.Awake();
+    public override void NetworkStart() {
+        base.NetworkStart();
+        if (!isOwner) return;
         utils.CreateTimer(PUSH_TIMER, 0.1f).setFinished();
         utils.CreateTimer(PUSH_START_TIMER, 0.3f);
-    }
-
-    public override void Start() {
-        utils.RunOnNextFrame(() => { camera = player.player_camera; });
+        // disable this plugin until the camera is created
+        enabled = false;
+        utils.WaitUntilCondition(
+            check: () => player.player_camera != null,
+            action: () => {
+                camera = player.player_camera;
+                enabled = true;
+            });
     }
 
     public override void OnTriggerStay(Collider other, PhysicsProp prop) {
+        if (!isOwner) return;
         Pushable pushable = prop as Pushable;
         Vector3 motion_vector = player.GetMoveVector();
         RaycastHit hit;
@@ -32,8 +39,14 @@ public class Pusher : PhysicsPlugin {
                 utils.ResetTimer(PUSH_START_TIMER);
             }
             if (utils.CheckTimer(PUSH_START_TIMER)) {
-                pushtarget = 600f * ((player.cc.radius * 1.5f) - hit.distance) + 30f * Vector3.Dot(player.cc.velocity - pushable.rigidbody.velocity, -hit.normal);
-                pushable.Push(pushtarget * Vector3.Project(motion_vector, hit.normal));
+                pushtarget = 600f * ((player.cc.radius * 1.5f) - hit.distance) + 30f * Vector3.Dot(player.current_velocity - pushable.rigidbody.velocity, -hit.normal);
+                if (isServer) {
+                    //pushable.Push(pushtarget * Vector3.Project(motion_vector, hit.normal));
+                    pushable.Push(Vector3.Project(player.current_velocity - pushable.rigidbody.velocity, -hit.normal), true);
+                }
+                else {
+                    pushable.PushOnServer(-hit.normal * 12f);
+                }
             }
             lastpushsurface = hit.normal;
             // We are not pushing if the analog is not being moved
@@ -48,6 +61,7 @@ public class Pusher : PhysicsPlugin {
     }
 
     public override void FixedUpdate() {
+        if (!isOwner) return;
         if (!utils.CheckTimer(PUSH_TIMER)) {
             if (camera.GetViewMode() == ViewMode.Third_Person) {
                 camera.RotateCameraToward(direction: -lastpushsurface,

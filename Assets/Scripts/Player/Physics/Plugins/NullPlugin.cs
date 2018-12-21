@@ -4,7 +4,9 @@ using System.Linq;
 using UnityEngine;
 
 public class NullPlugin : PhysicsPlugin {
-    public NullPlugin(MonoBehaviour context) : base(context) { }
+    public NullPlugin(PhysicsPropHandler context) : base(context) { }
 
     public override void Awake() { }
+
+    public override void NetworkStart() { }
 }
