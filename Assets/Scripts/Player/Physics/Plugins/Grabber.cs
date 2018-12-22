@@ -55,8 +55,7 @@ public class Grabber : PhysicsPlugin {
     private void PickupCallback(bool success) {
         if (success) {
             if (grabbing != null) {
-                grabbing.rigidbody.isKinematic = true;
-                grabbing.rigidbody.useGravity = false;
+                grabbing.SetPickupState(context.gameObject, disable_collision: !isServer);
             }
             // Wait until the grab button is released to finish the pick up
             utils.WaitUntilCondition(
@@ -90,8 +89,7 @@ public class Grabber : PhysicsPlugin {
 
     private void ThrowCallback(bool success) {
         if (grabbed != null) {
-            grabbed.rigidbody.isKinematic = !isServer;
-            grabbed.rigidbody.useGravity = true;
+            grabbed.SetThrownState();
         }
         grabbed = null;
     }
