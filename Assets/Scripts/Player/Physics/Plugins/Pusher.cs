@@ -5,7 +5,6 @@ using UnityEngine;
 using MLAPI;
 
 public class Pusher : PhysicsPlugin {
-    private float pushtarget = 0f;
     private Vector3 lastpushsurface;
     private CameraController camera;
     private string PUSH_TIMER = "PushTimer";
@@ -34,14 +33,14 @@ public class Pusher : PhysicsPlugin {
         Vector3 motion_vector = player.GetMoveVector();
         RaycastHit hit;
         if (Physics.Raycast(context.transform.position, motion_vector, out hit, player.cc.radius * 1.5f)) {
+            // Avoid pushing if we are angled away from the surface
+            if (Vector3.Dot(motion_vector, -hit.normal) < 0.8f) return;
             // Reset the push start buildup if we are no longer pushing
             if (utils.CheckTimer(PUSH_TIMER)) {
                 utils.ResetTimer(PUSH_START_TIMER);
             }
             if (utils.CheckTimer(PUSH_START_TIMER)) {
-                pushtarget = 600f * ((player.cc.radius * 1.5f) - hit.distance) + 30f * Vector3.Dot(player.current_velocity - pushable.rigidbody.velocity, -hit.normal);
                 if (isServer) {
-                    //pushable.Push(pushtarget * Vector3.Project(motion_vector, hit.normal));
                     pushable.Push(Vector3.Project(player.current_velocity - pushable.rigidbody.velocity, -hit.normal), true);
                 }
                 else {
@@ -51,10 +50,7 @@ public class Pusher : PhysicsPlugin {
             lastpushsurface = hit.normal;
             // We are not pushing if the analog is not being moved
             float move_mag = input_manager.GetMove().magnitude;
-            if (move_mag == 0) {
-                utils.SetTimerFinished(PUSH_TIMER);
-            }
-            else if (move_mag > 0.5f) {
+            if (move_mag > 0.5f) {
                 utils.ResetTimer(PUSH_TIMER);
             }
         }
