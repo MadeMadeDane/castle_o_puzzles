@@ -12,43 +12,41 @@ public class Grabable : PhysicsProp, IUsable {
     private bool is_grabbed = false;
     private uint grabberId;
     private MovingGeneric moving_object;
+    private Collider rb_collider;
 
     protected override void Awake() {
         base.Awake();
         moving_object = GetComponent<MovingGeneric>();
+        rb_collider = GetComponent<Collider>();
     }
 
     public bool Pickup(GameObject grabber, Vector3 grab_offset = default(Vector3), bool networked = false) {
         if (is_grabbed) {
             return false;
         }
-        parent = grabber;
         if (!networked) {
             previous_transform = transform.parent;
-            // Not a very good Back to the Future plot...
-            if (parent.transform.parent.parent == transform) {
-                parent.transform.parent.parent = transform.parent;
+            if (grabber.transform.parent.parent == transform) {
+                grabber.transform.parent.parent = transform.parent;
             }
-            transform.parent = parent.transform;
+            transform.parent = grabber.transform;
             transform.localPosition = grab_offset;
             transform.localRotation = Quaternion.identity;
         }
         else {
             NetworkedObjectTransform networkedTransform = GetComponent<NetworkedObjectTransform>();
-            NetworkedObjectTransform parentNetworkedTransform = parent.GetComponent<NetworkedObjectTransform>();
-            if (networkedTransform != null && parentNetworkedTransform != null) {
+            NetworkedObjectTransform grabberNetworkedTransform = grabber.GetComponent<NetworkedObjectTransform>();
+            if (networkedTransform != null && grabberNetworkedTransform != null) {
                 previous_network_transform = networkedTransform.networkParent;
-                if (parentNetworkedTransform.networkParent == networkedTransform) {
-                    parentNetworkedTransform.networkParent = networkedTransform.networkParent;
+                if (grabberNetworkedTransform.networkParent == networkedTransform) {
+                    grabberNetworkedTransform.networkParent = networkedTransform.networkParent;
                 }
-                networkedTransform.networkParent = parentNetworkedTransform;
+                networkedTransform.networkParent = grabberNetworkedTransform;
                 networkedTransform.networkParentLocalPosition = grab_offset;
                 networkedTransform.networkParentLocalRotation = Quaternion.identity;
             }
         }
-        rigidbody.isKinematic = true;
-        rigidbody.useGravity = false;
-        is_grabbed = true;
+        SetPickupState(grabber);
         return true;
     }
 
@@ -90,11 +88,8 @@ public class Grabable : PhysicsProp, IUsable {
             if (networkedTransform != null) networkedTransform.networkParent = previous_network_transform;
         }
 
-        rigidbody.isKinematic = false;
-        rigidbody.useGravity = true;
+        SetThrownState();
         rigidbody.AddForce(velocity, ForceMode.VelocityChange);
-        is_grabbed = false;
-        parent = null;
         return true;
     }
 
@@ -111,8 +106,6 @@ public class Grabable : PhysicsProp, IUsable {
         if (grabberId == ExecutingRpcSender) {
             success = Throw(velocity, local, true);
         }
-        if (success) grabberId = 0;
-
         InvokeClientRpcOnClient(rpc_ThrowCallback, ExecutingRpcSender, success);
     }
 
@@ -124,18 +117,33 @@ public class Grabable : PhysicsProp, IUsable {
         return;
     }
 
+    public void SetThrownState() {
+        rigidbody.isKinematic = !isServer;
+        rigidbody.useGravity = true;
+        is_grabbed = false;
+        parent = null;
+        grabberId = 0;
+        rb_collider.enabled = true;
+    }
+
+    public void SetPickupState(GameObject target_parent, bool disable_collision = false) {
+        rigidbody.isKinematic = true;
+        rigidbody.useGravity = false;
+        is_grabbed = true;
+        parent = target_parent;
+        if (disable_collision) {
+            rb_collider.enabled = false;
+        }
+    }
+
     private void FixedUpdate() {
         // If the block loses it's parent, reset it
         if (parent == null) {
-            rigidbody.isKinematic = !isServer;
-            rigidbody.useGravity = true;
-            is_grabbed = false;
-            grabberId = 0;
+            SetThrownState();
         }
         // Make sure carried blocks are always kinematic
         else {
-            rigidbody.isKinematic = true;
-            rigidbody.useGravity = false;
+            SetPickupState(parent);
         }
     }
 }

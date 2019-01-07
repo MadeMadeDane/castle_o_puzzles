@@ -886,13 +886,12 @@ public class PlayerController : NetworkedBehaviour {
         if (!InMovingCollision() && !OnMovingPlatform() && !InMovingInterior()) {
             moving_frame_velocity = Vector3.zero;
             if (player_container.transform.parent != null) {
-                player_container.transform.parent = null;
-
                 // Inherit velocity from previous platform
                 if (lastMovingPlatform != null) {
                     // Keep custom velocity globally accurate
                     current_velocity += lastMovingPlatform.player_velocity;
                 }
+                player_container.transform.parent = null;
             }
             lastMovingPlatform = null;
         }
