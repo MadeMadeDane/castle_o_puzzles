@@ -230,7 +230,13 @@ public class Inventory<T_ITEM>
             return itemList.Count > 0 ? (itemList[0].Value, itemList[0].GetRefCount(owner)) : (default(T_ITEM), 0);
         }
     }
-
+    public (string, T_ITEM, int) GetStackAtIndex(int index) {
+        InventoryItem indexItem = stacks.Values.ElementAtOrDefault(index);
+        if(indexItem != null) {
+            return (stacks.Keys.ElementAtOrDefault(index), indexItem.Value, indexItem.Count);
+        }
+        return (null, default(T_ITEM), -1);
+    }
     private bool AddReference(InventoryItem item, int owner, int count=1)
     {
         Debug.Log("Making Reference to Item");

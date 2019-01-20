@@ -461,6 +461,7 @@ GameObject:
   - component: {fileID: 5244926520790194819}
   - component: {fileID: 6527275195553282519}
   - component: {fileID: 6545534739982916336}
+  - component: {fileID: 3619004201024243814}
   m_Layer: 2
   m_Name: StickPlayer
   m_TagString: Untagged
@@ -591,6 +592,9 @@ MonoBehaviour:
   interp_delay: 0.02
   inactive_delay: 30
   velocity: {x: 0, y: 0, z: 0}
+  networkParentLocalPosition: {x: 0, y: 0, z: 0}
+  networkParentLocalRotation: {x: 0, y: 0, z: 0, w: 0}
+  debug_mode: 0
 --- !u!114 &6545534739982916336
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -603,6 +607,25 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2d42371711e0a4cc8b8a6bd6dbdc7fe5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &3619004201024243814
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3754296374550706765}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1d9411b0b84cb6c42bd279811515c987, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  INVMANG_CHANNEL: MLAPI_INTERNAL
+  cam_controller: {fileID: 0}
+  actionSlots: {fileID: 0}
+  image: {fileID: 21300000, guid: ef9af3ff2eb5cb841abf2d948d180005, type: 3}
+  explosive_rad: 1
+  select_reach_dist: 5
+  enable_logs: 0
 --- !u!1 &3754310118493782233
 GameObject:
   m_ObjectHideFlags: 0

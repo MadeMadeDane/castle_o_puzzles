@@ -11,7 +11,7 @@ public class InventoryManager : NetworkedBehaviour {
     public CameraController cam_controller;
     public ActionSlots actionSlots;
 
-    public Inventory<NetworkUseItem> netowrkInv;
+    public static Inventory<NetworkUseItem> networkInv;
     public Sprite image;
     public float explosive_rad = 1.0f;
     public float select_reach_dist = 5.0f;
@@ -29,7 +29,7 @@ public class InventoryManager : NetworkedBehaviour {
         amazon = new ItemCatalogue();
         actionSlots = gameObject.AddComponent<ActionSlots>();
         cam_controller = GetComponentInChildren<CameraController>();
-        netowrkInv = new Inventory<NetworkUseItem>();
+        networkInv = new Inventory<NetworkUseItem>();
         actionSlots.mh = mh;
     }
 
@@ -78,14 +78,14 @@ public class InventoryManager : NetworkedBehaviour {
             Debug.Log("Stuff");
             if (!isServer) {
                 Debug.Log("RPC to server");
-                InvokeServerRpc(RPC_AddAndEquipUseItem, NetworkingManager.singleton.LocalClientId, request.item_name, 1, channel: INVMANG_CHANNEL);
+                InvokeServerRpc(RPC_AddAndEquipUseItem, request.item_name, 1, channel: INVMANG_CHANNEL);
             }
             else {
                 string item_name = request.item_name;
                 uint clientId = NetworkingManager.singleton.LocalClientId;
                 NetworkUseItem netItem = new NetworkUseItem(item_name);
                 Debug.Log("Server: Swapping Use Item");
-                if (!netowrkInv.AddItemStack(item_name, netItem, (int) clientId, 1)) {
+                if (!networkInv.AddItemStack(item_name, netItem, (int) clientId, 1)) {
                     RPC_SwapUseItem(item_name);
                 }
             }
@@ -99,13 +99,40 @@ public class InventoryManager : NetworkedBehaviour {
         GameObject.Destroy(request.gameObject);
     }
     
+    public void EquipUseItem(string item_name) {
+        if (!isOwner) return;
+        Item shipped_item = amazon.RequestItem(item_name);
+        if (UseItem.isUseItem(shipped_item)) {
+            if (!isServer) {
+                InvokeServerRpc(RPC_EquipUseItem, item_name, 1, channel: INVMANG_CHANNEL);
+            }
+            else {
+                uint clientId = NetworkingManager.singleton.LocalClientId;
+                NetworkUseItem netItem;
+                if (!networkInv.RequestItem(item_name, (int) clientId, out netItem, 1)) {
+                    InvokeClientRpcOnEveryone(RPC_UpdateUseItems, networkInv, channel: INVMANG_CHANNEL);
+                    RPC_SwapUseItem(netItem.name);
+                }
+            }
+        }
+    }
     [ServerRPC]
-    private void RPC_AddAndEquipUseItem (uint clientId, string item_name, int num)
+    private void RPC_EquipUseItem (string item_name, int num)
+    {
+        NetworkUseItem netItem;
+        if (!networkInv.RequestItem(item_name, (int) ExecutingRpcSender, out netItem, num)) {
+            InvokeClientRpcOnEveryone(RPC_UpdateUseItems, networkInv, channel: INVMANG_CHANNEL);
+            InvokeClientRpcOnClient(RPC_SwapUseItem, ExecutingRpcSender, netItem.name, channel: INVMANG_CHANNEL);
+        }
+    }
+    
+    [ServerRPC]
+    private void RPC_AddAndEquipUseItem (string item_name, int num)
     {
         NetworkUseItem netItem = new NetworkUseItem(item_name);
-        Debug.Log("Swapping Use Item");
-        if (!netowrkInv.AddItemStack(item_name, netItem, (int) clientId, num)) {
-            InvokeClientRpcOnEveryone(RPC_SwapUseItem, item_name, channel: INVMANG_CHANNEL);
+        if (!networkInv.AddItemStack(item_name, netItem, (int) ExecutingRpcSender, num)) {
+            InvokeClientRpcOnEveryone(RPC_UpdateUseItems, networkInv,  channel: INVMANG_CHANNEL);
+            InvokeClientRpcOnClient(RPC_SwapUseItem, ExecutingRpcSender, item_name, channel: INVMANG_CHANNEL);
         }
     }
     [ClientRPC]
@@ -114,8 +141,15 @@ public class InventoryManager : NetworkedBehaviour {
         UseItem shipped_item = (UseItem) amazon.RequestItem(item_name);
         shipped_item.ctx = this;
         shipped_item.menu_form = image;
-        Debug.Log("Swapping Use Item");
         actionSlots.ChangeUseItem(shipped_item);
+    }
+    [ClientRPC]
+    private void RPC_UpdateUseItems (Inventory<NetworkUseItem> netInv)
+    {
+        Debug.Log("RPG Updating UseItems");
+        networkInv = netInv;
+    }
+    private void UpdateUseItemList( Inventory<NetworkUseItem> netInv) {
     }
     private bool CheckForCameraController() {
         if (cam_controller == null){
