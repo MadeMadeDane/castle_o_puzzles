@@ -11,7 +11,9 @@ public class InventoryManager : NetworkedBehaviour {
     public CameraController cam_controller;
     public ActionSlots actionSlots;
 
-    public static Inventory<NetworkUseItem> networkInv;
+    // The network inventory can ONLY be edited by the server
+    // The client simply uses this for ouptuting visuals
+    public static NetworkInventory networkInv;
     public Sprite image;
     public float explosive_rad = 1.0f;
     public float select_reach_dist = 5.0f;
@@ -29,7 +31,7 @@ public class InventoryManager : NetworkedBehaviour {
         amazon = new ItemCatalogue();
         actionSlots = gameObject.AddComponent<ActionSlots>();
         cam_controller = GetComponentInChildren<CameraController>();
-        networkInv = new Inventory<NetworkUseItem>();
+        networkInv = new NetworkInventory();
         actionSlots.mh = mh;
     }
 
@@ -39,7 +41,7 @@ public class InventoryManager : NetworkedBehaviour {
 
     // Update is called once per frame
     void Update() {
-        if(!CheckForCameraController()) return;
+        if (!CheckForCameraController()) return;
         if (!isOwner) return;
         ItemRequest targetItem = null;
         if (cam_controller.GetViewMode() == ViewMode.Shooter) {
@@ -85,7 +87,7 @@ public class InventoryManager : NetworkedBehaviour {
                 uint clientId = NetworkingManager.singleton.LocalClientId;
                 NetworkUseItem netItem = new NetworkUseItem(item_name);
                 Debug.Log("Server: Swapping Use Item");
-                if (!networkInv.AddItemStack(item_name, netItem, (int) clientId, 1)) {
+                if (!networkInv.AddItemStack(item_name, netItem, (int)clientId, 1)) {
                     RPC_SwapUseItem(item_name);
                 }
             }
@@ -93,12 +95,12 @@ public class InventoryManager : NetworkedBehaviour {
         if (AbilityItem.isAbilityItem(shipped_item)) {
             shipped_item.ctx = this;
             shipped_item.menu_form = image;
-            actionSlots.ability_items[shipped_item.GetName()] = (AbilityItem) shipped_item;
+            actionSlots.ability_items[shipped_item.GetName()] = (AbilityItem)shipped_item;
             actionSlots.ChangeAbilityItem(actionSlots.ability_items.GetStackCount(), shipped_item.GetName());
         }
         GameObject.Destroy(request.gameObject);
     }
-    
+
     public void EquipUseItem(string item_name) {
         if (!isOwner) return;
         Item shipped_item = amazon.RequestItem(item_name);
@@ -109,50 +111,68 @@ public class InventoryManager : NetworkedBehaviour {
             else {
                 uint clientId = NetworkingManager.singleton.LocalClientId;
                 NetworkUseItem netItem;
-                if (!networkInv.RequestItem(item_name, (int) clientId, out netItem, 1)) {
-                    InvokeClientRpcOnEveryone(RPC_UpdateUseItems, networkInv, channel: INVMANG_CHANNEL);
+                if (!networkInv.RequestItem(item_name, (int)clientId, out netItem, 1)) {
                     RPC_SwapUseItem(netItem.name);
                 }
             }
         }
     }
     [ServerRPC]
-    private void RPC_EquipUseItem (string item_name, int num)
-    {
+    private void RPC_EquipUseItem(string item_name, int num) {
         NetworkUseItem netItem;
-        if (!networkInv.RequestItem(item_name, (int) ExecutingRpcSender, out netItem, num)) {
-            InvokeClientRpcOnEveryone(RPC_UpdateUseItems, networkInv, channel: INVMANG_CHANNEL);
+        if (!networkInv.RequestItem(item_name, (int)ExecutingRpcSender, out netItem, num)) {
             InvokeClientRpcOnClient(RPC_SwapUseItem, ExecutingRpcSender, netItem.name, channel: INVMANG_CHANNEL);
         }
+        else {
+            InvokeClientRpcOnClient(RPC_SwapUseItem, ExecutingRpcSender, "", channel: INVMANG_CHANNEL);
+        }
     }
-    
+
     [ServerRPC]
-    private void RPC_AddAndEquipUseItem (string item_name, int num)
-    {
+    private void RPC_AddAndEquipUseItem(string item_name, int num) {
         NetworkUseItem netItem = new NetworkUseItem(item_name);
-        if (!networkInv.AddItemStack(item_name, netItem, (int) ExecutingRpcSender, num)) {
-            InvokeClientRpcOnEveryone(RPC_UpdateUseItems, networkInv,  channel: INVMANG_CHANNEL);
+        if (!networkInv.AddItemStack(item_name, netItem, (int)ExecutingRpcSender, num)) {
             InvokeClientRpcOnClient(RPC_SwapUseItem, ExecutingRpcSender, item_name, channel: INVMANG_CHANNEL);
         }
     }
     [ClientRPC]
-    private void RPC_SwapUseItem (string item_name)
-    {
-        UseItem shipped_item = (UseItem) amazon.RequestItem(item_name);
-        shipped_item.ctx = this;
-        shipped_item.menu_form = image;
-        actionSlots.ChangeUseItem(shipped_item);
+    private void RPC_SwapUseItem(string item_name) {
+        if (item_name != "") {
+            UseItem shipped_item = (UseItem)amazon.RequestItem(item_name);
+            shipped_item.ctx = this;
+            shipped_item.menu_form = image;
+            actionSlots.ChangeUseItem(shipped_item);
+        }
     }
+
+    public void UpdateNetworkInventoryCache() {
+        if (!isServer) {
+            InvokeServerRpc(RPC_GetUpdatedInventory, true, channel: INVMANG_CHANNEL);
+        }
+        else {
+            updateUseItems_callback();
+        }
+    }
+
+    [ServerRPC]
+    private void RPC_GetUpdatedInventory(bool success) {
+        Debug.Log("RPG Updating UseItems");
+        InvokeClientRpcOnClient(RPC_UpdateUseItems, ExecutingRpcSender, networkInv, channel: INVMANG_CHANNEL);
+    }
+
     [ClientRPC]
-    private void RPC_UpdateUseItems (Inventory<NetworkUseItem> netInv)
-    {
+    private void RPC_UpdateUseItems(NetworkInventory netInv) {
         Debug.Log("RPG Updating UseItems");
         networkInv = netInv;
+        updateUseItems_callback();
     }
-    private void UpdateUseItemList( Inventory<NetworkUseItem> netInv) {
+
+    public static Action updateUseItems_callback = () => { };
+
+    private void UpdateUseItemList(NetworkInventory netInv) {
     }
     private bool CheckForCameraController() {
-        if (cam_controller == null){
+        if (cam_controller == null) {
             cam_controller = networkedObject.GetComponentInChildren<CameraController>();
         }
         return cam_controller != null;
