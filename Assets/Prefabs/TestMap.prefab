@@ -29631,11 +29631,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 179}
     m_Modifications:
-    - target: {fileID: 6131574351243999541, guid: 3389058717a25a7488115996621fb330,
-        type: 3}
-      propertyPath: m_Name
-      value: BoltCutters Variant
-      objectReference: {fileID: 0}
     - target: {fileID: 6131574351244092693, guid: 3389058717a25a7488115996621fb330,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -29690,6 +29685,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6131574351243999541, guid: 3389058717a25a7488115996621fb330,
+        type: 3}
+      propertyPath: m_Name
+      value: BoltCutters Variant
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3389058717a25a7488115996621fb330, type: 3}
