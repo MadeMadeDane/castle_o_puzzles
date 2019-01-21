@@ -67,14 +67,14 @@ public class InventoryManager : NetworkedBehaviour {
         if (im.GetPickUp() && targetItem != null) {
             AddItemToInventory(targetItem);
         }
-        if (im.GetDropItem() && actionSlots.use_item != null) {
+        if (im.GetDropItem() && actionSlots.shared_item != null) {
             actionSlots.DropItem();
         }
     }
 
-    private bool NetworkSwapUseItem(string item_name, int clientId, out NetworkUseItem netItem, int count) {
+    private bool NetworkSwapSharedItem(string item_name, int clientId, out NetworkSharedItem netItem, int count) {
         bool success = false;
-        netItem = default(NetworkUseItem);
+        netItem = default(NetworkSharedItem);
         success = networkInv.RevokeItem(item_name, (int)clientId, true);
         if (!success) return false;
         return networkInv.RequestItem(item_name, (int)clientId, out netItem);
@@ -84,14 +84,14 @@ public class InventoryManager : NetworkedBehaviour {
     void AddItemToInventory(ItemRequest request) {
         if (!isOwner) return;
         Item shipped_item = amazon.RequestItem(request.item_name);
-        if (UseItem.isUseItem(shipped_item)) {
+        if (SharedItem.isSharedItem(shipped_item)) {
             if (!isServer) {
-                InvokeServerRpc(RPC_AddUseItem, request.item_name, 1, channel: INVMANG_CHANNEL);
+                InvokeServerRpc(RPC_AddSharedItem, request.item_name, 1, channel: INVMANG_CHANNEL);
             }
             else {
                 string item_name = request.item_name;
                 uint clientId = NetworkingManager.singleton.LocalClientId;
-                NetworkUseItem netItem = new NetworkUseItem(item_name);
+                NetworkSharedItem netItem = new NetworkSharedItem(item_name);
                 networkInv.AddItemStack(item_name, netItem, 1);
             }
         }
@@ -106,104 +106,104 @@ public class InventoryManager : NetworkedBehaviour {
 
 
     [ServerRPC]
-    private void RPC_AddUseItem(string item_name, int num) {
-        NetworkUseItem netItem = new NetworkUseItem(item_name);
+    private void RPC_AddSharedItem(string item_name, int num) {
+        NetworkSharedItem netItem = new NetworkSharedItem(item_name);
         networkInv.AddItemStack(item_name, netItem, num);
     }
     #endregion
 
     #region EquipRPCs
-    public void EquipUseItem(string item_name) {
+    public void EquipSharedItem(string item_name) {
         if (!isOwner) return;
         Item shipped_item = amazon.RequestItem(item_name);
-        if (UseItem.isUseItem(shipped_item)) {
+        if (SharedItem.isSharedItem(shipped_item)) {
             if (!isServer) {
-                InvokeServerRpc(RPC_EquipUseItem, item_name, 1, channel: INVMANG_CHANNEL);
+                InvokeServerRpc(RPC_EquipSharedItem, item_name, 1, channel: INVMANG_CHANNEL);
             }
             else {
                 uint clientId = NetworkingManager.singleton.LocalClientId;
-                NetworkUseItem netItem;
-                if (NetworkSwapUseItem(item_name, (int)clientId, out netItem, 1)) {
-                    RPC_ClientEquipUseItem(netItem.name);
+                NetworkSharedItem netItem;
+                if (NetworkSwapSharedItem(item_name, (int)clientId, out netItem, 1)) {
+                    RPC_ClientEquipSharedItem(netItem.name);
                 }
             }
         }
     }
 
     [ServerRPC]
-    private void RPC_EquipUseItem(string item_name, int num) {
-        NetworkUseItem netItem;
-        if (NetworkSwapUseItem(item_name, (int)ExecutingRpcSender, out netItem, num)) {
-            InvokeClientRpcOnClient(RPC_ClientEquipUseItem, ExecutingRpcSender, netItem.name, channel: INVMANG_CHANNEL);
+    private void RPC_EquipSharedItem(string item_name, int num) {
+        NetworkSharedItem netItem;
+        if (NetworkSwapSharedItem(item_name, (int)ExecutingRpcSender, out netItem, num)) {
+            InvokeClientRpcOnClient(RPC_ClientEquipSharedItem, ExecutingRpcSender, netItem.name, channel: INVMANG_CHANNEL);
         }
         else {
-            InvokeClientRpcOnClient(RPC_ClientEquipUseItem, ExecutingRpcSender, "", channel: INVMANG_CHANNEL);
+            InvokeClientRpcOnClient(RPC_ClientEquipSharedItem, ExecutingRpcSender, "", channel: INVMANG_CHANNEL);
         }
     }
 
     [ClientRPC]
-    private void RPC_ClientEquipUseItem(string item_name) {
+    private void RPC_ClientEquipSharedItem(string item_name) {
         if (item_name != "") {
-            UseItem shipped_item = (UseItem)amazon.RequestItem(item_name);
+            SharedItem shipped_item = (SharedItem)amazon.RequestItem(item_name);
             shipped_item.context = this;
             shipped_item.menu_form = image;
-            actionSlots.ChangeUseItem(shipped_item);
+            actionSlots.ChangeSharedItem(shipped_item);
         }
     }
     #endregion
 
     #region UnequipRPCs
-    public void UnequipUseItem(string item_name) {
+    public void UnequipSharedItem(string item_name) {
         if (!isOwner) return;
         Item shipped_item = amazon.RequestItem(item_name);
-        if (UseItem.isUseItem(shipped_item)) {
+        if (SharedItem.isSharedItem(shipped_item)) {
             if (!isServer) {
-                InvokeServerRpc(RPC_UnequipUseItem, item_name, 1, channel: INVMANG_CHANNEL);
+                InvokeServerRpc(RPC_UnequipSharedItem, item_name, 1, channel: INVMANG_CHANNEL);
             }
             else {
                 uint clientId = NetworkingManager.singleton.LocalClientId;
                 bool success = networkInv.RevokeItem(item_name, (int)clientId, 1);
-                RPC_ClientUnequipUseItem(success ? item_name : "");
+                RPC_ClientUnequipSharedItem(success ? item_name : "");
             }
         }
     }
 
     [ServerRPC]
-    private void RPC_UnequipUseItem(string item_name, int num) {
+    private void RPC_UnequipSharedItem(string item_name, int num) {
         bool success = networkInv.RevokeItem(item_name, (int)ExecutingRpcSender, num);
-        InvokeClientRpcOnClient(RPC_ClientUnequipUseItem, ExecutingRpcSender, success ? item_name : "", channel: INVMANG_CHANNEL);
+        InvokeClientRpcOnClient(RPC_ClientUnequipSharedItem, ExecutingRpcSender, success ? item_name : "", channel: INVMANG_CHANNEL);
     }
 
     [ClientRPC]
-    private void RPC_ClientUnequipUseItem(string item_name) {
-        if (item_name == actionSlots.use_item?.name()) actionSlots.ChangeUseItem(null);
+    private void RPC_ClientUnequipSharedItem(string item_name) {
+        if (item_name == actionSlots.shared_item?.name()) actionSlots.ChangeSharedItem(null);
     }
     #endregion
 
+    #region UpdateNetworkInventoryRPCs
     public void UpdateNetworkInventoryCache() {
         if (!isServer) {
             InvokeServerRpc(RPC_GetUpdatedInventory, true, channel: INVMANG_CHANNEL);
         }
         else {
-            updateUseItems_callback();
+            updateSharedItems_callback();
         }
     }
 
     [ServerRPC]
     private void RPC_GetUpdatedInventory(bool success) {
-        InvokeClientRpcOnClient(RPC_UpdateUseItems, ExecutingRpcSender, networkInv, channel: INVMANG_CHANNEL);
+        InvokeClientRpcOnClient(RPC_UpdateSharedItems, ExecutingRpcSender, networkInv, channel: INVMANG_CHANNEL);
     }
 
     [ClientRPC]
-    private void RPC_UpdateUseItems(NetworkInventory netInv) {
+    private void RPC_UpdateSharedItems(NetworkInventory netInv) {
         networkInv = netInv;
-        updateUseItems_callback();
+        updateSharedItems_callback();
     }
 
-    public static Action updateUseItems_callback = () => { };
+    public static Action updateSharedItems_callback = () => { };
+    #endregion
 
-    private void UpdateUseItemList(NetworkInventory netInv) {
-    }
     private bool CheckForCameraController() {
         if (cam_controller == null) {
             cam_controller = networkedObject.GetComponentInChildren<CameraController>();

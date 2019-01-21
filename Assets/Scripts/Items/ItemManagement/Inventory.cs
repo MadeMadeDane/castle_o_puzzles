@@ -6,7 +6,7 @@ using System;
 using UnityEngine;
 using MLAPI.Serialization;
 
-public class NetworkInventory : Inventory<NetworkUseItem>, IBitWritable {
+public class NetworkInventory : Inventory<NetworkSharedItem>, IBitWritable {
     public void Read(Stream stream) {
         using (PooledBitReader reader = PooledBitReader.Get(stream)) {
 
@@ -14,7 +14,7 @@ public class NetworkInventory : Inventory<NetworkUseItem>, IBitWritable {
             for (int i = 0; i < item_count; i++) {
                 string item_name = reader.ReadString().ToString();
                 int count = reader.ReadInt32();
-                AddItemStack(item_name, new NetworkUseItem(item_name), count);
+                AddItemStack(item_name, new NetworkSharedItem(item_name), count);
             }
         }
     }
@@ -24,7 +24,7 @@ public class NetworkInventory : Inventory<NetworkUseItem>, IBitWritable {
             foreach (KeyValuePair<string, InventoryItem> kvp in stacks) {
                 InventoryItem curInvItem = kvp.Value;
                 if (curInvItem.Value.name != kvp.Key) {
-                    Debug.LogWarning("NetworkUseItem name did not match " + kvp.Key + " != " + curInvItem.Value.name);
+                    Debug.LogWarning("NetworkSharedItem name did not match " + kvp.Key + " != " + curInvItem.Value.name);
                 }
                 writer.WriteString(kvp.Key);
                 writer.WriteInt32(curInvItem.Count);

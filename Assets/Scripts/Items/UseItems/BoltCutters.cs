@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BoltCutters : UseItem {
+public class BoltCutters : SharedItem {
     public override string name() => "BoltCutters";
     private InputManager im;
     // Use this for initialization
@@ -19,7 +19,7 @@ public class BoltCutters : UseItem {
     }
 
     bool saycheck() {
-        bool ret = im.GetUseItem();
+        bool ret = im.GetSharedItem();
         return ret;
     }
 

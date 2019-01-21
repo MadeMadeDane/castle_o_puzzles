@@ -4,19 +4,19 @@ using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
 
-public class UseItem : Item {
+public class SharedItem : Item {
 
-    public static bool isUseItem(Item item) {
-        return item.type == typeof(UseItem);
+    public static bool isSharedItem(Item item) {
+        return item.type == typeof(SharedItem);
     }
-    public UseItem(NetworkedBehaviour context = null) : base(context) {
-        type = typeof(UseItem);
+    public SharedItem(NetworkedBehaviour context = null) : base(context) {
+        type = typeof(SharedItem);
     }
 }
-public class NetworkUseItem {
+public class NetworkSharedItem {
     public string name;
 
-    public NetworkUseItem(string name) {
+    public NetworkSharedItem(string name) {
         this.name = name;
     }
 }
