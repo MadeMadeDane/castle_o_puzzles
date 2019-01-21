@@ -154,7 +154,7 @@ public class Inventory<T_ITEM> {
         return AddReference(foundItem, owner);
     }
 
-    public bool RequestItem(string item_name, int owner, out T_ITEM item, bool all = true) {
+    public bool RequestItem(string item_name, int owner, out T_ITEM item, bool all = false) {
         InventoryItem foundItem;
         item = default(T_ITEM);
         if (stacks.TryGetValue(item_name, out foundItem)) {
@@ -176,7 +176,7 @@ public class Inventory<T_ITEM> {
         return false;
     }
 
-    public bool RevokeItem(string item_name, int owner, bool all = true) {
+    public bool RevokeItem(string item_name, int owner, bool all = false) {
         InventoryItem foundItem;
         if (!stacks.TryGetValue(item_name, out foundItem)) return true;
         int num = all ? foundItem.GetRefCount(owner) : 1;
