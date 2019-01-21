@@ -180,6 +180,7 @@ public class InventoryManager : NetworkedBehaviour {
     }
     #endregion
 
+    #region UpdateNetworkInventoryRPCs
     public void UpdateNetworkInventoryCache() {
         if (!isServer) {
             InvokeServerRpc(RPC_GetUpdatedInventory, true, channel: INVMANG_CHANNEL);
@@ -201,9 +202,8 @@ public class InventoryManager : NetworkedBehaviour {
     }
 
     public static Action updateSharedItems_callback = () => { };
+    #endregion
 
-    private void UpdateSharedItemList(NetworkInventory netInv) {
-    }
     private bool CheckForCameraController() {
         if (cam_controller == null) {
             cam_controller = networkedObject.GetComponentInChildren<CameraController>();
