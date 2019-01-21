@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,35 +14,27 @@ public class InventorySelect : MonoBehaviour {
     }
 
     // Start is called before the first frame update
-    void Start() {
+    public void InitInventory() {
         init = false;
         ToggleGroup tg = GetComponentInChildren<ToggleGroup>();
-        tg.SetAllTogglesOff();
-        bool imThere = GetInventoryManager();
-        if (imThere) {
+        if (GetInventoryManager()) {
             im.UpdateNetworkInventoryCache();
         }
     }
 
     void update_callback() {
-        bool imThere = GetInventoryManager();
         ToggleGroup tg = GetComponentInChildren<ToggleGroup>();
         Toggle[] toggles = GetComponentsInChildren<Toggle>();
         int i = 0;
+        List<string> item_names = InventoryManager.networkInv.GetAllItemNames();
         foreach (Toggle toggle in toggles) {
-            if (imThere) {
-                string item_name;
-                NetworkUseItem item;
-                int count;
-                (item_name, item, count) = InventoryManager.networkInv.GetStackAtIndex(i++);
-                toggle.GetComponentInChildren<Text>().text = item_name;
-                if (im.actionSlots.use_item != null && im.actionSlots.use_item.GetName() == item_name) {
-                    Debug.Log("RPG The Check needs to be on this one " + item_name + " == " + im.actionSlots.use_item?.GetName());
-                    toggle.isOn = true;
-                }
+            string cur_name = item_names.ElementAtOrDefault(i++);
+            toggle.GetComponentInChildren<Text>().text = cur_name;
+            if (im.actionSlots.use_item != null && im.actionSlots.use_item.name() == cur_name) {
+                toggle.isOn = true;
             }
             else {
-                toggle.GetComponentInChildren<Text>().text = "";
+                toggle.isOn = false;
             }
         }
         init = true;
@@ -52,16 +45,13 @@ public class InventorySelect : MonoBehaviour {
     }
     public void ItemToggle(string toggleNum) {
         if (init) {
-            ToggleGroup tg = GetComponent<ToggleGroup>();
-            Toggle toggle = tg.ActiveToggles().FirstOrDefault();
-            if (toggle != null && GetInventoryManager()) {
+            Toggle toggle = transform.GetChild(Int32.Parse(toggleNum) - 1).GetComponentInChildren<Toggle>();
+            if (toggle != null) {
                 string item_name = toggle.GetComponentInChildren<Text>().text;
                 if (item_name != null && item_name != "") {
-                    im.EquipUseItem(item_name);
+                    if (toggle.isOn) im.EquipUseItem(item_name);
+                    else im.UnequipUseItem(item_name);
                 }
-            }
-            else {
-
             }
         }
     }

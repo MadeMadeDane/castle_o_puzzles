@@ -14,7 +14,6 @@ public class NetworkInventory : Inventory<NetworkUseItem>, IBitWritable {
             for (int i = 0; i < item_count; i++) {
                 string item_name = reader.ReadString().ToString();
                 int count = reader.ReadInt32();
-                Debug.Log("RPG Here is the item Name: " + item_name + " Count: " + count.ToString());
                 AddItemStack(item_name, new NetworkUseItem(item_name), count);
             }
         }
@@ -35,13 +34,11 @@ public class NetworkInventory : Inventory<NetworkUseItem>, IBitWritable {
 }
 public class Inventory<T_ITEM> {
     protected Dictionary<string, InventoryItem> stacks;
-    protected Dictionary<int, List<InventoryItem>> owner_list;
     public uint numSlots = 0;
 
     // Use this for initialization
     public Inventory() {
         stacks = new Dictionary<string, InventoryItem>();
-        owner_list = new Dictionary<int, List<InventoryItem>>();
     }
 
     public T_ITEM this[string item_name] {
@@ -62,14 +59,14 @@ public class Inventory<T_ITEM> {
         InventoryItem foundItem;
         if (!stacks.TryGetValue(addItem, out foundItem)) {
             if (numSlots > 0 && numAdded + stacks.Count > numSlots) {
-                return true;
+                return false;
             }
             foundItem = new InventoryItem(item);
             stacks[addItem] = foundItem;
             numAdded -= 1;
         }
         foundItem.Count += numAdded;
-        return false;
+        return true;
     }
 
     public bool AddItem(string addItem, T_ITEM item, int owner) {
@@ -81,7 +78,7 @@ public class Inventory<T_ITEM> {
         InventoryItem foundItem;
         if (!stacks.TryGetValue(addItem, out foundItem)) {
             if (numSlots > 0 && numAdded + stacks.Count > numSlots) {
-                return true;
+                return false;
             }
             Debug.Log("Adding single item stack");
             foundItem = new InventoryItem(item);
@@ -100,13 +97,11 @@ public class Inventory<T_ITEM> {
 
     public bool RemoveItemStack(string remItem, int num) {
         InventoryItem foundItem;
-        if (stacks.TryGetValue(remItem, out foundItem) &&
-            foundItem.Count >= num && foundItem.GetTotalRefs() > 0) {
-            foundItem.Count -= num;
-            if (foundItem.Count > 0) {
-                stacks.Remove(remItem);
-            }
-            return false;
+        if (!stacks.TryGetValue(remItem, out foundItem)) return true;
+        if (foundItem.Count < num || foundItem.GetTotalRefs() > 0) return false;
+        foundItem.Count -= num;
+        if (foundItem.Count <= 0) {
+            return stacks.Remove(remItem);
         }
         return true;
     }
@@ -117,15 +112,12 @@ public class Inventory<T_ITEM> {
 
     public bool RemoveItemStack(string remItem, int owner, int num) {
         InventoryItem foundItem;
-        if (stacks.TryGetValue(remItem, out foundItem) && foundItem.Count >= num) {
-            if (foundItem.RemoveReference(owner, num)) {
-                return true;
-            }
-            foundItem.Count -= num;
-            if (foundItem.Count > 0) {
-                UpdateOwnerList(owner, foundItem);
-                stacks.Remove(remItem);
-            }
+        if (!stacks.TryGetValue(remItem, out foundItem)) return true;
+        if (foundItem.Count < num) return false;
+        if (!foundItem.RemoveReference(owner, num)) return false;
+        foundItem.Count -= num;
+        if (foundItem.Count <= 0) {
+            return stacks.Remove(remItem);
         }
         return true;
     }
@@ -133,25 +125,16 @@ public class Inventory<T_ITEM> {
 
     public bool RemoveWholeItemStack(string remItem) {
         InventoryItem foundItem;
-        if (stacks.TryGetValue(remItem, out foundItem) &&
-            foundItem.Count > 0 && foundItem.GetTotalRefs() > 0) {
-            foundItem.Count = 0;
-            stacks.Remove(remItem);
-            return false;
-        }
-        return true;
+        if (!stacks.TryGetValue(remItem, out foundItem)) return true;
+        if (foundItem.GetTotalRefs() > 0) return false;
+        return stacks.Remove(remItem);
     }
 
     public bool RemoveWholeItemStack(string remItem, int owner) {
         InventoryItem foundItem;
-        if (stacks.TryGetValue(remItem, out foundItem) &&
-            foundItem.Count > 0 && foundItem.RemoveReference(owner, foundItem.Count)) {
-            foundItem.Count = 0;
-            UpdateOwnerList(owner, foundItem);
-            stacks.Remove(remItem);
-            return false;
-        }
-        return true;
+        if (!stacks.TryGetValue(remItem, out foundItem)) return true;
+        if (!foundItem.RemoveReference(owner, foundItem.Count)) return false;
+        return stacks.Remove(remItem);
     }
 
     public void UnlockItem(string item_name, T_ITEM item) {
@@ -165,55 +148,45 @@ public class Inventory<T_ITEM> {
 
         if (!stacks.TryGetValue(item_name, out foundItem)) {
             foundItem = new InventoryItem(item);
+            stacks[item_name] = foundItem;
         }
+        else if (GetOwnedItems(owner).Contains(foundItem)) return true;
         return AddReference(foundItem, owner);
     }
 
-    public bool RequestItem(string item_name, int owner, out T_ITEM item, bool all = false) {
+    public bool RequestItem(string item_name, int owner, out T_ITEM item, bool all = true) {
         InventoryItem foundItem;
         item = default(T_ITEM);
-        if (stacks.TryGetValue(item_name, out foundItem) && foundItem.Count > 0) {
-            bool result = AddReference(foundItem, owner, all ? foundItem.Count : 1);
-            if (!result) {
-                item = foundItem.Value;
-            }
-            return result;
+        if (stacks.TryGetValue(item_name, out foundItem)) {
+            bool success = AddReference(foundItem, owner, all ? foundItem.Count : 1);
+            if (success) item = foundItem.Value;
+            return success;
         }
-        return true;
+        return false;
     }
 
     public bool RequestItem(string item_name, int owner, out T_ITEM item, int num) {
         InventoryItem foundItem;
         item = default(T_ITEM);
         if (stacks.TryGetValue(item_name, out foundItem) && foundItem.Count >= num) {
-            bool result = AddReference(foundItem, owner, num);
-            if (!result) {
-                item = foundItem.Value;
-            }
-            return result;
+            bool success = AddReference(foundItem, owner, num);
+            if (success) item = foundItem.Value;
+            return success;
         }
-        return true;
+        return false;
     }
 
-    public bool RevokeItem(string item_name, int owner, bool all = false) {
+    public bool RevokeItem(string item_name, int owner, bool all = true) {
         InventoryItem foundItem;
-        if (stacks.TryGetValue(item_name, out foundItem)) {
-            int num = all ? foundItem.GetRefCount(owner) : 1;
-            bool result = foundItem.RemoveReference(owner, num);
-            UpdateOwnerList(owner, foundItem);
-            return result;
-        }
-        return true;
+        if (!stacks.TryGetValue(item_name, out foundItem)) return true;
+        int num = all ? foundItem.GetRefCount(owner) : 1;
+        return foundItem.RemoveReference(owner, num);
     }
 
     public bool RevokeItem(string item_name, int owner, int num) {
         InventoryItem foundItem;
-        if (stacks.TryGetValue(item_name, out foundItem)) {
-            bool result = foundItem.RemoveReference(owner, num);
-            UpdateOwnerList(owner, foundItem);
-            return result;
-        }
-        return true;
+        if (!stacks.TryGetValue(item_name, out foundItem)) return true;
+        return foundItem.RemoveReference(owner, num);
     }
 
     public T_ITEM GetItem(string item_name) {
@@ -227,61 +200,25 @@ public class Inventory<T_ITEM> {
     }
 
     public (T_ITEM, int) GetFirstOwnedItem(int owner) {
-        List<InventoryItem> itemList;
-        owner_list.TryGetValue(owner, out itemList);
-        if (itemList == null) {
-            return (default(T_ITEM), 0);
-        }
-        else {
-            return itemList.Count > 0 ? (itemList[0].Value, itemList[0].GetRefCount(owner)) : (default(T_ITEM), 0);
-        }
+        return GetOwnedItems(owner).Select((InventoryItem it) => (it.Value, it.GetRefCount(owner))).FirstOrDefault();
     }
-    public (string, T_ITEM, int) GetStackAtIndex(int index) {
-        InventoryItem indexItem = stacks.Values.ElementAtOrDefault(index);
-        if (indexItem != null) {
-            return (stacks.Keys.ElementAtOrDefault(index), indexItem.Value, indexItem.Count);
-        }
-        return (null, default(T_ITEM), -1);
+    public List<string> GetAllItemNames() {
+        return stacks.Keys.ToList();
     }
     private bool AddReference(InventoryItem item, int owner, int count = 1) {
-        Debug.Log("Making Reference to Item");
-        bool result;
-        int ref_count = item.GetRefCount(owner);
-        result = item.SetReference(owner, ref_count + count);
-        UpdateOwnerList(owner, item);
-        return result;
+        return item.SetReference(owner, item.GetRefCount(owner) + count);
     }
 
 
 
-    private void UpdateOwnerList(int owner, InventoryItem item) {
-        List<InventoryItem> itemList;
-        Debug.Log("Updating Owner List");
-        if (owner_list.TryGetValue(owner, out itemList)) {
-            int index = itemList.FindIndex(a => a == item);
-            if (index >= 0 && (item.Count > 0 || item.GetRefCount(owner) > 0)) {
-                itemList.RemoveAt(index);
-            }
-            else if (item.Count > 0 && item.GetRefCount(owner) > 0) {
-                itemList.Add(item);
-            }
-        }
-        else {
-            Debug.Log("Not in owner list ");
-            itemList = new List<InventoryItem>();
-            if (item.Count > 0 && item.GetRefCount(owner) > 0) {
-                Debug.Log("Adding to owner list");
-                itemList.Add(item);
-                owner_list[owner] = itemList;
-            }
-        }
+    private IEnumerable<InventoryItem> GetOwnedItems(int owner) {
+        return stacks.Values.Where((InventoryItem it) => it.ref_list.ContainsKey(owner));
     }
 
     protected class InventoryItem {
         public T_ITEM Value;
         public int Count;
-        private Dictionary<int, int> ref_list;
-        public bool enable_logs = true;
+        public Dictionary<int, int> ref_list;
 
         // Use this for initialization
         public InventoryItem(T_ITEM Value) {
@@ -301,30 +238,28 @@ public class Inventory<T_ITEM> {
         }
 
         public bool SetReference(int owner, int count) {
-            int new_total = count + ref_list.Where(reff => { return !reff.Key.Equals(owner); }).Select((reff) => reff.Value).Sum();
-            Debug.Log("Count for item " + this.Count + " new total " + new_total);
+            int new_total = count + ref_list.Where(r => !r.Key.Equals(owner)).Select((r) => r.Value).Sum();
             if (new_total <= this.Count) {
                 ref_list[owner] = count;
-                return false;
+                return true;
             }
-            return true;
+            return false;
         }
 
         public bool SetReference(int owner) {
             return SetReference(owner, 1);
         }
 
-
-
         public bool RemoveReference(int owner, int count) {
+            if (!ref_list.ContainsKey(owner)) return true;
             if (ref_list[owner] >= count) {
                 ref_list[owner] -= count;
                 if (ref_list[owner] <= 0) {
-                    ref_list.Remove(owner);
+                    return ref_list.Remove(owner);
                 }
-                return false;
+                return true;
             }
-            return true;
+            return false;
         }
 
         public bool RemoveReference(int owner) {

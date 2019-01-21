@@ -32,8 +32,6 @@ public class MenuHandler : MonoBehaviour {
             start_menu.is_open = !start_menu.is_open;
             if (start_menu.is_open) {
                 start_menu.open();
-                GameObject start_parent = gameObject.GetComponentInChildren<PlayerBuilder>().gameObject;
-                start_menu.ui_instance.transform.SetParent(start_parent.transform, false);
             }
             else {
                 start_menu.close();

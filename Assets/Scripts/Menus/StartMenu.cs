@@ -8,11 +8,12 @@ public class StartMenu : Menu {
         base.open();
         Cursor.visible = true;
         Cursor.lockState = CursorLockMode.Confined;
+        InventorySelect invSel = ui_instance.GetComponentInChildren<InventorySelect>();
+        invSel.InitInventory();
     }
 
     public override void close() {
         base.close();
-        ui_instance = null;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }

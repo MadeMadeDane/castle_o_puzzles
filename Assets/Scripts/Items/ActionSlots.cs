@@ -17,55 +17,58 @@ public class ActionSlots : MonoBehaviour {
     }
 
     // Use this for initialization
-    void Start () {
+    void Start() {
         ability_items = new Inventory<AbilityItem>();
         active_slot = 0;
         CheckForItemBar();
     }
-	
-	// Update is called once per frame
-	void Update () {
+
+    // Update is called once per frame
+    void Update() {
         if (im.GetAbilitySlot1()) {
-            if(ability_item != null) {
-                ability_item.Destroy();
+            if (ability_item != null) {
+                ability_item.OnDestroy();
             }
             active_slot = 0;
-            (AbilityItem item, int item_count)  = ability_items.GetFirstOwnedItem(active_slot);
+            (AbilityItem item, int item_count) = ability_items.GetFirstOwnedItem(active_slot);
             ability_item = item;
-            if(ability_item != null) {
+            if (ability_item != null) {
                 ability_item.Start();
             }
             UpdateSelectedSlotUI(active_slot);
-        } else if (im.GetAbilitySlot2()) {
-            if(ability_item != null) {
-                ability_item.Destroy();
+        }
+        else if (im.GetAbilitySlot2()) {
+            if (ability_item != null) {
+                ability_item.OnDestroy();
             }
             active_slot = 1;
-            (AbilityItem item, int item_count)  = ability_items.GetFirstOwnedItem(active_slot);
+            (AbilityItem item, int item_count) = ability_items.GetFirstOwnedItem(active_slot);
             ability_item = item;
-            if(ability_item != null) {
+            if (ability_item != null) {
                 ability_item.Start();
             }
             UpdateSelectedSlotUI(active_slot);
-        } else if (im.GetAbilitySlot3()) {
-            if(ability_item != null) {
-                ability_item.Destroy();
+        }
+        else if (im.GetAbilitySlot3()) {
+            if (ability_item != null) {
+                ability_item.OnDestroy();
             }
             active_slot = 2;
-            (AbilityItem item, int item_count)  = ability_items.GetFirstOwnedItem(active_slot);
+            (AbilityItem item, int item_count) = ability_items.GetFirstOwnedItem(active_slot);
             ability_item = item;
-            if(ability_item != null) {
+            if (ability_item != null) {
                 ability_item.Start();
             }
             UpdateSelectedSlotUI(active_slot);
-        } else if (im.GetAbilitySlot4()) {
-            if(ability_item != null) {
-                ability_item.Destroy();
+        }
+        else if (im.GetAbilitySlot4()) {
+            if (ability_item != null) {
+                ability_item.OnDestroy();
             }
             active_slot = 3;
-            (AbilityItem item, int item_count)  = ability_items.GetFirstOwnedItem(active_slot);
+            (AbilityItem item, int item_count) = ability_items.GetFirstOwnedItem(active_slot);
             ability_item = item;
-            if(ability_item != null) {
+            if (ability_item != null) {
                 ability_item.Start();
             }
             UpdateSelectedSlotUI(active_slot);
@@ -77,8 +80,7 @@ public class ActionSlots : MonoBehaviour {
             ability_item.Update();
         }
     }
-    private void FixedUpdate()
-    {
+    private void FixedUpdate() {
 
         if (use_item != null) {
             use_item.FixedUpdate();
@@ -89,29 +91,26 @@ public class ActionSlots : MonoBehaviour {
         }
     }
 
-    public void ChangeUseItem (UseItem item)
-    {
+    public void ChangeUseItem(UseItem item) {
         if (use_item != null) {
-            use_item.Destroy();
+            use_item.OnDestroy();
         }
         use_item = item;
-        use_item.Start();
+        if (use_item != null) use_item.Start();
         ChangeUseItemUI(item);
     }
 
-    public void ChangeAbilityItem(int slot, string item_name)
-    {
+    public void ChangeAbilityItem(int slot, string item_name) {
         if (slot < 4 && slot >= 0) {
-        Debug.Log("Adding Ability Item " + slot );
+            Debug.Log("Adding Ability Item " + slot);
             (AbilityItem aItem, int count) = ability_items.GetFirstOwnedItem(slot);
-            if(count > 0)
-            {
+            if (count > 0) {
                 if (slot == active_slot) {
-                    aItem.Destroy();
+                    aItem.OnDestroy();
                 }
-                ability_items.RevokeItem(aItem.GetName(),slot, true);
+                ability_items.RevokeItem(aItem.name(), slot, true);
             }
-            if (!ability_items.RequestItem(item_name, slot, out aItem)) {
+            if (ability_items.RequestItem(item_name, slot, out aItem)) {
                 ChangeAbilityItemUI(slot, aItem);
             }
             if (slot == active_slot) {
@@ -122,19 +121,19 @@ public class ActionSlots : MonoBehaviour {
         }
     }
 
-    private void UpdateSelectedSlotUI(int slot)
-    { 
+    private void UpdateSelectedSlotUI(int slot) {
         if (!CheckForItemBar()) {
             return;
         }
         for (int i = 0; i < 4; i++) {
             if (i == slot) {
-                    item_bar.ability_slots[i].transform.GetChild(0).GetComponent<Image>().enabled = true;
-            } else {
+                item_bar.ability_slots[i].transform.GetChild(0).GetComponent<Image>().enabled = true;
+            }
+            else {
                 item_bar.ability_slots[i].transform.GetChild(0).GetComponent<Image>().enabled = false;
             }
         }
-        
+
     }
 
     private void ChangeAbilityItemUI(int slot, AbilityItem item) {
@@ -144,7 +143,7 @@ public class ActionSlots : MonoBehaviour {
     }
     private void ChangeUseItemUI(UseItem item) {
         if (CheckForItemBar()) {
-            item_bar.use_slot.sprite = item.menu_form;
+            item_bar.use_slot.sprite = item?.menu_form;
         }
     }
     private bool CheckForItemBar() {
@@ -153,8 +152,7 @@ public class ActionSlots : MonoBehaviour {
         }
         return item_bar != null;
     }
-    public void DropItem()
-    {
+    public void DropItem() {
         use_item = null;
     }
 }
