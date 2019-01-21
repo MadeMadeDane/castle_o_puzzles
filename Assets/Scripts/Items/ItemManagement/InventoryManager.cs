@@ -23,7 +23,7 @@ public class InventoryManager : NetworkedBehaviour {
     private ItemCatalogue amazon;
 
 
-    private ItemRequest prevItem = null;
+    private WorldItem prevItem = null;
     // Use this for initialization
     public void Setup(MenuHandler mh) {
         utils = Utilities.Instance;
@@ -43,10 +43,10 @@ public class InventoryManager : NetworkedBehaviour {
     void Update() {
         if (!CheckForCameraController()) return;
         if (!isOwner) return;
-        ItemRequest targetItem = null;
+        WorldItem targetItem = null;
         if (cam_controller.GetViewMode() == ViewMode.Shooter) {
             Camera cam = cam_controller.controlled_camera;
-            targetItem = utils.RayCastExplosiveSelect<ItemRequest>(origin: cam.transform.position,
+            targetItem = utils.RayCastExplosiveSelect<WorldItem>(origin: cam.transform.position,
                                                                    path: cam.transform.forward * select_reach_dist,
                                                                    radius: explosive_rad);
         }
@@ -57,11 +57,7 @@ public class InventoryManager : NetworkedBehaviour {
             prevItem = null;
         }
         if (targetItem != null) {
-            if (!targetItem.gameObject.GetComponent<ParticleSystem>().isPlaying) {
-                targetItem.gameObject.GetComponent<ParticleSystem>().Play();
-            }
-            ParticleSystem.EmissionModule emitter = targetItem.gameObject.GetComponent<ParticleSystem>().emission;
-            emitter.enabled = true;
+            targetItem.Highlight();
             prevItem = targetItem;
         }
         if (im.GetPickUp() && targetItem != null) {
@@ -81,7 +77,7 @@ public class InventoryManager : NetworkedBehaviour {
     }
 
     #region AddItemRPCs
-    void AddItemToInventory(ItemRequest request) {
+    void AddItemToInventory(WorldItem request) {
         if (!isOwner) return;
         Item shipped_item = amazon.RequestItem(request.item_name);
         if (SharedItem.isSharedItem(shipped_item)) {
