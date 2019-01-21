@@ -8,7 +8,7 @@ public class ItemCatalogue {
     public ItemCatalogue() {
         items = new Dictionary<string, ItemCatalogueEntry>();
         items.Add(new MagnetBoots().name(), new ItemCatalogueEntry(typeof(MagnetBoots), typeof(AbilityItem), "", ""));
-        items.Add(new BoltCutters().name(), new ItemCatalogueEntry(typeof(BoltCutters), typeof(UseItem), "", ""));
+        items.Add(new BoltCutters().name(), new ItemCatalogueEntry(typeof(BoltCutters), typeof(SharedItem), "", ""));
 
     }
     public Item RequestItem(string item_name) {

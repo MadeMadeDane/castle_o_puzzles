@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 public class ActionSlots : MonoBehaviour {
-    public UseItem use_item = null;
+    public SharedItem shared_item = null;
     public AbilityItem ability_item = null;
     public Inventory<AbilityItem> ability_items;
     public MenuHandler mh;
@@ -73,8 +73,8 @@ public class ActionSlots : MonoBehaviour {
             }
             UpdateSelectedSlotUI(active_slot);
         }
-        if (use_item != null) {
-            use_item.Update();
+        if (shared_item != null) {
+            shared_item.Update();
         }
         if (ability_item != null) {
             ability_item.Update();
@@ -82,8 +82,8 @@ public class ActionSlots : MonoBehaviour {
     }
     private void FixedUpdate() {
 
-        if (use_item != null) {
-            use_item.FixedUpdate();
+        if (shared_item != null) {
+            shared_item.FixedUpdate();
         }
 
         if (ability_item != null) {
@@ -91,13 +91,13 @@ public class ActionSlots : MonoBehaviour {
         }
     }
 
-    public void ChangeUseItem(UseItem item) {
-        if (use_item != null) {
-            use_item.OnDestroy();
+    public void ChangeSharedItem(SharedItem item) {
+        if (shared_item != null) {
+            shared_item.OnDestroy();
         }
-        use_item = item;
-        if (use_item != null) use_item.Start();
-        ChangeUseItemUI(item);
+        shared_item = item;
+        if (shared_item != null) shared_item.Start();
+        ChangeSharedItemUI(item);
     }
 
     public void ChangeAbilityItem(int slot, string item_name) {
@@ -141,7 +141,7 @@ public class ActionSlots : MonoBehaviour {
             item_bar.ability_slots[slot].sprite = item.menu_form;
         }
     }
-    private void ChangeUseItemUI(UseItem item) {
+    private void ChangeSharedItemUI(SharedItem item) {
         if (CheckForItemBar()) {
             item_bar.use_slot.sprite = item?.menu_form;
         }
@@ -153,6 +153,6 @@ public class ActionSlots : MonoBehaviour {
         return item_bar != null;
     }
     public void DropItem() {
-        use_item = null;
+        shared_item = null;
     }
 }

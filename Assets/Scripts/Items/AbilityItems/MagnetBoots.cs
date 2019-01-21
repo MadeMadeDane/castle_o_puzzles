@@ -26,7 +26,7 @@ public class MagnetBoots : AbilityItem {
     }
 
     bool saycheck() {
-        bool ret = im.GetUseItem();
+        bool ret = im.GetSharedItem();
         return ret;
     }
 

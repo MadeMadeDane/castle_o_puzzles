@@ -101,7 +101,7 @@ public class InputManager : UnitySingleton<InputManager> {
             { "crouch_button",  new Button("Crouch") },
             { "center_camera_button",  new Button("Center Camera") },
             { "toggle_view_button",  new Button("Toggle View") },
-            { "use_item_button", new Button("Use Item") },
+            { "shared_item_button", new Button("Shared Item") },
             { "pick_up_button", new Button("Pick Up") },
             { "drop_item_button", new Button("Drop Item") },
             { "ability_slot_1_button", new Button("Ability Slot 1") },
@@ -200,12 +200,12 @@ public class InputManager : UnitySingleton<InputManager> {
         return _button_map["toggle_view_button"].pressed();
     }
 
-    public bool GetUseItem() {
-        return _button_map["use_item_button"].down();
+    public bool GetSharedItem() {
+        return _button_map["shared_item_button"].down();
     }
 
-    public bool GetUseItemHold() {
-        return _button_map["use_item_button"].pressed();
+    public bool GetSharedItemHold() {
+        return _button_map["shared_item_button"].pressed();
     }
 
     public bool GetPickUp() {

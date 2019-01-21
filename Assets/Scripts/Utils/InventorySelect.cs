@@ -10,7 +10,7 @@ public class InventorySelect : MonoBehaviour {
     private bool init = false;
 
     private void Awake() {
-        InventoryManager.updateUseItems_callback = update_callback;
+        InventoryManager.updateSharedItems_callback = update_callback;
     }
 
     // Start is called before the first frame update
@@ -30,7 +30,7 @@ public class InventorySelect : MonoBehaviour {
         foreach (Toggle toggle in toggles) {
             string cur_name = item_names.ElementAtOrDefault(i++);
             toggle.GetComponentInChildren<Text>().text = cur_name;
-            if (im.actionSlots.use_item != null && im.actionSlots.use_item.name() == cur_name) {
+            if (im.actionSlots.shared_item != null && im.actionSlots.shared_item.name() == cur_name) {
                 toggle.isOn = true;
             }
             else {
@@ -49,8 +49,8 @@ public class InventorySelect : MonoBehaviour {
             if (toggle != null) {
                 string item_name = toggle.GetComponentInChildren<Text>().text;
                 if (item_name != null && item_name != "") {
-                    if (toggle.isOn) im.EquipUseItem(item_name);
-                    else im.UnequipUseItem(item_name);
+                    if (toggle.isOn) im.EquipSharedItem(item_name);
+                    else im.UnequipSharedItem(item_name);
                 }
             }
         }
