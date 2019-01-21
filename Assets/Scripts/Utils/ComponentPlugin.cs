@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 
 public class ComponentPlugin {
-    protected MonoBehaviour context;
-    public ComponentPlugin(MonoBehaviour context) {
+    public MonoBehaviour context;
+    public ComponentPlugin(MonoBehaviour context = null) {
         this.context = context;
     }
 

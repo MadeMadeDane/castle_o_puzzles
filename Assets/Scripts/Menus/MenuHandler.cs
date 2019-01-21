@@ -23,13 +23,7 @@ public class MenuHandler : MonoBehaviour {
     }
 
     void Start() {
-        hud.cam_controller = cam_controller;
-        hud.prefab = hud_obj;
-        hud.open();
-        hud.ui_instance.transform.SetParent(transform, false);
 
-        start_menu.cam_controller = cam_controller;
-        start_menu.prefab = start_menu_obj;
     }
 
     // Update is called once per frame

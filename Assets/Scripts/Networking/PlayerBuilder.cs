@@ -8,7 +8,6 @@ public class PlayerBuilder : NetworkedBehaviour {
     public GameObject recover_prefab;
     public GameObject hud_prefab;
     public GameObject startmenu_prefab;
-    public Sprite ExampleImage;
 
     public override void NetworkStart() {
         if (!isOwner) return;
@@ -21,9 +20,19 @@ public class PlayerBuilder : NetworkedBehaviour {
 
         GameObject parent = transform.parent.gameObject;
         MenuHandler mh = parent.AddComponent<MenuHandler>();
-        mh.hud_obj = hud_prefab;
-        mh.start_menu_obj = startmenu_prefab;
-        InventoryManager im = parent.AddComponent<InventoryManager>();
-        im.image = ExampleImage;
+        CameraController cam_controller = camera.GetComponent<CameraController>();
+        mh.hud.cam_controller = cam_controller;
+        mh.hud.prefab = hud_prefab;
+        mh.hud.create();
+        mh.hud.ui_instance.transform.SetParent(transform, false);
+        mh.start_menu.cam_controller = cam_controller;
+        mh.start_menu.prefab = startmenu_prefab;
+        mh.start_menu.create();
+        mh.start_menu.close();
+        mh.start_menu.ui_instance.transform.SetParent(transform, false);
+        InventoryManager im = parent.GetComponentInChildren<InventoryManager>();
+        if (im != null) {
+            im.Setup(mh);
+        }
     }
 }
