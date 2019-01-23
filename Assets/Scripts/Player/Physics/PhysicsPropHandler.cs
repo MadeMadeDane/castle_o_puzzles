@@ -122,12 +122,16 @@ public class PhysicsPropHandler : NetworkedBehaviour {
         }
     }
 
-    public void HandleUse(GameObject other) {
+    // A return value of true will "hide" the regular use function of the player controller
+    public bool HandleUse(GameObject other) {
         PhysicsProp[] props = other.GetComponents<PhysicsProp>();
+        // Return if any of the Uses wanted to hide the regular use function
+        bool skip = false;
         foreach (PhysicsProp prop in props) {
             PhysicsPlugin plugin = plugins[prop.GetType()];
-            if (plugin.enabled) plugin.OnUse(prop);
+            if (plugin.enabled) skip |= plugin.OnUse(prop);
         }
+        return skip;
     }
 
     public bool IsServer() {

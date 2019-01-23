@@ -167,6 +167,7 @@ public class PlayerController : NetworkedBehaviour {
         moving_frame_velocity = Vector3.zero;
         current_velocity = Vector3.zero;
         accel = Vector3.zero;
+        GravityMult = 1;
         currentHit = new ControllerColliderHit();
         StartPos = transform.position;
 
@@ -1119,8 +1120,7 @@ public class PlayerController : NetworkedBehaviour {
                 radius: 1.5f,
                 gameObject: out usable_object);
             if (usable != null) {
-                usable.Use();
-                physhandler.HandleUse(usable_object);
+                if (!physhandler.HandleUse(usable_object)) usable.Use();
             }
             utils.SetTimerFinished(USE_TIMER);
         }

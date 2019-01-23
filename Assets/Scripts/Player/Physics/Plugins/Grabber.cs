@@ -25,8 +25,8 @@ public class Grabber : PhysicsPlugin {
         utils.CreateTimer(THROW_METER, 1f);
     }
 
-    public override void OnUse(PhysicsProp prop) {
-        if (!isOwner) return;
+    public override bool OnUse(PhysicsProp prop) {
+        if (!isOwner) return false;
         Grabable grabable = prop as Grabable;
         if (grabbed == null && grabbing == null) {
             Collider grabable_collider = grabable.GetComponent<Collider>();
@@ -50,6 +50,7 @@ public class Grabber : PhysicsPlugin {
                     });
             }
         }
+        return true;
     }
 
     private void PickupCallback(bool success) {
