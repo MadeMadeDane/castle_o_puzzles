@@ -113,9 +113,7 @@ public class Grabable : PhysicsProp, IUsable {
         InvokeServerRpc(rpc_ThrowOnServer, velocity, local);
     }
 
-    public void Use() {
-        return;
-    }
+    public void Use() { }
 
     public void SetThrownState() {
         rigidbody.isKinematic = !isServer;

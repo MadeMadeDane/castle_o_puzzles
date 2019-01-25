@@ -41,7 +41,7 @@ public class Pusher : PhysicsPlugin {
             }
             if (utils.CheckTimer(PUSH_START_TIMER)) {
                 if (isServer) {
-                    pushable.Push(Vector3.Project(player.current_velocity - pushable.rigidbody.velocity, -hit.normal), true);
+                    pushable.Push(Vector3.Project(player.GetVelocity() - pushable.rigidbody.velocity, -hit.normal), true);
                 }
                 else {
                     pushable.PushOnServer(-hit.normal * 12f);
@@ -63,7 +63,7 @@ public class Pusher : PhysicsPlugin {
                 camera.RotateCameraToward(direction: -lastpushsurface,
                                           lerp_factor: 0.03f);
             }
-            player.current_velocity = Vector3.Project(player.current_velocity, lastpushsurface) + Vector3.Project(player.current_velocity, Physics.gravity);
+            player.SetVelocity(Vector3.Project(player.GetVelocity(), lastpushsurface) + Vector3.Project(player.GetVelocity(), Physics.gravity));
         }
     }
 }

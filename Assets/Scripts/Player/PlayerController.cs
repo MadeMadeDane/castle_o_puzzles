@@ -9,6 +9,7 @@ using MLAPI;
 delegate void AccelerationFunction(Vector3 direction, float desiredSpeed, float acceleration, bool grounded);
 
 public class PlayerController : NetworkedBehaviour {
+    #region DECLARATIONS
     [Header("Linked Components")]
     public GameObject player_container;
     public CharacterController cc;
@@ -45,7 +46,8 @@ public class PlayerController : NetworkedBehaviour {
     public bool ShortHopEnabled;
     public bool JumpBoostEnabled;
     public bool ToggleCrouch;
-    public Vector3 current_velocity;
+    private Vector3 accel;
+    private Vector3 current_velocity;
     public bool debug_mode = false;
 
     // Managers
@@ -107,7 +109,6 @@ public class PlayerController : NetworkedBehaviour {
     // Physics state variables
     private AccelerationFunction accelerate;
     private Vector3 moving_frame_velocity;
-    private Vector3 accel;
     private ControllerColliderHit lastHit;
     private MovingGeneric lastMovingPlatform;
     private Collider lastMovingTrigger;
@@ -128,7 +129,122 @@ public class PlayerController : NetworkedBehaviour {
 
     private GameObject debugcanvas;
     private Dictionary<string, Text> debugtext;
+    #endregion
+    // Use this for initialization
+    private void Start() {
+        if (!isOwner) return;
+        Setup();
+        // Movement values
+        //SetShooterVars();
+        SetThirdPersonActionVars();
 
+        isJumping = false;
+        isFalling = false;
+        willJump = false;
+        isCrouching = false;
+        // Wall related vars
+        WallAxis = Vector3.zero;
+        AlongWallVel = Vector3.zero;
+        UpWallVel = Vector3.zero;
+        WallJumpReflect = Vector3.zero;
+        PreviousWallJumpPos = Vector3.positiveInfinity;
+        PreviousWallNormal = Vector3.zero;
+        PreviousWallJumpNormal = Vector3.zero;
+        LedgeClimbOffset = 0.5f;
+        WallScanDistance = 1.5f;
+        LedgeClimbBoost = Mathf.Sqrt(2 * cc.height * 1.1f * Physics.gravity.magnitude);
+        WallDistanceThreshold = 14f;
+
+        // Initial state
+        position_history_size = 50;
+        position_history = new LinkedList<Vector3>();
+        total_error = 0f;
+        error_threshold = 50;
+        error_stage = 0;
+        error_bucket = 0;
+        error_accum_size = 10;
+        error_accum = new Queue<float>(Enumerable.Repeat<float>(0f, error_accum_size));
+        moving_frame_velocity = Vector3.zero;
+        current_velocity = Vector3.zero;
+        accel = Vector3.zero;
+        GravityMult = 1;
+        currentHit = new ControllerColliderHit();
+        StartPos = transform.position;
+
+        // TODO: Test below
+        //cc.enableOverlapRecovery = false;
+        physhandler = GetComponent<PhysicsPropHandler>();
+        if (physhandler == null) {
+            throw new Exception("Could not find physics prop handler");
+        }
+        Physics.IgnoreCollision(wall_run_collider, cc);
+    }
+
+    private void Update() {
+        if (!isOwner) return;
+        // If the player does not have a camera, do nothing
+        if (player_camera == null) {
+            return;
+        }
+        if (input_manager.GetJump()) {
+            utils.ResetTimer(BUFFER_JUMP_TIMER);
+        }
+        if (input_manager.GetPickUp()) {
+            utils.ResetTimer(USE_TIMER);
+        }
+        if (input_manager.GetCrouch()) {
+            utils.ResetTimer(CROUCH_TIMER);
+        }
+    }
+
+    private void LateUpdate() {
+        if (!isOwner) return;
+        // If the player does not have a camera, do nothing
+        if (player_camera == null) {
+            return;
+        }
+        Vector3 old_yaw_pivot_pos = player_camera.yaw_pivot.transform.position;
+        player_container.transform.position = transform.position;
+        transform.localPosition = Vector3.zero;
+        player_container.transform.rotation = Quaternion.identity;
+        player_camera.yaw_pivot.transform.position = old_yaw_pivot_pos;
+    }
+
+    // Fixed Update is called once per physics tick
+    private void FixedUpdate() {
+        if (!isOwner) return;
+        // If the player does not have a camera, do nothing
+        if (player_camera == null) {
+            return;
+        }
+        HandleChangesFromLastState();
+        ProcessHits();
+        ProcessTriggers();
+        HandleCrouch();
+        HandleMovement();
+        HandleJumping();
+        HandleUse();
+        HandleGravity();
+        UpdatePlayerState();
+        if (debug_mode) {
+            IncrementCounters();
+        }
+    }
+
+    private void OnTriggerStay(Collider other) {
+        if (!isOwner) return;
+        if (!other.isTrigger) {
+            lastTrigger = other;
+        }
+    }
+
+    // Handle collisions on player move
+    private void OnControllerColliderHit(ControllerColliderHit hit) {
+        if (!isOwner) return;
+        lastHit = hit;
+    }
+
+    #region SETUP_CONFIGURATIONS
     private void Setup() {
         player_container = transform.parent.gameObject;
         input_manager = InputManager.Instance;
@@ -169,87 +285,6 @@ public class PlayerController : NetworkedBehaviour {
         if (debug_mode) {
             EnableDebug();
         }
-    }
-
-    private void EnableDebug() {
-        debugcanvas = new GameObject("Canvas", typeof(Canvas));
-        debugcanvas.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
-        debugcanvas.AddComponent<CanvasScaler>();
-        debugcanvas.AddComponent<GraphicRaycaster>();
-        debugtext = new Dictionary<string, Text>()
-        {
-            {"JumpMeter", new GameObject().AddComponent<Text>() },
-            {"LandingTimeDelta", new GameObject().AddComponent<Text>() },
-            {"BufferJumpTimeDelta", new GameObject().AddComponent<Text>() },
-            {"SlideTimeDelta", new GameObject().AddComponent<Text>() },
-            {"WallJumpTimeDelta", new GameObject().AddComponent<Text>() },
-            {"WallRunTimeDelta", new GameObject().AddComponent<Text>() },
-            {"WallClimbTimeDelta", new GameObject().AddComponent<Text>() },
-            {"ReGrabTimeDelta", new GameObject().AddComponent<Text>() },
-            {"MovingColliderTimeDelta", new GameObject().AddComponent<Text>() },
-            {"MovingPlatformTimeDelta", new GameObject().AddComponent<Text>() },
-            {"StuckTimeDelta", new GameObject().AddComponent<Text>() },
-            {"Current Velocity", new GameObject().AddComponent<Text>() }
-        };
-        int idx = 0;
-        Font ArialFont = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
-        foreach (KeyValuePair<string, Text> item in debugtext) {
-            item.Value.gameObject.name = item.Key;
-            RectTransform rect = item.Value.gameObject.GetComponent<RectTransform>();
-            rect.SetParent(debugcanvas.transform);
-            rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 220f);
-            rect.anchoredPosition3D = new Vector3(-250f, -15f * idx, 0);
-            item.Value.font = ArialFont;
-            idx++;
-        }
-    }
-
-    // Use this for initialization
-    private void Start() {
-        if (!isOwner) return;
-        Setup();
-        // Movement values
-        //SetShooterVars();
-        SetThirdPersonActionVars();
-
-        isJumping = false;
-        isFalling = false;
-        willJump = false;
-        isCrouching = false;
-        // Wall related vars
-        WallAxis = Vector3.zero;
-        AlongWallVel = Vector3.zero;
-        UpWallVel = Vector3.zero;
-        WallJumpReflect = Vector3.zero;
-        PreviousWallJumpPos = Vector3.positiveInfinity;
-        PreviousWallNormal = Vector3.zero;
-        PreviousWallJumpNormal = Vector3.zero;
-        LedgeClimbOffset = 0.5f;
-        WallScanDistance = 1.5f;
-        LedgeClimbBoost = Mathf.Sqrt(2 * cc.height * 1.1f * Physics.gravity.magnitude);
-        WallDistanceThreshold = 14f;
-
-        // Initial state
-        position_history_size = 50;
-        position_history = new LinkedList<Vector3>();
-        total_error = 0f;
-        error_threshold = 50;
-        error_stage = 0;
-        error_bucket = 0;
-        error_accum_size = 10;
-        error_accum = new Queue<float>(Enumerable.Repeat<float>(0f, error_accum_size));
-        moving_frame_velocity = Vector3.zero;
-        current_velocity = Vector3.zero;
-        currentHit = new ControllerColliderHit();
-        StartPos = transform.position;
-
-        // TODO: Test below
-        //cc.enableOverlapRecovery = false;
-        physhandler = GetComponent<PhysicsPropHandler>();
-        if (physhandler == null) {
-            throw new Exception("Could not find physics prop handler");
-        }
-        Physics.IgnoreCollision(wall_run_collider, cc);
     }
 
     private void SetShooterVars() {
@@ -332,77 +367,45 @@ public class PlayerController : NetworkedBehaviour {
         accelerate = AccelerateStandard;
     }
 
-    private void Update() {
-        if (!isOwner) return;
-        // If the player does not have a camera, do nothing
-        if (player_camera == null) {
-            return;
-        }
-        if (input_manager.GetJump()) {
-            utils.ResetTimer(BUFFER_JUMP_TIMER);
-        }
-        if (input_manager.GetPickUp()) {
-            utils.ResetTimer(USE_TIMER);
-        }
-        if (input_manager.GetCrouch()) {
-            utils.ResetTimer(CROUCH_TIMER);
-        }
-    }
-
-    private void LateUpdate() {
-        if (!isOwner) return;
-        // If the player does not have a camera, do nothing
-        if (player_camera == null) {
-            return;
-        }
-        Vector3 old_yaw_pivot_pos = player_camera.yaw_pivot.transform.position;
-        player_container.transform.position = transform.position;
-        transform.localPosition = Vector3.zero;
-        player_container.transform.rotation = Quaternion.identity;
-        player_camera.yaw_pivot.transform.position = old_yaw_pivot_pos;
-    }
-
-    // Fixed Update is called once per physics tick
-    private void FixedUpdate() {
-        if (!isOwner) return;
-        // If the player does not have a camera, do nothing
-        if (player_camera == null) {
-            return;
-        }
-        // Get starting values
-        GravityMult = 1;
-        accel = Vector3.zero;
-        if (WallDistanceCheck()) {
-            JumpMeterComputed = utils.GetTimerPercent(JUMP_METER);
-        }
-        else {
-            JumpMeterComputed = 0;
-        }
-
-        ProcessHits();
-        ProcessTriggers();
-        HandleCrouch();
-        HandleMovement();
-        HandleJumping();
-        HandleUse();
-        UpdatePlayerState();
-        if (debug_mode) {
-            IncrementCounters();
+    private void EnableDebug() {
+        debugcanvas = new GameObject("Canvas", typeof(Canvas));
+        debugcanvas.GetComponent<Canvas>().renderMode = RenderMode.ScreenSpaceOverlay;
+        debugcanvas.AddComponent<CanvasScaler>();
+        debugcanvas.AddComponent<GraphicRaycaster>();
+        debugtext = new Dictionary<string, Text>()
+        {
+            {"JumpMeter", new GameObject().AddComponent<Text>() },
+            {"LandingTimeDelta", new GameObject().AddComponent<Text>() },
+            {"BufferJumpTimeDelta", new GameObject().AddComponent<Text>() },
+            {"SlideTimeDelta", new GameObject().AddComponent<Text>() },
+            {"WallJumpTimeDelta", new GameObject().AddComponent<Text>() },
+            {"WallRunTimeDelta", new GameObject().AddComponent<Text>() },
+            {"WallClimbTimeDelta", new GameObject().AddComponent<Text>() },
+            {"ReGrabTimeDelta", new GameObject().AddComponent<Text>() },
+            {"MovingColliderTimeDelta", new GameObject().AddComponent<Text>() },
+            {"MovingPlatformTimeDelta", new GameObject().AddComponent<Text>() },
+            {"StuckTimeDelta", new GameObject().AddComponent<Text>() },
+            {"Current Velocity", new GameObject().AddComponent<Text>() }
+        };
+        int idx = 0;
+        Font ArialFont = (Font)Resources.GetBuiltinResource(typeof(Font), "Arial.ttf");
+        foreach (KeyValuePair<string, Text> item in debugtext) {
+            item.Value.gameObject.name = item.Key;
+            RectTransform rect = item.Value.gameObject.GetComponent<RectTransform>();
+            rect.SetParent(debugcanvas.transform);
+            rect.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, 220f);
+            rect.anchoredPosition3D = new Vector3(-250f, -15f * idx, 0);
+            item.Value.font = ArialFont;
+            idx++;
         }
     }
+    #endregion
 
+    #region HANDLE_STATE
     private void UpdatePlayerState() {
         // Update character state based on desired movement
-        if (!OnGround()) {
-            accel += Physics.gravity * GravityMult;
-        }
-        else {
-            // Push the character controller into the normal of the surface
-            // This should trigger ground detection
-            accel += -Mathf.Sign(currentHit.normal.y) * Physics.gravity.magnitude * currentHit.normal;
-        }
-
         current_velocity += accel * Time.deltaTime;
+        accel = Vector3.zero;
 
         Vector3 previous_position = transform.position;
         bool failed_move = false;
@@ -543,6 +546,17 @@ public class PlayerController : NetworkedBehaviour {
         }
     }
 
+    private void HandleChangesFromLastState() {
+        if (WallDistanceCheck()) {
+            JumpMeterComputed = utils.GetTimerPercent(JUMP_METER);
+        }
+        else {
+            JumpMeterComputed = 0;
+        }
+    }
+    #endregion
+
+    #region PROCESS_COLLISIONS
     private void ProcessTriggers() {
         if (lastTrigger == null) {
             return;
@@ -768,7 +782,23 @@ public class PlayerController : NetworkedBehaviour {
         PreviousWallJumpNormal = Vector3.zero;
         PreviousWallJumpPos = Vector3.positiveInfinity;
     }
+    #endregion
 
+    #region HANDLE_GRAVITY
+    private void HandleGravity() {
+        if (!OnGround()) {
+            accel += Physics.gravity * GravityMult;
+        }
+        else {
+            // Push the character controller into the normal of the surface
+            // This should trigger ground detection
+            accel += -Mathf.Sign(currentHit.normal.y) * Physics.gravity.magnitude * currentHit.normal;
+        }
+        GravityMult = 1;
+    }
+    #endregion
+
+    #region HANDLE_CROUCHING
     private void HandleCrouch() {
         if (ToggleCrouch) {
             if (!utils.CheckTimer(CROUCH_TIMER)) {
@@ -822,7 +852,9 @@ public class PlayerController : NetworkedBehaviour {
         recovery_collider.height = re_standHeight;
         recovery_collider.center = new Vector3(recovery_collider.center.x, re_standCenter, recovery_collider.center.z);
     }
+    #endregion
 
+    #region HANDLE_MOVEMENT
     // Apply movement forces from input (FAST edition)
     private void HandleMovement() {
         // Check if we can still be hanging
@@ -965,7 +997,137 @@ public class PlayerController : NetworkedBehaviour {
         //Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), current_velocity, Color.red, Time.fixedDeltaTime);
         //Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), accel, Color.blue, Time.fixedDeltaTime);
     }
+    #endregion
 
+    #region HANDLE_JUMPING
+    // Handle jumping
+    private void HandleJumping() {
+        // Ground detection for friction and jump state
+        if (OnGround()) {
+            isJumping = false;
+            isFalling = false;
+        }
+
+        // Add additional gravity when going down (optional)
+        if (current_velocity.y < 0) {
+            GravityMult += DownGravityAdd;
+        }
+
+        // Handle jumping and falling
+        if (JumpBuffered()) {
+            if (OnGround() || CanWallJump() || IsWallRunning() || isHanging) {
+                DoJump();
+            }
+        }
+        // Fall fast when we let go of jump (optional)
+        if (!isFalling && isJumping && !input_manager.GetJumpHold()) {
+            if (ShortHopEnabled && Vector3.Dot(current_velocity, Physics.gravity.normalized) < 0) {
+                current_velocity -= Vector3.Project(current_velocity, Physics.gravity.normalized) / 2;
+            }
+            isFalling = true;
+        }
+
+
+    }
+
+    // Set the player to a jumping state
+    private void DoJump() {
+        if (CanWallJump() || IsWallRunning()) {
+            PreviousWallJumpPos = transform.position;
+            PreviousWallJumpNormal = PreviousWallNormal;
+        }
+        if (!isHanging && utils.GetTimerTime(JUMP_METER) > JumpMeterThreshold) {
+            if (!OnGround() && CanWallJump() && WallJumpReflect.magnitude > 0) {
+                //Debug.Log("Wall Jump");
+                current_velocity += (WallJumpReflect - current_velocity) * WallJumpBoost * JumpMeterComputed;
+                if (conserveUpwardMomentum) {
+                    current_velocity.y = Math.Max(current_velocity.y + WallJumpSpeed * JumpMeterComputed, WallJumpSpeed * JumpMeterComputed);
+                }
+                else {
+                    current_velocity.y = Math.Max(current_velocity.y, WallJumpSpeed * JumpMeterComputed);
+                }
+                utils.ResetTimer(JUMP_METER);
+                utils.SetTimerFinished(WALL_HIT_TIMER);
+            }
+            else if (!OnGround() && IsWallRunning()) {
+                //Debug.Log("Wall Run Jump");
+                current_velocity += PreviousWallNormal * WallRunJumpSpeed * JumpMeterComputed;
+                float pathvel = Vector3.Dot(current_velocity, transform.forward);
+                float newspeed = Mathf.Clamp(pathvel + (WallRunJumpBoostAdd * JumpMeterComputed), 0f, WallRunJumpBoostSpeed);
+                current_velocity += transform.forward * (newspeed - pathvel);
+                current_velocity.y = Math.Max(current_velocity.y, WallRunJumpUpSpeed * JumpMeterComputed);
+                utils.ResetTimer(JUMP_METER);
+                utils.SetTimerFinished(WALL_HIT_TIMER);
+            }
+            else if (OnGround()) {
+                //Debug.Log("Upward Jump");
+                if (conserveUpwardMomentum) {
+                    current_velocity.y = Math.Max(current_velocity.y + JumpVelocity * JumpMeterComputed, JumpVelocity * JumpMeterComputed);
+                }
+                else {
+                    current_velocity.y = Math.Max(current_velocity.y, JumpVelocity * JumpMeterComputed);
+                }
+            }
+            if (JumpBoostEnabled && CanJumpBoost()) {
+                Vector3 movvec = GetMoveVector().normalized;
+                float pathvel = Vector3.Dot(current_velocity, movvec);
+                float newspeed = Mathf.Clamp(pathvel + JumpBoostAdd, 0f, JumpBoostSpeed);
+                current_velocity += (Mathf.Max(newspeed, pathvel) - pathvel) * movvec;
+            }
+            foreach (Action callback in jump_callback_table) {
+                callback();
+            }
+        }
+        else if (isHanging) {
+            current_velocity.y = LedgeClimbBoost;
+            PreviousWallNormal = Vector3.zero;
+            PreviousWallJumpNormal = Vector3.zero;
+            PreviousWallJumpPos = Vector3.positiveInfinity;
+        }
+        utils.ResetTimer(REGRAB_TIMER);
+        isJumping = true;
+        isFalling = false;
+        willJump = false;
+        isHanging = false;
+
+        // Intentionally set the timers over the limit
+        utils.SetTimerFinished(BUFFER_JUMP_TIMER);
+        utils.SetTimerFinished(LANDING_TIMER);
+        utils.SetTimerFinished(WALL_JUMP_TIMER);
+        utils.SetTimerFinished(WALL_RUN_TIMER);
+        utils.SetTimerFinished(WALL_CLIMB_TIMER);
+        utils.SetTimerFinished(MOVING_PLATFORM_TIMER);
+
+        WallJumpReflect = Vector3.zero;
+    }
+
+    public void RegisterJumpCallback(Action callback) {
+        jump_callback_table.Add(callback);
+    }
+
+    public void UnregisterJumpCallback(Action callback) {
+        jump_callback_table.Remove(callback);
+    }
+    #endregion
+
+    #region HANDLE_USE
+    private void HandleUse() {
+        if (!utils.CheckTimer(USE_TIMER)) {
+            GameObject usable_object;
+            IUsable usable = utils.RayCastExplosiveSelect<IUsable>(
+                origin: transform.position,
+                path: transform.forward * 1f,
+                radius: 1.5f,
+                gameObject: out usable_object);
+            if (usable != null) {
+                if (!physhandler.HandleUse(usable_object)) usable.Use();
+            }
+            utils.SetTimerFinished(USE_TIMER);
+        }
+    }
+    #endregion
+
+    #region PUBLIC_OUTPUT_INTERFACE
     public Vector3 GetMoveVector() {
         if (player_camera == null) return Vector3.zero;
         return (input_manager.GetMoveVertical() * player_camera.yaw_pivot.transform.forward +
@@ -1075,150 +1237,19 @@ public class PlayerController : NetworkedBehaviour {
         return can_jump_boost;
     }
 
-    // Handle jumping
-    private void HandleJumping() {
-        // Ground detection for friction and jump state
-        if (OnGround()) {
-            isJumping = false;
-            isFalling = false;
-        }
+    public Vector3 GetVelocity() => current_velocity;
 
-        // Add additional gravity when going down (optional)
-        if (current_velocity.y < 0) {
-            GravityMult += DownGravityAdd;
-        }
+    public Vector3 GetAcceleration() => accel;
+    #endregion
 
-        // Handle jumping and falling
-        if (JumpBuffered()) {
-            if (OnGround() || CanWallJump() || IsWallRunning() || isHanging) {
-                DoJump();
-            }
-        }
-        // Fall fast when we let go of jump (optional)
-        if (!isFalling && isJumping && !input_manager.GetJumpHold()) {
-            if (ShortHopEnabled && Vector3.Dot(current_velocity, Physics.gravity.normalized) < 0) {
-                current_velocity -= Vector3.Project(current_velocity, Physics.gravity.normalized) / 2;
-            }
-            isFalling = true;
-        }
+    #region PUBLIC_INPUT_INTERFACE
+    public Vector3 Accelerate(Vector3 acceleration) {
+        accel += acceleration;
+        return accel;
     }
 
-    private void HandleUse() {
-        if (!utils.CheckTimer(USE_TIMER)) {
-            GameObject usable_object;
-            IUsable usable = utils.RayCastExplosiveSelect<IUsable>(
-                origin: transform.position,
-                path: transform.forward * 1f,
-                radius: 1.5f,
-                gameObject: out usable_object);
-            if (usable != null) {
-                usable.Use();
-                physhandler.HandleUse(usable_object);
-            }
-            utils.SetTimerFinished(USE_TIMER);
-        }
-    }
-
-    // Set the player to a jumping state
-    private void DoJump() {
-        if (CanWallJump() || IsWallRunning()) {
-            PreviousWallJumpPos = transform.position;
-            PreviousWallJumpNormal = PreviousWallNormal;
-        }
-        if (!isHanging && utils.GetTimerTime(JUMP_METER) > JumpMeterThreshold) {
-            if (!OnGround() && CanWallJump() && WallJumpReflect.magnitude > 0) {
-                //Debug.Log("Wall Jump");
-                current_velocity += (WallJumpReflect - current_velocity) * WallJumpBoost * JumpMeterComputed;
-                if (conserveUpwardMomentum) {
-                    current_velocity.y = Math.Max(current_velocity.y + WallJumpSpeed * JumpMeterComputed, WallJumpSpeed * JumpMeterComputed);
-                }
-                else {
-                    current_velocity.y = Math.Max(current_velocity.y, WallJumpSpeed * JumpMeterComputed);
-                }
-                utils.ResetTimer(JUMP_METER);
-                utils.SetTimerFinished(WALL_HIT_TIMER);
-            }
-            else if (!OnGround() && IsWallRunning()) {
-                //Debug.Log("Wall Run Jump");
-                current_velocity += PreviousWallNormal * WallRunJumpSpeed * JumpMeterComputed;
-                float pathvel = Vector3.Dot(current_velocity, transform.forward);
-                float newspeed = Mathf.Clamp(pathvel + (WallRunJumpBoostAdd * JumpMeterComputed), 0f, WallRunJumpBoostSpeed);
-                current_velocity += transform.forward * (newspeed - pathvel);
-                current_velocity.y = Math.Max(current_velocity.y, WallRunJumpUpSpeed * JumpMeterComputed);
-                utils.ResetTimer(JUMP_METER);
-                utils.SetTimerFinished(WALL_HIT_TIMER);
-            }
-            else if (OnGround()) {
-                //Debug.Log("Upward Jump");
-                if (conserveUpwardMomentum) {
-                    current_velocity.y = Math.Max(current_velocity.y + JumpVelocity * JumpMeterComputed, JumpVelocity * JumpMeterComputed);
-                }
-                else {
-                    current_velocity.y = Math.Max(current_velocity.y, JumpVelocity * JumpMeterComputed);
-                }
-            }
-            if (JumpBoostEnabled && CanJumpBoost()) {
-                Vector3 movvec = GetMoveVector().normalized;
-                float pathvel = Vector3.Dot(current_velocity, movvec);
-                float newspeed = Mathf.Clamp(pathvel + JumpBoostAdd, 0f, JumpBoostSpeed);
-                current_velocity += (Mathf.Max(newspeed, pathvel) - pathvel) * movvec;
-            }
-            foreach (Action callback in jump_callback_table) {
-                callback();
-            }
-        }
-        else if (isHanging) {
-            current_velocity.y = LedgeClimbBoost;
-            PreviousWallNormal = Vector3.zero;
-            PreviousWallJumpNormal = Vector3.zero;
-            PreviousWallJumpPos = Vector3.positiveInfinity;
-        }
-        utils.ResetTimer(REGRAB_TIMER);
-        isJumping = true;
-        isFalling = false;
-        willJump = false;
-        isHanging = false;
-
-        // Intentionally set the timers over the limit
-        utils.SetTimerFinished(BUFFER_JUMP_TIMER);
-        utils.SetTimerFinished(LANDING_TIMER);
-        utils.SetTimerFinished(WALL_JUMP_TIMER);
-        utils.SetTimerFinished(WALL_RUN_TIMER);
-        utils.SetTimerFinished(WALL_CLIMB_TIMER);
-        utils.SetTimerFinished(MOVING_PLATFORM_TIMER);
-
-        WallJumpReflect = Vector3.zero;
-    }
-
-    public void RegisterJumpCallback(Action callback) {
-        jump_callback_table.Add(callback);
-    }
-
-    public void UnregisterJumpCallback(Action callback) {
-        jump_callback_table.Remove(callback);
-    }
-
-    private void OnTriggerStay(Collider other) {
-        if (!isOwner) return;
-        if (!other.isTrigger) {
-            lastTrigger = other;
-        }
-    }
-
-    // Handle collisions on player move
-    private void OnControllerColliderHit(ControllerColliderHit hit) {
-        if (!isOwner) return;
-        lastHit = hit;
-    }
-
-    private void Teleport(Vector3 position) {
-        foreach (Collider col in GetComponents<Collider>()) {
-            col.enabled = false;
-        }
-        transform.position = position;
-        foreach (Collider col in GetComponents<Collider>()) {
-            col.enabled = true;
-        }
+    public void SetVelocity(Vector3 velocity) {
+        current_velocity = velocity;
     }
 
     public void Recover(Collider other) {
@@ -1252,4 +1283,15 @@ public class PlayerController : NetworkedBehaviour {
         Vector3 path_from_center = Vector3.ProjectOnPlane(transform.position - other.bounds.center, Physics.gravity);
         Teleport(transform.position + path_from_center.normalized * cc.radius * 0.25f);
     }
+
+    private void Teleport(Vector3 position) {
+        foreach (Collider col in GetComponents<Collider>()) {
+            col.enabled = false;
+        }
+        transform.position = position;
+        foreach (Collider col in GetComponents<Collider>()) {
+            col.enabled = true;
+        }
+    }
+    #endregion
 }

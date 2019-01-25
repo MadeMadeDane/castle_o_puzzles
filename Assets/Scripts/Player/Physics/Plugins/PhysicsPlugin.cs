@@ -47,5 +47,6 @@ public class PhysicsPlugin : ComponentPlugin {
 
     public virtual void OnControllerColliderHit(ControllerColliderHit hit, PhysicsProp prop) { }
 
-    public virtual void OnUse(PhysicsProp prop) { }
+    // A return value of true "hides" the regular use behavior of the player controller
+    public virtual bool OnUse(PhysicsProp prop) { return false; }
 }

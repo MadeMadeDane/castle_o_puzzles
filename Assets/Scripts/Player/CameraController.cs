@@ -161,7 +161,7 @@ public class CameraController : NetworkedBehaviour {
 
     public void ThirdPersonJumpCallback() {
         if ((current_player.IsWallRunning() || current_player.CanWallJump()) && !input_manager.GetCenterCameraHold()) {
-            RotatePlayerToward(direction: Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity),
+            RotatePlayerToward(direction: Vector3.ProjectOnPlane(current_player.GetVelocity(), Physics.gravity),
                                lerp_factor: 1.0f);
         }
     }
@@ -369,7 +369,7 @@ public class CameraController : NetworkedBehaviour {
         }
         else {
             //Debug.Log("Velocity move");
-            desired_move = Vector3.ProjectOnPlane(current_player.current_velocity, Physics.gravity).normalized;
+            desired_move = Vector3.ProjectOnPlane(current_player.GetVelocity(), Physics.gravity).normalized;
         }
 
         // Rotate a player toward the last static ledge they were hanging on
