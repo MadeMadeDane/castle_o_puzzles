@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using MLAPI;
 
@@ -49,4 +50,10 @@ public class PhysicsPlugin : ComponentPlugin {
 
     // A return value of true "hides" the regular use behavior of the player controller
     public virtual bool OnUse(PhysicsProp prop) { return false; }
+
+    public T GetComponentInNetworkedChildren<T>() {
+        T childcomp = context.GetComponentInChildren<T>();
+        if (childcomp != null) return childcomp;
+        return moving_player.networkChildren.Select((child) => child.GetComponentInChildren<T>()).FirstOrDefault();
+    }
 }
