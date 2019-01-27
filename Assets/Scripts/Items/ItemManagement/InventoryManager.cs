@@ -21,8 +21,6 @@ public class InventoryManager : NetworkedBehaviour {
     private Utilities utils;
     private InputManager im;
 
-
-    private WorldItem prevItem = null;
     // Use this for initialization
     public void Setup(MenuHandler mh) {
         utils = Utilities.Instance;
@@ -50,7 +48,6 @@ public class InventoryManager : NetworkedBehaviour {
         }
         if (targetItem != null) {
             targetItem.Highlight();
-            prevItem = targetItem;
         }
         if (im.GetPickUp() && targetItem != null) {
             AddItemToInventory(targetItem);
