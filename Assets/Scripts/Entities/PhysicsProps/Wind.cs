@@ -13,6 +13,7 @@ public class Wind : PhysicsProp {
 
     public Vector3 GetForceAtPosition(Vector3 position) {
         Vector3 calculatedForce = Vector3.zero;
+        // Only constant wind velocity/force is supported for now
         if (isConstant) calculatedForce = constantForceValue;
         if (isLocal) calculatedForce = transform.TransformDirection(calculatedForce);
         return calculatedForce;
@@ -20,6 +21,7 @@ public class Wind : PhysicsProp {
 
     public Vector3 GetWindVelocityAtPosition(Vector3 position) {
         Vector3 calculatedVel = Vector3.zero;
+        // Only constant wind velocity/force is supported for now
         if (isConstant) calculatedVel = constantVelocityValue;
         if (isLocal) calculatedVel = transform.TransformDirection(calculatedVel);
         return calculatedVel;
