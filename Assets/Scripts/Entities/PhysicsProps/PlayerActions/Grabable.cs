@@ -13,9 +13,12 @@ public class Grabable : PhysicsProp, IUsable {
     private uint grabberId;
     private MovingGeneric moving_object;
     private Collider rb_collider;
+    private int IGNORE_RAYCAST_LAYER;
+    private int DEFAULT_LAYER = 0;
 
     protected override void Awake() {
         base.Awake();
+        IGNORE_RAYCAST_LAYER = LayerMask.NameToLayer("Ignore Raycast");
         moving_object = GetComponent<MovingGeneric>();
         rb_collider = GetComponent<Collider>();
     }
@@ -121,7 +124,8 @@ public class Grabable : PhysicsProp, IUsable {
         is_grabbed = false;
         parent = null;
         grabberId = 0;
-        rb_collider.enabled = true;
+        rb_collider.isTrigger = false;
+        gameObject.layer = DEFAULT_LAYER;
     }
 
     public void SetPickupState(GameObject target_parent, bool disable_collision = false) {
@@ -130,7 +134,8 @@ public class Grabable : PhysicsProp, IUsable {
         is_grabbed = true;
         parent = target_parent;
         if (disable_collision) {
-            rb_collider.enabled = false;
+            rb_collider.isTrigger = true;
+            gameObject.layer = IGNORE_RAYCAST_LAYER;
         }
     }
 
