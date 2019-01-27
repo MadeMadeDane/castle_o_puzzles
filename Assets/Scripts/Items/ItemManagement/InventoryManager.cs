@@ -20,7 +20,6 @@ public class InventoryManager : NetworkedBehaviour {
     public bool enable_logs = false;
     private Utilities utils;
     private InputManager im;
-    private ItemCatalogue amazon;
 
 
     private WorldItem prevItem = null;
@@ -28,7 +27,6 @@ public class InventoryManager : NetworkedBehaviour {
     public void Setup(MenuHandler mh) {
         utils = Utilities.Instance;
         im = InputManager.Instance;
-        amazon = new ItemCatalogue();
         actionSlots = gameObject.AddComponent<ActionSlots>();
         cam_controller = GetComponentInChildren<CameraController>();
         networkInv = new NetworkInventory();
@@ -49,12 +47,6 @@ public class InventoryManager : NetworkedBehaviour {
             targetItem = utils.RayCastExplosiveSelect<WorldItem>(origin: cam.transform.position,
                                                                    path: cam.transform.forward * select_reach_dist,
                                                                    radius: explosive_rad);
-        }
-        if (prevItem != null && prevItem != targetItem) {
-            //prevItem.gameObject.GetComponent<ParticleSystem>().Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            ParticleSystem.EmissionModule emitter = prevItem.gameObject.GetComponent<ParticleSystem>().emission;
-            emitter.enabled = false;
-            prevItem = null;
         }
         if (targetItem != null) {
             targetItem.Highlight();
@@ -79,39 +71,43 @@ public class InventoryManager : NetworkedBehaviour {
     #region AddItemRPCs
     void AddItemToInventory(WorldItem request) {
         if (!isOwner) return;
-        Item shipped_item = amazon.RequestItem(request.item_name);
+        Item shipped_item = ItemCatalogue.RequestItem(request.item_name);
         if (SharedItem.isSharedItem(shipped_item)) {
             if (!isServer) {
-                InvokeServerRpc(RPC_AddSharedItem, request.item_name, 1, channel: INVMANG_CHANNEL);
+                InvokeServerRpc(RPC_AddSharedItemNetwork, request.networkId, 1, channel: INVMANG_CHANNEL);
             }
             else {
-                string item_name = request.item_name;
-                uint clientId = NetworkingManager.singleton.LocalClientId;
-                NetworkSharedItem netItem = new NetworkSharedItem(item_name);
-                networkInv.AddItemStack(item_name, netItem, 1);
+                RPC_AddSharedItemNetwork(request.networkId, 1);
             }
         }
-        if (AbilityItem.isAbilityItem(shipped_item)) {
+        else if (AbilityItem.isAbilityItem(shipped_item)) {
             shipped_item.context = this;
             shipped_item.menu_form = image;
             actionSlots.ability_items[shipped_item.name()] = (AbilityItem)shipped_item;
             actionSlots.ChangeAbilityItem(actionSlots.ability_items.GetStackCount(), shipped_item.name());
         }
-        GameObject.Destroy(request.gameObject);
     }
 
 
+    [ServerRPC]
+    private void RPC_AddSharedItemNetwork(uint itemNetowrkId, int num) {
+        NetworkedObject nobj = GetNetworkedObject(itemNetowrkId);
+        if (nobj == null) return;
+        RPC_AddSharedItem(nobj.GetComponent<WorldItem>().item_name, num);
+        Destroy(nobj.gameObject);
+    }
     [ServerRPC]
     private void RPC_AddSharedItem(string item_name, int num) {
         NetworkSharedItem netItem = new NetworkSharedItem(item_name);
         networkInv.AddItemStack(item_name, netItem, num);
     }
+
     #endregion
 
     #region EquipRPCs
     public void EquipSharedItem(string item_name) {
         if (!isOwner) return;
-        Item shipped_item = amazon.RequestItem(item_name);
+        Item shipped_item = ItemCatalogue.RequestItem(item_name);
         if (SharedItem.isSharedItem(shipped_item)) {
             if (!isServer) {
                 InvokeServerRpc(RPC_EquipSharedItem, item_name, 1, channel: INVMANG_CHANNEL);
@@ -140,7 +136,7 @@ public class InventoryManager : NetworkedBehaviour {
     [ClientRPC]
     private void RPC_ClientEquipSharedItem(string item_name) {
         if (item_name != "") {
-            SharedItem shipped_item = (SharedItem)amazon.RequestItem(item_name);
+            SharedItem shipped_item = (SharedItem)ItemCatalogue.RequestItem(item_name);
             shipped_item.context = this;
             shipped_item.menu_form = image;
             actionSlots.ChangeSharedItem(shipped_item);
@@ -151,7 +147,7 @@ public class InventoryManager : NetworkedBehaviour {
     #region UnequipRPCs
     public void UnequipSharedItem(string item_name) {
         if (!isOwner) return;
-        Item shipped_item = amazon.RequestItem(item_name);
+        Item shipped_item = ItemCatalogue.RequestItem(item_name);
         if (SharedItem.isSharedItem(shipped_item)) {
             if (!isServer) {
                 InvokeServerRpc(RPC_UnequipSharedItem, item_name, 1, channel: INVMANG_CHANNEL);
