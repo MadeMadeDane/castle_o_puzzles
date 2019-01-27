@@ -49,13 +49,17 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
             return _networkParent;
         }
         set {
+            if (value == _networkParent) return;
             if (value != null) {
                 networkParentLocalPosition = value.transform.InverseTransformPoint(transform.position);
                 networkParentLocalRotation = transform.rotation * Quaternion.Inverse(value.transform.rotation);
             }
+            if (_networkParent != null) _networkParent.networkChildren.Remove(this);
             _networkParent = value;
+            if (_networkParent != null && !_networkParent.networkChildren.Contains(this)) _networkParent.networkChildren.Add(this);
         }
     }
+    public List<NetworkedObjectTransform> networkChildren;
     public Vector3 networkParentLocalPosition;
     public Quaternion networkParentLocalRotation;
     public bool debug_mode = false;
@@ -205,6 +209,14 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
             lastRecieveClientTime = received_transform.timestamp;
             latency = latency_buffer.Accumulate(lastReceiveTime - lastRecieveClientTime) / latency_buffer.Size();
             Transform parent_transform = GetNetworkedObjectTransform(received_transform.parentId, received_transform.movingObjectId);
+            // Set the network parent (receiver side) if we found a parent transform
+            if (parent_transform != null) {
+                NetworkedObjectTransform parent_netobjtransform = MovingGeneric.GetMovingObjectAt(received_transform.parentId, received_transform.movingObjectId);
+                networkParent = parent_netobjtransform;
+            }
+            else {
+                networkParent = null;
+            }
             position_buffer.Insert(lastRecieveClientTime, received_transform.position, parent_transform);
             rotation_buffer.Insert(lastRecieveClientTime, received_transform.rotation, parent_transform);
         }

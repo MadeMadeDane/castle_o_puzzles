@@ -11,7 +11,8 @@ public class PhysicsPropHandler : NetworkedBehaviour {
     private void Awake() {
         plugins = new Dictionary<Type, PhysicsPlugin>() {
             {typeof(Pushable), new Pusher(context: this)},
-            {typeof(Grabable), new Grabber(context: this)}
+            {typeof(Grabable), new Grabber(context: this)},
+            {typeof(FluidDynamic), new FluidDynamicHandler(context: this)}
         };
 
         foreach (PhysicsPlugin plugin in plugins.Values) {
