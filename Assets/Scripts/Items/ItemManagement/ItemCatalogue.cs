@@ -2,18 +2,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using MLAPI;
 
 public class ItemCatalogue {
-    Dictionary<string, ItemCatalogueEntry> items;
-    public ItemCatalogue() {
-        items = new Dictionary<string, ItemCatalogueEntry>();
-        items.Add(new MagnetBoots().name(), new ItemCatalogueEntry(typeof(MagnetBoots), typeof(AbilityItem), "", ""));
-        items.Add(new BoltCutters().name(), new ItemCatalogueEntry(typeof(BoltCutters), typeof(SharedItem), "", ""));
-
-    }
-    public Item RequestItem(string item_name) {
+    private static Dictionary<string, ItemCatalogueEntry> items = new Dictionary<string, ItemCatalogueEntry>() {
+        {new MagnetBoots().name(), new ItemCatalogueEntry(typeof(MagnetBoots), typeof(AbilityItem), "", "")},
+        {new BoltCutters().name(), new ItemCatalogueEntry(typeof(BoltCutters), typeof(SharedItem), "", "")},
+        {new Tankard().name(), new ItemCatalogueEntry(typeof(Tankard), typeof(SharedItem), "", "")}
+    };
+    public static Item RequestItem(string item_name) {
         Item requested_item = Activator.CreateInstance(items[item_name].type) as Item;
-        //requested_item.physical_form = AssetBundle.LoadFromFile()
+        requested_item.physical_form = Resources.Load<GameObject>(item_name);
         return requested_item;
     }
 }
