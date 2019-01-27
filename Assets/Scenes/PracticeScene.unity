@@ -810,6 +810,9 @@ MonoBehaviour:
       playerPrefab: 1
     - prefab: {fileID: 38, guid: 417c56e68ced9a3449a11082afd376c9, type: 3}
       playerPrefab: 0
+    - prefab: {fileID: 1503659747097095747, guid: 41429cb5465f8ac4d97e1bd3ec1a4e9e,
+        type: 3}
+      playerPrefab: 0
     PlayerPrefabName: PlayerContainer
     MessageBufferSize: 1024
     ReceiveTickrate: 100
