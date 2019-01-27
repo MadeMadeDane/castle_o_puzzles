@@ -5,8 +5,10 @@ using MLAPI;
 
 public class PhysicsProp : NetworkedBehaviour {
     new public Rigidbody rigidbody;
+    protected Utilities utils;
 
     protected virtual void Awake() {
+        utils = Utilities.Instance;
         rigidbody = GetComponent<Rigidbody>();
     }
 }

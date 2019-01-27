@@ -12,7 +12,8 @@ public class PhysicsPropHandler : NetworkedBehaviour {
         plugins = new Dictionary<Type, PhysicsPlugin>() {
             {typeof(Pushable), new Pusher(context: this)},
             {typeof(Grabable), new Grabber(context: this)},
-            {typeof(FluidDynamic), new FluidDynamicHandler(context: this)}
+            {typeof(FluidDynamic), new FluidDynamicHandler(context: this)},
+            {typeof(Wind), new NullPlugin(context: this)}
         };
 
         foreach (PhysicsPlugin plugin in plugins.Values) {
