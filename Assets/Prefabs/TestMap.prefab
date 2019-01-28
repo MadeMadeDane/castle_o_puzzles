@@ -55,6 +55,7 @@ Transform:
   - {fileID: 250}
   - {fileID: 255}
   - {fileID: 4118103701815890262}
+  - {fileID: 1748152414823908338}
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -9036,7 +9037,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8233d90336aea43098adf6dbabd606a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_MeshFormatVersion: 0
+  m_MeshFormatVersion: 1
   m_Faces: []
   m_SharedVertices: []
   m_SharedTextures: []
@@ -14346,7 +14347,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8233d90336aea43098adf6dbabd606a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_MeshFormatVersion: 0
+  m_MeshFormatVersion: 1
   m_Faces: []
   m_SharedVertices: []
   m_SharedTextures: []
@@ -25835,7 +25836,8 @@ MonoBehaviour:
   rigidbody: {fileID: 0}
   effectiveVolume: 0
   fallingFrictionOnly: 1
-  airFriction: {x: 0, y: 10, z: 0}
+  oneWayFriction: 1
+  airFriction: {x: 4, y: 4, z: 4}
   current_wind: {fileID: 0}
 --- !u!1 &126
 GameObject:
@@ -25969,7 +25971,7 @@ GameObject:
   - component: {fileID: 3927047829525109407}
   - component: {fileID: 6822185878352957922}
   m_Layer: 2
-  m_Name: Cube
+  m_Name: Wind Updraft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -26246,17 +26248,9 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_IsSelectable: 1
-  m_SelectedFaces: 04000000
-  m_SelectedEdges:
-  - a: 16
-    b: 17
-  - a: 18
-    b: 16
-  - a: 17
-    b: 19
-  - a: 19
-    b: 18
-  m_SelectedVertices: 10000000110000001200000013000000
+  m_SelectedFaces: 
+  m_SelectedEdges: []
+  m_SelectedVertices: 
 --- !u!64 &1797239198029629478
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -26301,3 +26295,123 @@ MonoBehaviour:
   isLocal: 1
   constantForceValue: {x: 0, y: 0, z: 0}
   constantVelocityValue: {x: 0, y: 20, z: 0}
+  windCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1.0023689
+      inSlope: -0.0022309779
+      outSlope: -0.0022309779
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.9496228
+      value: 1.0002503
+      inSlope: 0.002653021
+      outSlope: 0.002653021
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.10861031
+      outWeight: 0.70219713
+    - serializedVersion: 3
+      time: 0.9999752
+      value: 0.000008946285
+      inSlope: -0.009439458
+      outSlope: -0.009439458
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 1
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!1 &4660006117170157575
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1748152414823908338}
+  - component: {fileID: 8048691357227175156}
+  - component: {fileID: 5475544892435483663}
+  m_Layer: 2
+  m_Name: Wind Tunnel
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1748152414823908338
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4660006117170157575}
+  m_LocalRotation: {x: 0.5039542, y: -0.12693968, z: 0.26415002, w: 0.8124909}
+  m_LocalPosition: {x: 7.5, y: 2.25, z: 51.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 246}
+  m_RootOrder: 27
+  m_LocalEulerAnglesHint: {x: 62.372, y: 7.4300003, z: 40.521004}
+--- !u!136 &8048691357227175156
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4660006117170157575}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 1
+  m_Enabled: 1
+  m_Radius: 12
+  m_Height: 60
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &5475544892435483663
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4660006117170157575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 14a709bfc6efdf6449e44b0c90c9235f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rigidbody: {fileID: 0}
+  isConstant: 1
+  isLocal: 1
+  constantForceValue: {x: 0, y: 0, z: 0}
+  constantVelocityValue: {x: 0, y: 30, z: 0}
+  windCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 34
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4

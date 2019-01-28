@@ -8,7 +8,9 @@ public class FluidDynamicHandler : PhysicsPlugin {
     private void HandleFluidDynamicChildren() {
         FluidDynamic flchild = GetComponentInNetworkedChildren<FluidDynamic>();
         if (flchild != null) {
-            player.Accelerate(flchild.CalculateAirFriction(player.GetVelocity()));
+            player.Accelerate(flchild.CalculateAirFriction(
+                velocity: player.GetVelocity(),
+                desiredDirection: player.GetMoveVector()));
             player.Accelerate(flchild.CalculateBuoyantForce());
         }
     }
