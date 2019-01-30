@@ -32,7 +32,7 @@ public class FluidDynamic : PhysicsProp {
         // If we have "one way friction" disable x/z friction if the following are true:
         //   * We are either moving faster than the wind, or are moving nearly perpendicular to it
         //   * We are attempting to move in the same direction as the wind / moving normally outside of wind
-        if (oneWayFriction && (Vector3.Dot(relativeVelocity, windVelocity) >= 0 || Mathf.Abs(Vector3.Dot(desiredDirection.Value, windVelocity.normalized)) < 0.1f) && Vector3.Dot(relativeVelocity, desiredDirection.Value) > 0f) {
+        if (oneWayFriction && (Vector3.Dot(relativeVelocity, windVelocity) >= 0 || Mathf.Abs(Vector3.Dot(desiredDirection.Value, windVelocity.normalized)) < 0.1f) && Vector3.Dot(relativeVelocity, desiredDirection.Value) >= 0f) {
             computedAirFriction.x = 0f;
             computedAirFriction.z = 0f;
         }
