@@ -118,6 +118,46 @@ public class Utilities : UnitySingleton<Utilities> {
         }
     }
 
+    public T[] RayCastExplosiveSelectAll<T>(Vector3 origin, Vector3 path, float radius) where T : class {
+        RaycastHit hit;
+        if (Physics.Raycast(origin, path, out hit, path.magnitude)) {
+            return ExplosiveSelectAll<T>(hit.point, radius);
+        }
+        return ExplosiveSelectAll<T>(origin + path, radius);
+    }
+
+    public T[] RayCastExplosiveSelectAll<T>(Vector3 origin, Vector3 path, float radius, out GameObject gameObject) where T : class {
+        RaycastHit hit;
+        if (Physics.Raycast(origin, path, out hit, path.magnitude)) {
+            return ExplosiveSelectAll<T>(hit.point, radius, out gameObject);
+        }
+        return ExplosiveSelectAll<T>(origin + path, radius, out gameObject);
+    }
+
+    public T[] ExplosiveSelectAll<T>(Vector3 position, float radius, out GameObject gameObject) where T : class {
+        gameObject = null;
+        Collider[] colliders = Physics.OverlapSphere(position, radius);
+        Collider nearest_selected = colliders.OrderBy(x => (position - x.transform.position).magnitude)
+                                             .Where(x => x.GetComponent<T>() != null)
+                                             .FirstOrDefault();
+        if (nearest_selected != null) {
+            gameObject = nearest_selected.gameObject;
+            return nearest_selected.GetComponents<T>();
+        }
+        return new T[0];
+    }
+
+    public T[] ExplosiveSelectAll<T>(Vector3 position, float radius) where T : class {
+        Collider[] colliders = Physics.OverlapSphere(position, radius);
+        Collider nearest_selected = colliders.OrderBy(x => (position - x.transform.position).magnitude)
+                        .Where(x => x.GetComponent<T>() != null)
+                        .FirstOrDefault();
+        if (nearest_selected != null) {
+            return nearest_selected.GetComponents<T>();
+        }
+        return new T[0];
+    }
+
     public T RayCastExplosiveSelect<T>(Vector3 origin, Vector3 path, float radius) where T : class {
         RaycastHit hit;
         if (Physics.Raycast(origin, path, out hit, path.magnitude)) {

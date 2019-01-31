@@ -1114,13 +1114,16 @@ public class PlayerController : NetworkedBehaviour {
     private void HandleUse() {
         if (!utils.CheckTimer(USE_TIMER)) {
             GameObject usable_object;
-            IUsable usable = utils.RayCastExplosiveSelect<IUsable>(
+            IUsable[] usables = utils.RayCastExplosiveSelectAll<IUsable>(
                 origin: transform.position,
                 path: transform.forward * 1f,
                 radius: 1.5f,
                 gameObject: out usable_object);
-            if (usable != null) {
-                if (!physhandler.HandleUse(usable_object)) usable.Use();
+            // Let the physprophandler try and handle the use first. If it returns false, handle it here.
+            if (usables.Any() && !physhandler.HandleUse(usable_object)) {
+                foreach (IUsable usable in usables) {
+                    usable.Use();
+                }
             }
             utils.SetTimerFinished(USE_TIMER);
         }

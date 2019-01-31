@@ -48,9 +48,4 @@ public class IOEntity : MonoBehaviour {
             }
         }
     }
-
-    protected virtual void Start() {
-        Debug.Log($"({name}) - ({GetType()}) connected digital inputs: {ConnectedDigitalInputs.Count}");
-        Debug.Log($"({name}) - ({GetType()}) connected analog inputs: {ConnectedAnalogInputs.Count}");
-    }
 }
