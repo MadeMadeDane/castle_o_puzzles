@@ -10,7 +10,8 @@ public class IOTestEntity : IOEntity, IUsable {
     public AnalogState exampleAnalog;
 
     // Start is called before the first frame update
-    void Start() {
+    protected override void Start() {
+        base.Start();
         if (run_tests) {
             //StartCoroutine(TestDigitalStates());
             //StartCoroutine(TestAnalogStates());

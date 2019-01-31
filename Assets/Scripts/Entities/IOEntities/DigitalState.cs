@@ -4,11 +4,10 @@ using UnityEngine;
 using UnityEngine.Events;
 
 [System.Serializable]
-public class DigitalStateChange: UnityEvent<DigitalState> {};
+public class DigitalStateChange : UnityEvent<DigitalState> { };
 
 [System.Serializable]
-public class DigitalState
-{
+public class DigitalState {
     public UnityEvent Trigger;
     public DigitalStateChange Change;
 
@@ -40,7 +39,7 @@ public class DigitalState
         IOManager.Instance.IOTick(() => Trigger.Invoke());
     }
 
-    public void impulse(bool impulse_state=true) {
+    public void impulse(bool impulse_state = true) {
         _state = !impulse_state;
         state = impulse_state;
         state = !impulse_state;

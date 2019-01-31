@@ -43,6 +43,13 @@ public class Utilities : UnitySingleton<Utilities> {
         return StartCoroutine(WaitAndRunCoroutine(seconds, action));
     }
 
+    public List<T_FIELD> GetAllFieldsOfType<T_CLASS, T_FIELD>(T_CLASS ent) where T_FIELD : class {
+        return ent.GetType().GetFields()
+            .Select((field) => field.GetValue(ent))
+            .Where((field) => field is T_FIELD)
+            .Select((obj) => obj as T_FIELD).ToList();
+    }
+
     public Timer GetTimer(string name) {
         Timer timer;
         Timers.TryGetValue(name, out timer);

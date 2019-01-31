@@ -1565,6 +1565,7 @@ GameObject:
   - component: {fileID: 568}
   - component: {fileID: 567}
   - component: {fileID: 615}
+  - component: {fileID: 174246206315821866}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -1960,6 +1961,52 @@ MonoBehaviour:
   networkParentLocalPosition: {x: 0, y: 0, z: 0}
   networkParentLocalRotation: {x: 0, y: 0, z: 0, w: 0}
   debug_mode: 0
+--- !u!114 &174246206315821866
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 57}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 92289dcef905658459e546aa4fabdfc3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  can_be_held: 0
+  pressed:
+    Trigger:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    Change:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 8607790759683883688}
+          m_MethodName: TestDigitalChange
+          m_Mode: 0
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+      m_TypeName: DigitalStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+  pressed2:
+    Trigger:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    Change:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: DigitalStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
 --- !u!1 &58
 GameObject:
   m_ObjectHideFlags: 0
@@ -25426,6 +25473,7 @@ GameObject:
   - component: {fileID: 618}
   - component: {fileID: 616}
   - component: {fileID: 686}
+  - component: {fileID: 8607790759683883688}
   m_Layer: 0
   m_Name: Cube (6)
   m_TagString: Untagged
@@ -25839,6 +25887,36 @@ MonoBehaviour:
   oneWayFriction: 1
   airFriction: {x: 4, y: 4, z: 4}
   current_wind: {fileID: 0}
+--- !u!114 &8607790759683883688
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 86}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 84035b4a4c8e0964388817d8d0534650, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  run_tests: 0
+  exampleDigital:
+    Trigger:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    Change:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: DigitalStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+  exampleAnalog:
+    Change:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: AnalogStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
 --- !u!1 &126
 GameObject:
   m_ObjectHideFlags: 0
