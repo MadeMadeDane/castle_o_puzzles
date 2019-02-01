@@ -7,7 +7,7 @@ using System.Linq;
 public class IOEntity : MonoBehaviour {
     public HashSet<DigitalState> ConnectedDigitalInputs = new HashSet<DigitalState>();
     public HashSet<AnalogState> ConnectedAnalogInputs = new HashSet<AnalogState>();
-    Utilities utils;
+    protected Utilities utils;
 
     protected virtual void Awake() {
         utils = Utilities.Instance;

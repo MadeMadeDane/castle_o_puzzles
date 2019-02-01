@@ -5,9 +5,9 @@ using System.Linq;
 
 [AddComponentMenu("IOEntities/IOAndGate")]
 public class IOAndGate : IOEntity {
-    public DigitalState output;
+    public DigitalState Output;
 
-    public void input(DigitalState input) {
-        output.state = ConnectedDigitalInputs.All((dState) => dState.state);
+    public void Input(DigitalState input) {
+        Output.state = ConnectedDigitalInputs.All((dState) => dState.state);
     }
 }
