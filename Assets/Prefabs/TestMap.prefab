@@ -25839,8 +25839,9 @@ MonoBehaviour:
   rigidbody: {fileID: 0}
   effectiveVolume: 0
   fallingFrictionOnly: 1
-  oneWayFriction: 1
   airFriction: {x: 4, y: 4, z: 4}
+  windFriction: {x: 4, y: 4, z: 4}
+  noPlayerHorizontalFriction: 1
   current_wind: {fileID: 0}
 --- !u!1 &126
 GameObject:
@@ -26296,6 +26297,7 @@ MonoBehaviour:
   rigidbody: {fileID: 0}
   isConstant: 1
   isLocal: 1
+  keepPlayerInside: 0
   constantForceValue: {x: 0, y: 0, z: 0}
   constantVelocityValue: {x: 0, y: 20, z: 0}
   windCurve:
@@ -26885,6 +26887,7 @@ MonoBehaviour:
   rigidbody: {fileID: 0}
   isConstant: 1
   isLocal: 1
+  keepPlayerInside: 1
   constantForceValue: {x: 0, y: 0, z: 0}
   constantVelocityValue: {x: 0, y: 30, z: 0}
   windCurve:

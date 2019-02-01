@@ -7,8 +7,9 @@ using MLAPI;
 [AddComponentMenu("PhysicsProps/Wind")]
 public class Wind : PhysicsProp {
     [Header("Constant forces")]
-    public bool isConstant;
-    public bool isLocal;
+    public bool isConstant = true;
+    public bool isLocal = true;
+    public bool keepPlayerInside = false;
     public Vector3 constantForceValue;
     public Vector3 constantVelocityValue;
     public AnimationCurve windCurve;
