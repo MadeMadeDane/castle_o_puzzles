@@ -2,11 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
+using MLAPI;
 
 // This class tracks IOEntities in order to provide connection information
-public class IOEntity : MonoBehaviour {
+public class IOEntity : NetworkedBehaviour {
     public HashSet<DigitalState> ConnectedDigitalInputs = new HashSet<DigitalState>();
     public HashSet<AnalogState> ConnectedAnalogInputs = new HashSet<AnalogState>();
+    public HashSet<DigitalState> DigitalOutputs = new HashSet<DigitalState>();
+    public HashSet<AnalogState> AnaloglOutputs = new HashSet<AnalogState>();
     protected Utilities utils;
 
     protected virtual void Awake() {
@@ -20,6 +23,7 @@ public class IOEntity : MonoBehaviour {
         // Get all digital states on this IOEntity
         List<DigitalState> myDigitalStates = utils.GetAllFieldsOfType<IOEntity, DigitalState>(this);
         foreach (DigitalState dState in myDigitalStates) {
+            DigitalOutputs.Add(dState);
             // Find every digital state change event on that specific digital state
             foreach (DigitalStateChange dChange in utils.GetAllFieldsOfType<DigitalState, DigitalStateChange>(dState)) {
                 // Find every listener on that specific digital state change
@@ -36,6 +40,7 @@ public class IOEntity : MonoBehaviour {
     protected void IndexAnalogConnections() {
         List<AnalogState> myAnalogStates = utils.GetAllFieldsOfType<IOEntity, AnalogState>(this);
         foreach (AnalogState aState in myAnalogStates) {
+            AnaloglOutputs.Add(aState);
             // Find every analog state change event on that specific analog state
             foreach (AnalogStateChange aChange in utils.GetAllFieldsOfType<AnalogState, AnalogStateChange>(aState)) {
                 // Find every listener on that specific analog state change

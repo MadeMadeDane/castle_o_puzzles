@@ -18,8 +18,17 @@ public class IOLight : IOEntity {
     protected override void Awake() {
         base.Awake();
         controlled_light = GetComponent<Light>();
-        Switch(StartOn);
         if (UseColorToggles) controlled_light.color = InactiveColor;
+
+        // Set up output state callbacks for clients
+        if (!isServer) {
+            TurnedOn.OnReceiveNetworkValue = Switch;
+            ActiveColorOn.OnReceiveNetworkValue = SwitchToActiveColor;
+            Intensity.OnReceiveNetworkValue = SetIntensity;
+        }
+        // Set up the initial output state on the server
+        SetIntensity(1f);
+        Switch(StartOn);
     }
 
     public void TurnOn() {
@@ -46,6 +55,7 @@ public class IOLight : IOEntity {
     public void SwitchToActiveColor(bool active) {
         if (!UseColorToggles) return;
         controlled_light.color = active ? ActiveColor : InactiveColor;
+        ActiveColorOn.state = active;
     }
 
     public void SetIntensity(AnalogState input) {

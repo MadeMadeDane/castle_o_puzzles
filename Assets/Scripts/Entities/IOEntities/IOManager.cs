@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using MLAPI;
 
 public class IOManager : UnitySingleton<IOManager> {
     private int CurrentIOTick = 0;
@@ -15,6 +16,8 @@ public class IOManager : UnitySingleton<IOManager> {
     //  to run on the next game tick, thus breaking the chain and setting the CurrentIOTick back to 0.
     //  The IOTickRate represents the maximum length of any IO event chain allowed to run in a game tick.
     public void IOTick(Action action) {
+        // Prevent all IO from flowing if we are not the server
+        if (!NetworkingManager.singleton.isServer) return;
         if (CurrentIOTick >= IOTickRate) {
             Utilities.Instance.RunOnNextTick(() => IOTick(action));
         }
