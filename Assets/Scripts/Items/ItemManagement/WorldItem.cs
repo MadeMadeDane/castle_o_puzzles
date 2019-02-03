@@ -24,6 +24,7 @@ public class WorldItem : NetworkedBehaviour {
             partSys.Play();
         }
         emitter = partSys.emission;
+        RegisterWithWorldItemTracker();
     }
 
     // Update is called once per frame
@@ -36,5 +37,14 @@ public class WorldItem : NetworkedBehaviour {
     }
     void HandleHighlight() {
         emitter.enabled = !utils.CheckTimer(ATTACH_TIMER);
+    }
+    public override void OnDestroyed() {
+        UnregisterWithWorldItemTracker();
+    }
+    void RegisterWithWorldItemTracker() {
+        WorldItemTracker.Instance.RegisterItem(this);
+    }
+    void UnregisterWithWorldItemTracker() {
+        WorldItemTracker.Instance.UnregisterItem(this);
     }
 }
