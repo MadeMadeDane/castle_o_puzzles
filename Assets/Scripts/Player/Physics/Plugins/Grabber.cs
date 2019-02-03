@@ -50,7 +50,7 @@ public class Grabber : PhysicsPlugin {
                     });
             }
         }
-        return true;
+        return false;
     }
 
     private void PickupCallback(bool success) {

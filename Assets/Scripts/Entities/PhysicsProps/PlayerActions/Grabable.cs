@@ -142,11 +142,11 @@ public class Grabable : PhysicsProp, IUsable {
     private void FixedUpdate() {
         // If the block loses it's parent, reset it
         if (parent == null) {
-            SetThrownState();
+            if (is_grabbed) SetThrownState();
         }
         // Make sure carried blocks are always kinematic
         else {
-            SetPickupState(parent);
+            if (!is_grabbed) SetPickupState(parent);
         }
     }
 }

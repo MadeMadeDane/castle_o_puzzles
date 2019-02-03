@@ -381,7 +381,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 57d8685b573174612804e817e316585b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  MapPrefab: {fileID: 51, guid: 417c56e68ced9a3449a11082afd376c9, type: 3}
+  MapPrefab: {fileID: 52, guid: 417c56e68ced9a3449a11082afd376c9, type: 3}
 --- !u!114 &624962413
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -808,7 +808,7 @@ MonoBehaviour:
     - prefab: {fileID: 3754669400956811389, guid: b5e540b85e600e24886da56547f2f5d8,
         type: 3}
       playerPrefab: 1
-    - prefab: {fileID: 51, guid: 417c56e68ced9a3449a11082afd376c9, type: 3}
+    - prefab: {fileID: 52, guid: 417c56e68ced9a3449a11082afd376c9, type: 3}
       playerPrefab: 0
     - prefab: {fileID: 1503659747097095747, guid: 41429cb5465f8ac4d97e1bd3ec1a4e9e,
         type: 3}
