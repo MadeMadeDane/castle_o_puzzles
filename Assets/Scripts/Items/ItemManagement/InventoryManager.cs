@@ -15,7 +15,7 @@ public class InventoryManager : NetworkedBehaviour {
     // The client simply uses this for ouptuting visuals
     public static NetworkInventory networkInv;
     public Sprite image;
-    public float explosive_rad = 1.0f;
+    public float select_cone_threshold = Mathf.Sqrt(3f) / 2f;
     public float select_reach_dist = 5.0f;
     public bool enable_logs = false;
     private Utilities utils;
@@ -39,24 +39,43 @@ public class InventoryManager : NetworkedBehaviour {
     void Update() {
         if (!CheckForCameraController()) return;
         if (!isOwner) return;
-        WorldItem targetItem = null;
-        if (cam_controller.GetViewMode() == ViewMode.Shooter) {
-            Camera cam = cam_controller.controlled_camera;
-            targetItem = utils.RayCastExplosiveSelect<WorldItem>(origin: cam.transform.position,
-                                                                   path: cam.transform.forward * select_reach_dist,
-                                                                   radius: explosive_rad);
-        }
+        WorldItem targetItem = HandleItemSelection();
         if (targetItem != null) {
             targetItem.Highlight();
         }
         if (im.GetPickUp() && targetItem != null) {
-            AddItemToInventory(targetItem);
+            HandleItemPickup(targetItem);
         }
         if (im.GetDropItem() && actionSlots.shared_item != null) {
             actionSlots.DropItem();
         }
     }
 
+    private WorldItem HandleItemSelection() {
+        if (cam_controller.GetViewMode() != ViewMode.Shooter) return null;
+        Camera cam = cam_controller.controlled_camera;
+        Vector3 cam_pos = cam.transform.position;
+        Vector3 cam_forward = cam.transform.forward;
+        HashSet<WorldItem> worldItems = WorldItemTracker.Instance.worldItems;
+
+        IEnumerable<WorldItem> objInRange = worldItems.Where((item) => {
+            Vector3 relative_pos = (item.transform.position - cam_pos);
+            // Is the item close enough to be picked up?
+            bool in_radius = relative_pos.magnitude <= select_reach_dist;
+            // The angle of the cone is controlled by this dot product. Which items am I looking at? 
+            bool in_cone = Vector3.Dot(relative_pos.normalized, cam_forward) >= select_cone_threshold;
+            return in_radius && in_cone;
+        });
+        // The highest dot product gives the item that is closest to our viewing angle
+        return objInRange.OrderBy((item) => Vector3.Dot((item.transform.position - cam_pos), cam_forward)).LastOrDefault();
+    }
+
+    private void HandleItemPickup(WorldItem targetItem) {
+        Vector3 local_pos = targetItem.transform.position - cam_controller.transform.position;
+        if (!Physics.Raycast(cam_controller.transform.position, local_pos, out RaycastHit hit_info, local_pos.magnitude)) return;
+        if (!hit_info.transform.GetComponentsInChildren<WorldItem>().Contains(targetItem)) return;
+        AddItemToInventory(targetItem);
+    }
     private bool NetworkSwapSharedItem(string item_name, int clientId, out NetworkSharedItem netItem, int count) {
         bool success = false;
         netItem = default(NetworkSharedItem);
