@@ -758,6 +758,8 @@ public class PlayerController : NetworkedBehaviour {
             lastMovingPlatform = moving_platform;
             utils.ResetTimer(MOVING_PLATFORM_TIMER);
         }
+
+        if (currentHit.normal.y < 0.8f && IsSliding()) utils.ResetTimer(SLIDE_TIMER);
         PreviousWallNormal = Vector3.zero;
         PreviousWallJumpNormal = Vector3.zero;
         PreviousWallJumpPos = Vector3.positiveInfinity;
@@ -765,6 +767,7 @@ public class PlayerController : NetworkedBehaviour {
 
     private void ProcessSlideHit() {
         // Slides
+        if (IsSliding()) utils.ResetTimer(SLIDE_TIMER);
         PreviousWallNormal = Vector3.zero;
         PreviousWallJumpNormal = Vector3.zero;
         PreviousWallJumpPos = Vector3.positiveInfinity;
