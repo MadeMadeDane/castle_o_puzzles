@@ -9,15 +9,15 @@ using System.Linq;
 public class IOPressurePlate : IOEntity {
     public DigitalState Pressed;
     public AnalogState Weight;
-    public Rigidbody plate_rb;
+    public Rigidbody PlateRb;
     public float StandardPressForce = 10f;
     public float MaxDisplacement = 0.5f;
     public float ActivationPoint = 0.4f;
     public float Springiness = 50f;
     public float Damping = 20f;
     private float RestDisplacement = 0f;
-    private float plate_velocity = 0f;
-    private float plate_force;
+    private float PlateVelocity = 0f;
+    private float PlateForce;
     private GameObject lastPresser;
     private string PRESS_TIMER;
     private string ACTIVE_TIMER;
@@ -28,7 +28,7 @@ public class IOPressurePlate : IOEntity {
         ACTIVE_TIMER = $"PressurePlateActive_{GetInstanceID()}";
         utils.CreateTimer(PRESS_TIMER, 0.1f).setFinished();
         utils.CreateTimer(ACTIVE_TIMER, 0.1f).setFinished();
-        plate_rb = GetComponent<Rigidbody>();
+        PlateRb = GetComponent<Rigidbody>();
         RestDisplacement = transform.localPosition.y;
     }
 
@@ -50,7 +50,7 @@ public class IOPressurePlate : IOEntity {
     }
 
     public void Press(float force) {
-        plate_force += force;
+        PlateForce += force;
     }
 
     private void HandlePress() {
@@ -72,16 +72,16 @@ public class IOPressurePlate : IOEntity {
     }
 
     private void MovePlate() {
-        if (plate_rb.isKinematic) {
+        if (PlateRb.isKinematic) {
             float current_displacement = transform.localPosition.y;
-            float computed_force = -plate_force + ((RestDisplacement - transform.localPosition.y) * Springiness) - plate_velocity * Damping;
-            plate_velocity += computed_force * Time.fixedDeltaTime;
-            current_displacement += plate_velocity * Time.fixedDeltaTime;
+            float computed_force = -PlateForce + ((RestDisplacement - current_displacement) * Springiness) - PlateVelocity * Damping;
+            PlateVelocity += computed_force * Time.fixedDeltaTime;
+            current_displacement += PlateVelocity * Time.fixedDeltaTime;
             if (Mathf.Abs(current_displacement - RestDisplacement) >= MaxDisplacement) {
                 current_displacement = Mathf.Clamp(current_displacement,
                                                    Mathf.Min(RestDisplacement - MaxDisplacement, RestDisplacement + MaxDisplacement),
                                                    Mathf.Max(RestDisplacement - MaxDisplacement, RestDisplacement + MaxDisplacement));
-                plate_velocity = 0f;
+                PlateVelocity = 0f;
             }
             transform.localPosition = new Vector3(transform.localPosition.x, current_displacement, transform.localPosition.z);
             if (RestDisplacement - current_displacement > ActivationPoint) {
@@ -91,7 +91,7 @@ public class IOPressurePlate : IOEntity {
         else {
             Debug.Log("non-kinematic rigidbodies not supported");
         }
-        plate_force = 0f;
+        PlateForce = 0f;
     }
 
     private void FixedUpdate() {
