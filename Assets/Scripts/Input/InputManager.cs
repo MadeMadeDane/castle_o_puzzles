@@ -208,15 +208,15 @@ public class InputManager : UnitySingleton<InputManager> {
         return _button_map["shared_item_button"].pressed();
     }
 
-    public bool GetPickUp() {
+    public bool GetUse() {
         return _button_map["use_button"].down();
     }
 
-    public bool GetPickUpHold() {
+    public bool GetUseHold() {
         return _button_map["use_button"].pressed();
     }
 
-    public bool GetPickUpRelease() {
+    public bool GetUseRelease() {
         return _button_map["use_button"].up();
     }
 

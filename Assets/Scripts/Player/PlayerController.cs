@@ -189,7 +189,7 @@ public class PlayerController : NetworkedBehaviour {
         if (input_manager.GetJump()) {
             utils.ResetTimer(BUFFER_JUMP_TIMER);
         }
-        if (input_manager.GetPickUp()) {
+        if (input_manager.GetUse()) {
             utils.ResetTimer(USE_TIMER);
         }
         if (input_manager.GetCrouch()) {

@@ -43,7 +43,7 @@ public class InventoryManager : NetworkedBehaviour {
         if (targetItem != null) {
             targetItem.Highlight();
         }
-        if (im.GetPickUp() && targetItem != null) {
+        if (im.GetUse() && targetItem != null) {
             HandleItemPickup(targetItem);
         }
         if (im.GetDropItem() && actionSlots.shared_item != null) {
