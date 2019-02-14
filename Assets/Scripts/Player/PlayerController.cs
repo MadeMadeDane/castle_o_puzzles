@@ -978,8 +978,13 @@ public class PlayerController : NetworkedBehaviour {
         Vector3 deltaVel = direction * acceleration * Time.deltaTime;
         if (grounded) {
             // Accelerate if we aren't at the desired speed
-            if (Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity).magnitude <= desiredSpeed) {
+            Vector3 new_plane_velocity = Vector3.ProjectOnPlane(current_velocity + deltaVel, currentHit.normal);
+            Vector3 plane_velocity = Vector3.ProjectOnPlane(current_velocity, currentHit.normal);
+            if (new_plane_velocity.magnitude <= desiredSpeed) {
                 current_velocity += deltaVel;
+            }
+            else if (plane_velocity.magnitude <= desiredSpeed) {
+                current_velocity = Vector3.ClampMagnitude(new_plane_velocity, desiredSpeed) + (current_velocity - plane_velocity);
             }
             /*else if (desiredSpeed > GetGroundVelocity().magnitude) {
                 current_velocity = Vector3.ClampMagnitude(Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity), desiredSpeed) + (current_velocity + Vector3.Project(deltaVel, Physics.gravity) - GetGroundVelocity());
