@@ -61,7 +61,7 @@ public class Grabber : PhysicsPlugin {
             // Wait until the grab button is released to finish the pick up
             utils.WaitUntilCondition(
                 check: () => {
-                    return !input_manager.GetPickUpHold();
+                    return !input_manager.GetUseHold();
                 },
                 action: () => {
                     if (grabbed != null) return;
@@ -80,10 +80,10 @@ public class Grabber : PhysicsPlugin {
 
     public override void Update() {
         if (!isOwner) return;
-        if (input_manager.GetPickUp() && grabbed) {
+        if (input_manager.GetUse() && grabbed) {
             utils.ResetTimer(THROW_METER);
         }
-        if (input_manager.GetPickUpRelease() && grabbed) {
+        if (input_manager.GetUseRelease() && grabbed) {
             utils.ResetTimer(THROW_PRESS);
         }
     }

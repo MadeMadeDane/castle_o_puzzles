@@ -102,7 +102,7 @@ public class InputManager : UnitySingleton<InputManager> {
             { "center_camera_button",  new Button("Center Camera") },
             { "toggle_view_button",  new Button("Toggle View") },
             { "shared_item_button", new Button("Shared Item") },
-            { "pick_up_button", new Button("Pick Up") },
+            { "use_button", new Button("Use") },
             { "drop_item_button", new Button("Drop Item") },
             { "ability_slot_1_button", new Button("Ability Slot 1") },
             { "ability_slot_2_button", new Button("Ability Slot 2") },
@@ -208,16 +208,16 @@ public class InputManager : UnitySingleton<InputManager> {
         return _button_map["shared_item_button"].pressed();
     }
 
-    public bool GetPickUp() {
-        return _button_map["pick_up_button"].down();
+    public bool GetUse() {
+        return _button_map["use_button"].down();
     }
 
-    public bool GetPickUpHold() {
-        return _button_map["pick_up_button"].pressed();
+    public bool GetUseHold() {
+        return _button_map["use_button"].pressed();
     }
 
-    public bool GetPickUpRelease() {
-        return _button_map["pick_up_button"].up();
+    public bool GetUseRelease() {
+        return _button_map["use_button"].up();
     }
 
     public bool GetDropItem() {

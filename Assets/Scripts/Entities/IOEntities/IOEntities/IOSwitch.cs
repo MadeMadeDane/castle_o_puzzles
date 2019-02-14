@@ -18,7 +18,7 @@ public class IOSwitch : IOEntity, IUsable {
                 if (!Output.state) {
                     Output.state = true;
                     Utilities.Instance.WaitUntilCondition(
-                        check: () => { return !InputManager.Instance.GetPickUpHold(); },
+                        check: () => { return !InputManager.Instance.GetUseHold(); },
                         action: () => { Output.state = false; });
                 }
                 break;

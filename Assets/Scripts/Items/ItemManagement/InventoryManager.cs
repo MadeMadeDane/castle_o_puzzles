@@ -43,7 +43,7 @@ public class InventoryManager : NetworkedBehaviour {
         if (targetItem != null) {
             targetItem.Highlight();
         }
-        if (im.GetPickUp() && targetItem != null) {
+        if (im.GetUse() && targetItem != null) {
             HandleItemPickup(targetItem);
         }
         if (im.GetDropItem() && actionSlots.shared_item != null) {
@@ -67,13 +67,14 @@ public class InventoryManager : NetworkedBehaviour {
             return in_radius && in_cone;
         });
         // The highest dot product gives the item that is closest to our viewing angle
-        return objInRange.OrderBy((item) => Vector3.Dot((item.transform.position - cam_pos), cam_forward)).LastOrDefault();
+        return objInRange.OrderBy((item) => Vector3.Dot((item.transform.position - cam_pos).normalized, cam_forward)).LastOrDefault();
     }
 
     private void HandleItemPickup(WorldItem targetItem) {
         Vector3 local_pos = targetItem.transform.position - cam_controller.transform.position;
-        if (!Physics.Raycast(cam_controller.transform.position, local_pos, out RaycastHit hit_info, local_pos.magnitude)) return;
-        if (!hit_info.transform.GetComponentsInChildren<WorldItem>().Contains(targetItem)) return;
+        if (Physics.Raycast(cam_controller.transform.position, local_pos, out RaycastHit hit_info, local_pos.magnitude)) {
+            if (!hit_info.transform.GetComponentsInChildren<WorldItem>().Contains(targetItem)) return;
+        }
         AddItemToInventory(targetItem);
     }
     private bool NetworkSwapSharedItem(string item_name, int clientId, out NetworkSharedItem netItem, int count) {

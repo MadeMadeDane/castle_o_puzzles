@@ -189,7 +189,7 @@ public class PlayerController : NetworkedBehaviour {
         if (input_manager.GetJump()) {
             utils.ResetTimer(BUFFER_JUMP_TIMER);
         }
-        if (input_manager.GetPickUp()) {
+        if (input_manager.GetUse()) {
             utils.ResetTimer(USE_TIMER);
         }
         if (input_manager.GetCrouch()) {
@@ -758,6 +758,8 @@ public class PlayerController : NetworkedBehaviour {
             lastMovingPlatform = moving_platform;
             utils.ResetTimer(MOVING_PLATFORM_TIMER);
         }
+
+        if (currentHit.normal.y < 0.8f && IsSliding()) utils.ResetTimer(SLIDE_TIMER);
         PreviousWallNormal = Vector3.zero;
         PreviousWallJumpNormal = Vector3.zero;
         PreviousWallJumpPos = Vector3.positiveInfinity;
@@ -765,6 +767,7 @@ public class PlayerController : NetworkedBehaviour {
 
     private void ProcessSlideHit() {
         // Slides
+        if (IsSliding()) utils.ResetTimer(SLIDE_TIMER);
         PreviousWallNormal = Vector3.zero;
         PreviousWallJumpNormal = Vector3.zero;
         PreviousWallJumpPos = Vector3.positiveInfinity;
@@ -975,8 +978,13 @@ public class PlayerController : NetworkedBehaviour {
         Vector3 deltaVel = direction * acceleration * Time.deltaTime;
         if (grounded) {
             // Accelerate if we aren't at the desired speed
-            if (Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity).magnitude <= desiredSpeed) {
+            Vector3 new_plane_velocity = Vector3.ProjectOnPlane(current_velocity + deltaVel, currentHit.normal);
+            Vector3 plane_velocity = Vector3.ProjectOnPlane(current_velocity, currentHit.normal);
+            if (new_plane_velocity.magnitude <= desiredSpeed) {
                 current_velocity += deltaVel;
+            }
+            else if (plane_velocity.magnitude <= desiredSpeed) {
+                current_velocity = Vector3.ClampMagnitude(new_plane_velocity, desiredSpeed) + (current_velocity - plane_velocity);
             }
             /*else if (desiredSpeed > GetGroundVelocity().magnitude) {
                 current_velocity = Vector3.ClampMagnitude(Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity), desiredSpeed) + (current_velocity + Vector3.Project(deltaVel, Physics.gravity) - GetGroundVelocity());
