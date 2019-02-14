@@ -79,8 +79,8 @@ public class IOPressurePlate : IOEntity {
             current_displacement += PlateVelocity * Time.fixedDeltaTime;
             if (Mathf.Abs(current_displacement - RestDisplacement) >= MaxDisplacement) {
                 current_displacement = Mathf.Clamp(current_displacement,
-                                                   Mathf.Min(RestDisplacement - MaxDisplacement, RestDisplacement + MaxDisplacement),
-                                                   Mathf.Max(RestDisplacement - MaxDisplacement, RestDisplacement + MaxDisplacement));
+                                                   RestDisplacement - MaxDisplacement,
+                                                   RestDisplacement + MaxDisplacement);
                 PlateVelocity = 0f;
             }
             transform.localPosition = new Vector3(transform.localPosition.x, current_displacement, transform.localPosition.z);

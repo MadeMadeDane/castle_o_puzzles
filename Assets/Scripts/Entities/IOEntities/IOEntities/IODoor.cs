@@ -8,8 +8,9 @@ using System.Linq;
 [RequireComponent(typeof(Rigidbody))]
 public class IODoor : IOEntity, IUsable {
     public DigitalState DoorOpen;
+    public DigitalState Unlocked;
     public Rigidbody DoorRb;
-    public bool Locked = false;
+    public bool StartUnlocked = true;
     public float OpenRotation = 90f;
     public float Springiness = 50f;
     public float Damping = 20f;
@@ -19,15 +20,24 @@ public class IODoor : IOEntity, IUsable {
     protected override void Awake() {
         base.Awake();
         DoorRb = GetComponent<Rigidbody>();
+        SetUnlocked(StartUnlocked);
         Open(false);
     }
 
     public void Lock() {
-        Locked = true;
+        SetUnlocked(false);
     }
 
     public void Unlock() {
-        Locked = false;
+        SetUnlocked(true);
+    }
+
+    public void SetUnlocked(DigitalState input) {
+        SetUnlocked(input.state);
+    }
+
+    public void SetUnlocked(bool unlocked) {
+        Unlocked.state = unlocked;
     }
 
     public void Open(DigitalState input) {
@@ -39,7 +49,7 @@ public class IODoor : IOEntity, IUsable {
     }
 
     public void Use() {
-        if (!Locked) DoorOpen.state = !DoorOpen.state;
+        if (Unlocked.state) DoorOpen.state = !DoorOpen.state;
     }
 
     private void MoveDoor() {

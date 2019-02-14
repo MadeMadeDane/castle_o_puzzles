@@ -14924,7 +14924,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 258}
-  - component: {fileID: 431}
   - component: {fileID: 648}
   m_Layer: 0
   m_Name: BoltCutters Spawner
@@ -14947,19 +14946,6 @@ Transform:
   m_Father: {fileID: 252}
   m_RootOrder: 25
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &431
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 89}
-  m_Material: {fileID: 0}
-  m_IsTrigger: 0
-  m_Enabled: 1
-  serializedVersion: 2
-  m_Size: {x: 2, y: 5, z: 0.5}
-  m_Center: {x: 0, y: 0.5, z: 0}
 --- !u!114 &648
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27539,17 +27525,9 @@ MonoBehaviour:
   m_PreserveMeshAssetOnDestroy: 0
   assetGuid: 
   m_IsSelectable: 1
-  m_SelectedFaces: 03000000
-  m_SelectedEdges:
-  - a: 12
-    b: 13
-  - a: 14
-    b: 12
-  - a: 13
-    b: 15
-  - a: 15
-    b: 14
-  m_SelectedVertices: 0c0000000d0000000e0000000f000000
+  m_SelectedFaces: 
+  m_SelectedEdges: []
+  m_SelectedVertices: 
 --- !u!64 &631618595898265763
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -27604,6 +27582,17 @@ MonoBehaviour:
         m_Calls:
         - m_Target: {fileID: 6013641375999114012}
           m_MethodName: SwitchToActiveColor
+          m_Mode: 0
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+        - m_Target: {fileID: 2654151668047621239}
+          m_MethodName: SetUnlocked
           m_Mode: 0
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
@@ -28045,8 +28034,20 @@ MonoBehaviour:
         m_Calls: []
       m_TypeName: DigitalStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
+  Unlocked:
+    InternalValue: 0
+    Trigger:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    Change:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: DigitalStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
   DoorRb: {fileID: 0}
-  Locked: 0
+  StartUnlocked: 0
   OpenRotation: 90
   Springiness: 70
   Damping: 20
