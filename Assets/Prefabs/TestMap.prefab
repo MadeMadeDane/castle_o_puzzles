@@ -6844,13 +6844,6 @@ MonoBehaviour:
   Automatic: 0
   ResetToHome: 1
   HomeResetTime: 10
-  a_Velocity:
-    InternalValue: 0
-    Change:
-      m_PersistentCalls:
-        m_Calls: []
-      m_TypeName: AnalogStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-        PublicKeyToken=null
   d_AtHome:
     InternalValue: 0
     Trigger:
@@ -7662,13 +7655,6 @@ MonoBehaviour:
   Automatic: 1
   ResetToHome: 0
   HomeResetTime: 10
-  a_Velocity:
-    InternalValue: 0
-    Change:
-      m_PersistentCalls:
-        m_Calls: []
-      m_TypeName: AnalogStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-        PublicKeyToken=null
   d_AtHome:
     InternalValue: 0
     Trigger:
@@ -7694,13 +7680,6 @@ MonoBehaviour:
       m_TypeName: DigitalStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
   AngularVelocity: {x: 0, y: 50, z: 0}
-  a_AngularVelocity:
-    InternalValue: 0
-    Change:
-      m_PersistentCalls:
-        m_Calls: []
-      m_TypeName: AnalogStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-        PublicKeyToken=null
 --- !u!54 &394
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -14399,13 +14378,6 @@ MonoBehaviour:
   Automatic: 0
   ResetToHome: 0
   HomeResetTime: 10
-  a_Velocity:
-    InternalValue: 0
-    Change:
-      m_PersistentCalls:
-        m_Calls: []
-      m_TypeName: AnalogStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-        PublicKeyToken=null
   d_AtHome:
     InternalValue: 0
     Trigger:
@@ -14431,13 +14403,6 @@ MonoBehaviour:
       m_TypeName: DigitalStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
   AngularVelocity: {x: 0, y: 50, z: 0}
-  a_AngularVelocity:
-    InternalValue: 0
-    Change:
-      m_PersistentCalls:
-        m_Calls: []
-      m_TypeName: AnalogStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-        PublicKeyToken=null
 --- !u!1 &87
 GameObject:
   m_ObjectHideFlags: 0
@@ -16966,13 +16931,6 @@ MonoBehaviour:
   Automatic: 0
   ResetToHome: 1
   HomeResetTime: 10
-  a_Velocity:
-    InternalValue: 0
-    Change:
-      m_PersistentCalls:
-        m_Calls: []
-      m_TypeName: AnalogStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
-        PublicKeyToken=null
   d_AtHome:
     InternalValue: 0
     Trigger:
@@ -27617,6 +27575,7 @@ MonoBehaviour:
   ActivationPoint: 0.4
   Springiness: 50
   Damping: 20
+  ResetSpeed: 15
 --- !u!114 &9185338622664633711
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27700,6 +27659,7 @@ GameObject:
   - component: {fileID: 2654151668047621239}
   - component: {fileID: 1362847460366134529}
   - component: {fileID: 5773335538578985356}
+  - component: {fileID: 1999671594585612463}
   m_Layer: 0
   m_Name: Door
   m_TagString: Untagged
@@ -28107,10 +28067,56 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
+        - m_Target: {fileID: 1999671594585612463}
+          m_MethodName: Input
+          m_Mode: 0
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
       m_TypeName: DigitalStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
   delay: 5
   mode: 1
+--- !u!114 &1999671594585612463
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7340866450483879100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5100f610840391741a05194175b988a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Output:
+    InternalValue: 0
+    Trigger:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 331261764964589995}
+          m_MethodName: ResetPlate
+          m_Mode: 1
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+      m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    Change:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: DigitalStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
 --- !u!1 &7571711748114042088
 GameObject:
   m_ObjectHideFlags: 0
