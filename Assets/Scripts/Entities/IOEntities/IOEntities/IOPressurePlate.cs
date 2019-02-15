@@ -22,8 +22,7 @@ public class IOPressurePlate : IOEntity {
     private string PRESS_TIMER;
     private string ACTIVE_TIMER;
 
-    protected override void Awake() {
-        base.Awake();
+    protected override void Startup() {
         PRESS_TIMER = $"PressurePlatePress_{GetInstanceID()}";
         ACTIVE_TIMER = $"PressurePlateActive_{GetInstanceID()}";
         utils.CreateTimer(PRESS_TIMER, 0.1f).setFinished();

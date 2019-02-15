@@ -5,11 +5,12 @@ using MLAPI;
 
 [RequireComponent(typeof(ParticleSystem))]
 [RequireComponent(typeof(MovingGeneric))]
-
+[RequireComponent(typeof(Collider))]
 public class WorldItem : NetworkedBehaviour {
     private string ATTACH_TIMER;
     private Utilities utils;
     public string item_name = "";
+    public new Collider collider;
 
 
     private ParticleSystem.EmissionModule emitter;
@@ -23,6 +24,7 @@ public class WorldItem : NetworkedBehaviour {
         if (!partSys.isPlaying) {
             partSys.Play();
         }
+        collider = GetComponent<Collider>();
         emitter = partSys.emission;
         RegisterWithWorldItemTracker();
     }

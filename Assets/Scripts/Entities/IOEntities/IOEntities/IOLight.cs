@@ -15,8 +15,7 @@ public class IOLight : IOEntity {
     public Color ActiveColor;
     public Color InactiveColor;
 
-    protected override void Awake() {
-        base.Awake();
+    protected override void Startup() {
         controlled_light = GetComponent<Light>();
         if (UseColorToggles) controlled_light.color = InactiveColor;
 

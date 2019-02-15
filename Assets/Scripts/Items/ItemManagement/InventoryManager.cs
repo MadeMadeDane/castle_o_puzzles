@@ -56,18 +56,12 @@ public class InventoryManager : NetworkedBehaviour {
         Camera cam = cam_controller.controlled_camera;
         Vector3 cam_pos = cam.transform.position;
         Vector3 cam_forward = cam.transform.forward;
-        HashSet<WorldItem> worldItems = WorldItemTracker.Instance.worldItems;
-
-        IEnumerable<WorldItem> objInRange = worldItems.Where((item) => {
-            Vector3 relative_pos = (item.transform.position - cam_pos);
-            // Is the item close enough to be picked up?
-            bool in_radius = relative_pos.magnitude <= select_reach_dist;
-            // The angle of the cone is controlled by this dot product. Which items am I looking at? 
-            bool in_cone = Vector3.Dot(relative_pos.normalized, cam_forward) >= select_cone_threshold;
-            return in_radius && in_cone;
-        });
-        // The highest dot product gives the item that is closest to our viewing angle
-        return objInRange.OrderBy((item) => Vector3.Dot((item.transform.position - cam_pos).normalized, cam_forward)).LastOrDefault();
+        Ray cam_ray = new Ray(cam_pos, cam_forward);
+        return WorldItemTracker.Instance.worldItems
+            .Where((item) => (item.transform.position - cam_pos).magnitude <= select_reach_dist)
+            .Where((item) => item.collider.bounds.IntersectRay(cam_ray))
+            .OrderBy((item) => Vector3.Dot((item.transform.position - cam_pos).normalized, cam_forward))
+            .LastOrDefault();
     }
 
     private void HandleItemPickup(WorldItem targetItem) {

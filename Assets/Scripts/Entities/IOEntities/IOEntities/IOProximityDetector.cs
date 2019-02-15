@@ -10,8 +10,7 @@ public class IOProximityDetector : IOEntity {
     public float range = 10f;
     private string DETECTION_TIMER;
 
-    protected override void Awake() {
-        base.Awake();
+    protected override void Startup() {
         DETECTION_TIMER = $"ProximityDetection_{GetInstanceID()}";
         utils.CreateTimer(DETECTION_TIMER, 0.1f).setFinished();
     }

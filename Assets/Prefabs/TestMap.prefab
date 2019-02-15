@@ -15702,7 +15702,7 @@ MonoBehaviour:
       m_TypeName: DigitalStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
         PublicKeyToken=null
   delay: 3
-  mode: 2
+  mode: 0
 --- !u!114 &737
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -27591,8 +27591,8 @@ MonoBehaviour:
             m_StringArgument: 
             m_BoolArgument: 0
           m_CallState: 2
-        - m_Target: {fileID: 2654151668047621239}
-          m_MethodName: SetUnlocked
+        - m_Target: {fileID: 5773335538578985356}
+          m_MethodName: Input
           m_Mode: 0
           m_Arguments:
             m_ObjectArgument: {fileID: 0}
@@ -27699,6 +27699,7 @@ GameObject:
   - component: {fileID: 4967693839278782149}
   - component: {fileID: 2654151668047621239}
   - component: {fileID: 1362847460366134529}
+  - component: {fileID: 5773335538578985356}
   m_Layer: 0
   m_Name: Door
   m_TagString: Untagged
@@ -28073,6 +28074,43 @@ MonoBehaviour:
   networkParentLocalPosition: {x: 0, y: 0, z: 0}
   networkParentLocalRotation: {x: 0, y: 0, z: 0, w: 0}
   debug_mode: 0
+--- !u!114 &5773335538578985356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7340866450483879100}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 342f5f5e52e72634692851592ac37c91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Output:
+    InternalValue: 0
+    Trigger:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    Change:
+      m_PersistentCalls:
+        m_Calls:
+        - m_Target: {fileID: 2654151668047621239}
+          m_MethodName: Open
+          m_Mode: 0
+          m_Arguments:
+            m_ObjectArgument: {fileID: 0}
+            m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+            m_IntArgument: 0
+            m_FloatArgument: 0
+            m_StringArgument: 
+            m_BoolArgument: 0
+          m_CallState: 2
+      m_TypeName: DigitalStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+  delay: 5
+  mode: 1
 --- !u!1 &7571711748114042088
 GameObject:
   m_ObjectHideFlags: 0
