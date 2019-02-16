@@ -876,8 +876,8 @@ public class PlayerController : NetworkedBehaviour {
 
         Vector3 planevelocity = Vector3.ProjectOnPlane(current_velocity, currentHit.normal);
         Vector3 movVec = GetMoveVector();
-        float movmag = movVec.magnitude < 0.8f ? movVec.magnitude < 0.2f ? 0f : movVec.magnitude : 1f;
-        movmag = Mathf.Pow(movmag, 2f);
+        // Force a 20% cutoff region where only the player is rotated but not moved
+        float movmag = movVec.magnitude < 0.2f ? 0f : movVec.magnitude;
         // Do this first so we cancel out incremented time from update before checking it
         if (!OnGround()) {
             // We are in the air (for atleast LandingGracePeriod). We will slide on landing if moving fast enough.
