@@ -64,6 +64,7 @@ public class PlayerController : NetworkedBehaviour {
     private string WALL_JUMP_TIMER = "WallJump";
     private string WALL_RUN_TIMER = "WallRun";
     private string WALL_CLIMB_TIMER = "WallClimb";
+    private string WALL_HANG_TIMER = "WallHang";
     private string WALL_HIT_TIMER = "WallHit";
     private string REGRAB_TIMER = "ReGrab";
     private string MOVING_COLLIDER_TIMER = "MovingCollider";
@@ -75,7 +76,7 @@ public class PlayerController : NetworkedBehaviour {
     // Jumping state variables
     private float JumpMeterThreshold;
     private float JumpMeterComputed;
-    private bool isHanging;
+    private float LedgeGapTolerance;
     private bool isJumping;
     private bool isFalling;
     private bool isCrouching;
@@ -263,6 +264,7 @@ public class PlayerController : NetworkedBehaviour {
         wr_standCenter = wall_run_collider.center.y;
         re_standHeight = recovery_collider.height;
         re_standCenter = recovery_collider.center.y;
+        LedgeGapTolerance = 0.1f;
 
         utils.CreateTimer(JUMP_METER, 0.3f);
         utils.CreateTimer(USE_TIMER, 0.1f);
@@ -274,6 +276,7 @@ public class PlayerController : NetworkedBehaviour {
         utils.CreateTimer(WALL_JUMP_TIMER, 0.2f).setFinished();
         utils.CreateTimer(WALL_RUN_TIMER, 0.2f).setFinished();
         utils.CreateTimer(WALL_CLIMB_TIMER, 0.2f).setFinished();
+        utils.CreateTimer(WALL_HANG_TIMER, 0.1f).setFinished();
         utils.CreateTimer(WALL_HIT_TIMER, 0.2f).setFinished();
         utils.CreateTimer(REGRAB_TIMER, 0.5f).setFinished();
         utils.CreateTimer(MOVING_COLLIDER_TIMER, 0.01f).setFinished();
@@ -620,30 +623,35 @@ public class PlayerController : NetworkedBehaviour {
                 UpdateWallConditions(hit.normal);
             }
 
-            if (IsWallClimbing() && !isHanging) {
-                // Make sure our head is against a wall
-                if (Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), transform.forward, out hit, cc.radius + WallScanDistance)) {
-                    Vector3 LedgeScanVerticalPos = transform.position + transform.up * (GetHeadHeight() + cc.radius);
-                    Vector3 LedgeScanHorizontalVector = (cc.radius + LedgeClimbOffset) * transform.forward;
-                    RaycastHit WallHit = hit;
-                    // Make sure we don't hit a wall at the ledge height
-                    if (!Physics.Raycast(origin: LedgeScanVerticalPos, direction: LedgeScanHorizontalVector.normalized, maxDistance: LedgeScanHorizontalVector.magnitude)) {
-                        Vector3 LedgeScanPos = LedgeScanVerticalPos + LedgeScanHorizontalVector;
-                        // Scan down for a ledge
-                        if (Physics.Raycast(LedgeScanPos, -transform.up, out hit, cc.radius + LedgeClimbOffset)) {
-                            if (CanGrabLedge() && Vector3.Dot(hit.normal, Physics.gravity.normalized) < -0.866f) {
-                                // The surface of the ledge should always be behind the ledge wall
-                                if (Vector3.Dot(WallHit.point - hit.point, WallHit.normal) < 0) return;
-                                LastHangingNormal = WallHit.normal;
-                                isHanging = true;
-                            }
-                        }
-                    }
-                }
+            if (IsWallClimbing() && !IsHanging()) {
+                HandleLedgeHang();
             }
         }
 
         lastTrigger = null;
+    }
+
+    private void HandleLedgeHang() {
+        // Make sure our head is against a wall
+        if (!Physics.Raycast(transform.position + (transform.up * GetHeadHeight()), transform.forward, out RaycastHit WallHit, cc.radius + WallScanDistance)) return;
+
+        Vector3 LedgeScanVerticalPos = transform.position + transform.up * (GetHeadHeight() + cc.radius);
+        Vector3 LedgeScanHorizontalVector = (cc.radius + LedgeClimbOffset) * transform.forward;
+        // Make sure we don't hit a wall at the ledge height
+        if (Physics.Raycast(origin: LedgeScanVerticalPos, direction: LedgeScanHorizontalVector.normalized, maxDistance: LedgeScanHorizontalVector.magnitude)) return;
+        if (Physics.Raycast(origin: LedgeScanVerticalPos - transform.up * LedgeGapTolerance, direction: LedgeScanHorizontalVector.normalized, maxDistance: LedgeScanHorizontalVector.magnitude)) return;
+
+        // Scan down for a ledge
+        Vector3 LedgeScanPos = LedgeScanVerticalPos + LedgeScanHorizontalVector;
+        if (!Physics.Raycast(LedgeScanPos, -transform.up, out RaycastHit LedgeHit, cc.radius + LedgeClimbOffset)) return;
+
+        // Make sure the ledge is not too steep
+        if (CanGrabLedge() && Vector3.Dot(LedgeHit.normal, Physics.gravity.normalized) < -0.866f) {
+            // The surface of the ledge should always be behind the ledge wall
+            if (Vector3.Dot(WallHit.point - LedgeHit.point, WallHit.normal) < 0) return;
+            LastHangingNormal = WallHit.normal;
+            utils.ResetTimer(WALL_HANG_TIMER);
+        }
     }
 
     private bool IsWall(Vector3 normal) {
@@ -681,7 +689,7 @@ public class PlayerController : NetworkedBehaviour {
             }
         }
         // If we fail the wall run try to wall climb instead if we are looking at the wall
-        else if (isHanging || Vector3.Dot(transform.forward, -wall_normal) >= WallRunClimbCosAngle) {
+        else if (Vector3.Dot(transform.forward, -wall_normal) >= WallRunClimbCosAngle) {
             utils.ResetTimer(WALL_CLIMB_TIMER);
         }
         PreviousWallNormal = wall_normal;
@@ -860,15 +868,11 @@ public class PlayerController : NetworkedBehaviour {
     #region HANDLE_MOVEMENT
     // Apply movement forces from input (FAST edition)
     private void HandleMovement() {
-        // Check if we can still be hanging
-        if (!IsWallClimbing()) {
-            isHanging = false;
-        }
         // Handle moving collisions
         HandleMovingCollisions();
 
         // If we are hanging stay still
-        if (isHanging) {
+        if (IsHanging()) {
             current_velocity = Vector3.zero;
             GravityMult = 0;
             return;
@@ -1023,7 +1027,7 @@ public class PlayerController : NetworkedBehaviour {
 
         // Handle jumping and falling
         if (JumpBuffered()) {
-            if (OnGround() || CanWallJump() || IsWallRunning() || isHanging) {
+            if (OnGround() || CanWallJump() || IsWallRunning() || IsHanging()) {
                 DoJump();
             }
         }
@@ -1044,7 +1048,7 @@ public class PlayerController : NetworkedBehaviour {
             PreviousWallJumpPos = transform.position;
             PreviousWallJumpNormal = PreviousWallNormal;
         }
-        if (!isHanging && utils.GetTimerTime(JUMP_METER) > JumpMeterThreshold) {
+        if (!IsHanging() && utils.GetTimerTime(JUMP_METER) > JumpMeterThreshold) {
             if (!OnGround() && CanWallJump() && WallJumpReflect.magnitude > 0) {
                 //Debug.Log("Wall Jump");
                 current_velocity += (WallJumpReflect - current_velocity) * WallJumpBoost * JumpMeterComputed;
@@ -1086,7 +1090,7 @@ public class PlayerController : NetworkedBehaviour {
                 callback();
             }
         }
-        else if (isHanging) {
+        else if (IsHanging()) {
             current_velocity.y = LedgeClimbBoost;
             PreviousWallNormal = Vector3.zero;
             PreviousWallJumpNormal = Vector3.zero;
@@ -1096,7 +1100,6 @@ public class PlayerController : NetworkedBehaviour {
         isJumping = true;
         isFalling = false;
         willJump = false;
-        isHanging = false;
 
         // Intentionally set the timers over the limit
         utils.SetTimerFinished(BUFFER_JUMP_TIMER);
@@ -1104,6 +1107,7 @@ public class PlayerController : NetworkedBehaviour {
         utils.SetTimerFinished(WALL_JUMP_TIMER);
         utils.SetTimerFinished(WALL_RUN_TIMER);
         utils.SetTimerFinished(WALL_CLIMB_TIMER);
+        utils.SetTimerFinished(WALL_HANG_TIMER);
         utils.SetTimerFinished(MOVING_PLATFORM_TIMER);
 
         WallJumpReflect = Vector3.zero;
@@ -1179,7 +1183,7 @@ public class PlayerController : NetworkedBehaviour {
     }
 
     public bool IsHanging() {
-        return isHanging;
+        return !utils.CheckTimer(WALL_HANG_TIMER);
     }
 
     public bool IsCrouching() {
@@ -1266,7 +1270,7 @@ public class PlayerController : NetworkedBehaviour {
     public void Recover(Collider other) {
         if (!isOwner) return;
         utils.ResetTimer(STUCK_TIMER);
-        isHanging = false;
+        utils.SetTimerFinished(WALL_HANG_TIMER);
 
         Vector3 closest_point = other.ClosestPointOnBounds(transform.position);
         Vector3 path_to_point = closest_point - transform.position;
@@ -1289,7 +1293,7 @@ public class PlayerController : NetworkedBehaviour {
     public void RecoverSafe(Collider other) {
         if (!isOwner) return;
         utils.ResetTimer(STUCK_TIMER);
-        isHanging = false;
+        utils.SetTimerFinished(WALL_HANG_TIMER);
 
         Vector3 path_from_center = Vector3.ProjectOnPlane(transform.position - other.bounds.center, Physics.gravity);
         Teleport(transform.position + path_from_center.normalized * cc.radius * 0.25f);
