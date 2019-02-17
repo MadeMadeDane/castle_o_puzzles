@@ -18,9 +18,8 @@ public class PlayerAnimator : NetworkedBehaviour {
     //private bool isClimbing;
     private bool isSliding;
     //private bool isRolling;
-    public float runMinSpeed = 4.5f;
-    public float walkMaxSpeed = 4;
-    public float sprintMinSpeed = 12;
+    public float walkMaxSpeed = 6.0f;
+    public float runMinSpeed = 8.0f;
 
     // For networked players
     public float FixedSendsPerSecond = 10f;
@@ -80,8 +79,7 @@ public class PlayerAnimator : NetworkedBehaviour {
             previous_position = transform.position;
         }
         // NOTE: This makes animations framerate dependent. We may want to move this into fixed update in the future.
-        velocity_mag = averageVelocity.Accumulate(velocity_mag);
-
+        velocity_mag = averageVelocity.Accumulate(velocity_mag) / averageVelocity.Size();
         if (Input.GetKey(KeyCode.Q)) {
             isSliding = true;
             isWalking = false;
@@ -90,7 +88,7 @@ public class PlayerAnimator : NetworkedBehaviour {
         }
         else {
             isSliding = false;
-            if (on_ground && velocity_mag < .2) {
+            if (on_ground && velocity_mag < 0.2f) {
                 isWalking = false;
                 isRunning = false;
             }

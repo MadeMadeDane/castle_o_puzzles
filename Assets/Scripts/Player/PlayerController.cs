@@ -44,6 +44,7 @@ public class PlayerController : NetworkedBehaviour {
     public bool wallClimbEnabled;
     public bool conserveUpwardMomentum;
     public bool ShortHopEnabled;
+    public bool ShortHopTempDisable;
     public bool JumpBoostEnabled;
     public bool ToggleCrouch;
     private Vector3 accel;
@@ -155,6 +156,8 @@ public class PlayerController : NetworkedBehaviour {
         WallScanDistance = 1.5f;
         LedgeClimbBoost = Mathf.Sqrt(2 * cc.height * 1.1f * Physics.gravity.magnitude);
         WallDistanceThreshold = 14f;
+        LedgeGapTolerance = 0.1f;
+        ShortHopTempDisable = false;
 
         // Initial state
         position_history_size = 50;
@@ -264,7 +267,6 @@ public class PlayerController : NetworkedBehaviour {
         wr_standCenter = wall_run_collider.center.y;
         re_standHeight = recovery_collider.height;
         re_standCenter = recovery_collider.center.y;
-        LedgeGapTolerance = 0.1f;
 
         utils.CreateTimer(JUMP_METER, 0.3f);
         utils.CreateTimer(USE_TIMER, 0.1f);
@@ -1015,9 +1017,10 @@ public class PlayerController : NetworkedBehaviour {
     // Handle jumping
     private void HandleJumping() {
         // Ground detection for friction and jump state
-        if (OnGround()) {
+        if (OnGround() || IsHanging()) {
             isJumping = false;
             isFalling = false;
+            ShortHopTempDisable = false;
         }
 
         // Add additional gravity when going down (optional)
@@ -1033,7 +1036,7 @@ public class PlayerController : NetworkedBehaviour {
         }
         // Fall fast when we let go of jump (optional)
         if (!isFalling && isJumping && !input_manager.GetJumpHold()) {
-            if (ShortHopEnabled && Vector3.Dot(current_velocity, Physics.gravity.normalized) < 0) {
+            if (ShortHopEnabled && !ShortHopTempDisable && Vector3.Dot(current_velocity, Physics.gravity.normalized) < 0) {
                 current_velocity -= Vector3.Project(current_velocity, Physics.gravity.normalized) / 2;
             }
             isFalling = true;

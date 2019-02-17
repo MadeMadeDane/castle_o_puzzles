@@ -21,6 +21,7 @@ public class Grabable : PhysicsProp, IUsable {
         IGNORE_RAYCAST_LAYER = LayerMask.NameToLayer("Ignore Raycast");
         moving_object = GetComponent<MovingGeneric>();
         rb_collider = GetComponent<Collider>();
+        SetThrownState();
     }
 
     public bool Pickup(GameObject grabber, Vector3 grab_offset = default(Vector3), bool networked = false) {
