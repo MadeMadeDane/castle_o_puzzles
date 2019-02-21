@@ -13,7 +13,10 @@ public class PhysicsPropHandler : NetworkedBehaviour {
             {typeof(Pushable), new Pusher(context: this)},
             {typeof(Grabable), new Grabber(context: this)},
             {typeof(FluidDynamic), new FluidDynamicHandler(context: this)},
-            {typeof(Wind), new NullPlugin(context: this)}
+            {typeof(Wind), new NullPlugin(context: this)},
+            {typeof(Launcher), new LaunchHandler(context: this)},
+            {typeof(Launchable), new NullPlugin(context: this)},
+            {typeof(Breakable), new NullPlugin(context: this)}
         };
 
         foreach (PhysicsPlugin plugin in plugins.Values) {

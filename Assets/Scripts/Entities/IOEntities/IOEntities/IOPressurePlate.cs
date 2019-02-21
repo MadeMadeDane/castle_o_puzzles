@@ -15,6 +15,7 @@ public class IOPressurePlate : IOEntity {
     public float ActivationPoint = 0.4f;
     public float Springiness = 50f;
     public float Damping = 20f;
+    public float ResetSpeed = 2f;
     private float RestDisplacement = 0f;
     private float PlateVelocity = 0f;
     private float PlateForce;
@@ -22,8 +23,7 @@ public class IOPressurePlate : IOEntity {
     private string PRESS_TIMER;
     private string ACTIVE_TIMER;
 
-    protected override void Awake() {
-        base.Awake();
+    protected override void Startup() {
         PRESS_TIMER = $"PressurePlatePress_{GetInstanceID()}";
         ACTIVE_TIMER = $"PressurePlateActive_{GetInstanceID()}";
         utils.CreateTimer(PRESS_TIMER, 0.1f).setFinished();
@@ -40,6 +40,9 @@ public class IOPressurePlate : IOEntity {
         Weight.state = weight;
     }
 
+    public void ResetPlate() {
+        Press(-ResetSpeed / Time.fixedDeltaTime);
+    }
 
     public void Press() {
         Press(StandardPressForce);
@@ -77,10 +80,10 @@ public class IOPressurePlate : IOEntity {
             float computed_force = -PlateForce + ((RestDisplacement - current_displacement) * Springiness) - PlateVelocity * Damping;
             PlateVelocity += computed_force * Time.fixedDeltaTime;
             current_displacement += PlateVelocity * Time.fixedDeltaTime;
-            if (Mathf.Abs(current_displacement - RestDisplacement) >= MaxDisplacement) {
+            if (current_displacement > RestDisplacement || (RestDisplacement - current_displacement) > MaxDisplacement) {
                 current_displacement = Mathf.Clamp(current_displacement,
                                                    RestDisplacement - MaxDisplacement,
-                                                   RestDisplacement + MaxDisplacement);
+                                                   RestDisplacement);
                 PlateVelocity = 0f;
             }
             transform.localPosition = new Vector3(transform.localPosition.x, current_displacement, transform.localPosition.z);

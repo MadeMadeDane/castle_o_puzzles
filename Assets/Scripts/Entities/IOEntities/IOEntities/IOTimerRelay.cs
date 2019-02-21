@@ -7,7 +7,7 @@ using System.Linq;
 public class IOTimerRelay : IOEntity {
     public DigitalState Output;
     public float delay;
-    public enum RelayMode { SINGLE, SINGLE_ACTIVE_LOW, CONTINUOUS }
+    public enum RelayMode { CONTINUOUS, SQUARE_WAVE, SINGLE, SINGLE_ACTIVE_LOW }
     public RelayMode mode;
     private bool running = false;
 
@@ -30,12 +30,27 @@ public class IOTimerRelay : IOEntity {
             case RelayMode.CONTINUOUS:
                 DoContinuous(input);
                 break;
+            case RelayMode.SQUARE_WAVE:
+                DoSquare(input);
+                break;
         }
     }
 
     private void DoContinuous(bool input) {
         utils.WaitAndRun(delay, () => {
             Output.state = input;
+        });
+    }
+
+    private void DoSquare(bool input, bool active_state = true) {
+        if (running || input != active_state) return;
+
+        running = true;
+        Output.initialize(!input);
+        Output.state = input;
+        utils.WaitAndRun(delay, () => {
+            running = false;
+            Output.state = !input;
         });
     }
 

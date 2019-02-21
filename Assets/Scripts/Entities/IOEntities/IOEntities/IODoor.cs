@@ -17,8 +17,7 @@ public class IODoor : IOEntity, IUsable {
     private float RestRotation = 0f;
     private float DoorVelocity = 0f;
 
-    protected override void Awake() {
-        base.Awake();
+    protected override void Startup() {
         DoorRb = GetComponent<Rigidbody>();
         SetUnlocked(StartUnlocked);
         Open(false);

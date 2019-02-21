@@ -12,12 +12,16 @@ public class IOEntity : NetworkedBehaviour {
     public HashSet<AnalogState> AnaloglOutputs = new HashSet<AnalogState>();
     protected Utilities utils;
 
-    protected virtual void Awake() {
+    private void Awake() {
         utils = Utilities.Instance;
         // Use reflection to determine which IOEntities we are hooked up to
         IndexDigitalConnections();
         IndexAnalogConnections();
+        Startup();
     }
+
+    // Use this function instead of awake when creating an IOEntity
+    protected virtual void Startup() { }
 
     protected void IndexDigitalConnections() {
         // Get all digital states on this IOEntity

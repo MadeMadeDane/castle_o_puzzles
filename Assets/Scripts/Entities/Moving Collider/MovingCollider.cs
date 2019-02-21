@@ -20,7 +20,6 @@ public class MovingCollider : MovingEntity {
     private Utilities utils;
 
     // States
-    public AnalogState a_Velocity;
     public DigitalState d_AtHome;
     public DigitalState d_Moving;
 
@@ -82,7 +81,6 @@ public class MovingCollider : MovingEntity {
         }
         velocity = Vector3.Lerp(velocity, target_velocity, 0.1f);
         transform.Translate(velocity * Time.deltaTime, Space.World);
-        a_Velocity.state = velocity.magnitude;
     }
 
     private void CheckHomeResetTimer() {
