@@ -11,17 +11,14 @@ public class IOSpeaker : IOEntity {
     public AnalogState Volume;
     public AudioSource source;
 
-    protected override void Awake() {
-        base.Awake();
+    override protected void Startup() {
         source = GetComponent<AudioSource>();
         source.loop = true;
         source.Play();
         source.enabled = false;
 
         // Set up output state callbacks for clients
-        if (!isServer) {
-            TurnedOn.OnReceiveNetworkValue = Switch;
-        }
+        TurnedOn.OnReceiveNetworkValue = Switch;
         // Set up the initial output state on the server
         Switch(StartOn);
     }

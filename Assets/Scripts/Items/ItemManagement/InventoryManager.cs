@@ -93,7 +93,7 @@ public class InventoryManager : NetworkedBehaviour {
         }
         else if (AbilityItem.isAbilityItem(shipped_item)) {
             shipped_item.context = this;
-            shipped_item.menu_form = image;
+            shipped_item.menu_form = Resources.Load(shipped_item.name() + "MenuForm") as Sprite;
             actionSlots.ability_items[shipped_item.name()] = (AbilityItem)shipped_item;
             actionSlots.ChangeAbilityItem(actionSlots.ability_items.GetStackCount(), shipped_item.name());
         }
@@ -149,7 +149,7 @@ public class InventoryManager : NetworkedBehaviour {
         if (item_name != "") {
             SharedItem shipped_item = (SharedItem)ItemCatalogue.RequestItem(item_name);
             shipped_item.context = this;
-            shipped_item.menu_form = image;
+            shipped_item.menu_form =  Resources.Load<Sprite>(shipped_item.name() + "MenuForm");
             actionSlots.ChangeSharedItem(shipped_item);
         }
     }

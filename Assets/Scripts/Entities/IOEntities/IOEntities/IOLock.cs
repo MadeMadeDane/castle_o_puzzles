@@ -5,18 +5,17 @@ using System.Linq;
 using MLAPI;
 
 [AddComponentMenu("IOEntities/IOLock")]
-//[RequireComponent(typeof(Light))]
+[RequireComponent(typeof(Collider))]
 public class IOLock : IOEntity {
     public static string IOLOCK_CHANNEL = "MLAPI_INTERNAL";
     public DigitalState Locked;
     public bool takes_key = true;
 
-    protected override void Awake() {
-        base.Awake();
+    protected override void Startup() {
         // Set up output state callbacks for clients
-        if (!isServer) {
-            Locked.OnReceiveNetworkValue = SetLockedState;
-        }
+        Locked.OnReceiveNetworkValue = SetLockedState;
+        if (!isServer) return;
+        
         // Set up the initial output state on the server
         SetLockedState(true);
     }
@@ -26,12 +25,6 @@ public class IOLock : IOEntity {
     }
 
     public void SetLockedState(bool state) {
-        if (state) {
-            Debug.Log("RPG Lock is now locked");
-        }
-        else {
-            Debug.Log("RPG Lock is now unlocked");
-        }
         Locked.state = state;
     }
 
@@ -39,7 +32,10 @@ public class IOLock : IOEntity {
     private bool HandleLockStateChangeRequest(uint clientID, bool lock_state) {
         (NetworkSharedItem item, int count) = InventoryManager.networkInv.GetFirstOwnedItem((int) clientID);
         if (item.name == "GoldKey" && count > 0) {
-            if(takes_key) InventoryManager.networkInv.RevokeItem(item.name, (int) clientID);
+            if (takes_key) {
+                InventoryManager.networkInv.RevokeItem(item.name, (int) clientID);
+                InventoryManager.networkInv.RemoveItem(item.name);
+            }
             Locked.state = lock_state;
             return true;
         }
@@ -53,7 +49,7 @@ public class IOLock : IOEntity {
     [ClientRPC]
     private void RPC_LockStateChangeFinish(bool locked) {
         if (takes_key && !locked) {
-            ((InventoryManager)PlayerDataList.Instance["InventoryManager"]).actionSlots.ChangeSharedItem(null);
+            PlayerDataList.Instance.get<InventoryManager>().actionSlots.ChangeSharedItem(null);
         }
     }
     public void RequestLockStateChange(bool lock_state) {

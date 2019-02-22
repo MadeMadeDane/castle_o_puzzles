@@ -21,6 +21,7 @@ namespace MLAPI.Transports.UNET {
 
 public class TestNetworking : NetworkedBehaviour {
     public GameObject MapPrefab;
+    public List<GameObject> destroyList;
 
     void Start() {
         // Add WebGL for server
@@ -53,6 +54,7 @@ public class TestNetworking : NetworkedBehaviour {
 
         Destroy(transform.parent.gameObject, 0.1f);
         Destroy(gameObject);
+        foreach(GameObject obj in destroyList) Destroy(obj);
     }
 
     private void SubmitName(string ip) {
@@ -60,5 +62,6 @@ public class TestNetworking : NetworkedBehaviour {
         NetworkingManager.singleton.StartClient();
         Destroy(transform.parent.gameObject, 0.1f);
         Destroy(gameObject);
+        foreach(GameObject obj in destroyList) Destroy(obj);
     }
 }

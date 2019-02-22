@@ -7,6 +7,7 @@ public class BoltCutters : SharedItem {
     // Use this for initialization
 
     public override void Start() {
+        base.Start();
         outputLogs("Added Actions to Magnet Boots");
     }
 

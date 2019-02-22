@@ -6,6 +6,7 @@ using MLAPI;
 [RequireComponent(typeof(ParticleSystem))]
 [RequireComponent(typeof(MovingGeneric))]
 [RequireComponent(typeof(Collider))]
+[RequireComponent(typeof(NetworkedObject))]
 public class WorldItem : NetworkedBehaviour {
     private string ATTACH_TIMER;
     private Utilities utils;

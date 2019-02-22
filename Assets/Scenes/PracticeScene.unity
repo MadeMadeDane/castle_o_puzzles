@@ -816,7 +816,7 @@ MonoBehaviour:
     - prefab: {fileID: 6131574351243999541, guid: 3389058717a25a7488115996621fb330,
         type: 3}
       playerPrefab: 0
-    - prefab: {fileID: 1114866167741066585, guid: b3f47d4034293e445b295d4c9ef745ec,
+    - prefab: {fileID: 5507628094276737324, guid: 3591177ffc0c27744a89df6072cf3f25,
         type: 3}
       playerPrefab: 0
     PlayerPrefabName: PlayerContainer

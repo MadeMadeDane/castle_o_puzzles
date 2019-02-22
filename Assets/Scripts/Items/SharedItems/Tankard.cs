@@ -7,7 +7,7 @@ public class Tankard : SharedItem {
     // Use this for initialization
 
     public override void Start() {
-        im = InputManager.Instance;
+        base.Start();
     }
 
     public override void Update() {
