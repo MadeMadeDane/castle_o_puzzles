@@ -8,14 +8,19 @@ using MLAPI;
 [RequireComponent(typeof(Collider))]
 public class IOLock : IOEntity {
     public static string IOLOCK_CHANNEL = "MLAPI_INTERNAL";
+    private Utilities utils;
     public DigitalState Locked;
+    public string key_name = "GoldKey";
     public bool takes_key = true;
 
     protected override void Startup() {
-        // Set up output state callbacks for clients
-        Locked.OnReceiveNetworkValue = SetLockedState;
-        if (!isServer) return;
-        
+        utils = Utilities.Instance;
+        if (!isServer) {
+            // Set up output state callbacks for clients
+            Locked.OnReceiveNetworkValue = SetLockedState;
+            return;
+        }
+
         // Set up the initial output state on the server
         SetLockedState(true);
     }
@@ -31,7 +36,7 @@ public class IOLock : IOEntity {
     #region Lock RPCs
     private bool HandleLockStateChangeRequest(uint clientID, bool lock_state) {
         (NetworkSharedItem item, int count) = InventoryManager.networkInv.GetFirstOwnedItem((int) clientID);
-        if (item.name == "GoldKey" && count > 0) {
+        if (item.name == key_name && count > 0) {
             if (takes_key) {
                 InventoryManager.networkInv.RevokeItem(item.name, (int) clientID);
                 InventoryManager.networkInv.RemoveItem(item.name);
@@ -41,7 +46,7 @@ public class IOLock : IOEntity {
         }
         return false;
     }
-    [ServerRPC]
+    [ServerRPC(RequireOwnership = false)]
     private void RPC_RequestLockStateChange(bool lock_state) {
         if (HandleLockStateChangeRequest(ExecutingRpcSender,lock_state))
             InvokeClientRpcOnClient(RPC_LockStateChangeFinish, ExecutingRpcSender, lock_state);
@@ -49,7 +54,7 @@ public class IOLock : IOEntity {
     [ClientRPC]
     private void RPC_LockStateChangeFinish(bool locked) {
         if (takes_key && !locked) {
-            PlayerDataList.Instance.get<InventoryManager>().actionSlots.ChangeSharedItem(null);
+            utils.get<InventoryManager>().actionSlots.ChangeSharedItem(null);
         }
     }
     public void RequestLockStateChange(bool lock_state) {

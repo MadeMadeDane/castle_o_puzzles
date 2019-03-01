@@ -21,9 +21,9 @@ public class KeySharedItem : SharedItem {
     }
 
     protected void TryLockToggle() {
-        CameraController cam = PlayerDataList.Instance.get<CameraController>();
+        CameraController cam = utils.get<CameraController>();
         IOLock iolock = utils.RayCastExplosiveSelect<IOLock>(cam.transform.position, cam.transform.forward.normalized * reach_distance, explosion_radius);
-        if(iolock != null) {   
+        if(iolock != null) {
             iolock.RequestLockStateChange(!iolock.Locked.state);
         }
     }

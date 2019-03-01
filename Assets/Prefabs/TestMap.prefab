@@ -28971,6 +28971,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   StartOn: 0
+  StartingVolume: 1
   TurnedOn:
     InternalValue: 0
     Trigger:

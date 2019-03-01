@@ -6,7 +6,8 @@ using System.Linq;
 [AddComponentMenu("IOEntities/IOSpeaker")]
 [RequireComponent(typeof(AudioSource))]
 public class IOSpeaker : IOEntity {
-    public bool StartOn;
+    public bool StartOn = true;
+    public float StartingVolume = 1f;
     public DigitalState TurnedOn;
     public AnalogState Volume;
     public AudioSource source;
@@ -16,11 +17,15 @@ public class IOSpeaker : IOEntity {
         source.loop = true;
         source.Play();
         source.enabled = false;
-
-        // Set up output state callbacks for clients
-        TurnedOn.OnReceiveNetworkValue = Switch;
+        if  (!isServer) {
+            // Set up output state callbacks for clients
+            TurnedOn.OnReceiveNetworkValue = Switch;
+            Volume.OnReceiveNetworkValue = SetVolume;
+            return;
+        } 
         // Set up the initial output state on the server
         Switch(StartOn);
+        SetVolume(StartingVolume);
     }
 
     public void TurnOn() {
