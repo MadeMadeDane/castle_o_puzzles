@@ -3,9 +3,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using MLAPI.Components;
 
 public class Utilities : UnitySingleton<Utilities> {
     private Dictionary<string, Timer> Timers = new Dictionary<string, Timer>();
+    public Dictionary<Type, Component> player_data = new Dictionary<Type, Component>();
+    public GameObject currentPlayer = null;
 
     private IEnumerator WaitUntilConditionCoroutine(Func<bool> check, Action action) {
         yield return new WaitUntil(check);
@@ -198,6 +201,18 @@ public class Utilities : UnitySingleton<Utilities> {
 
     private void FixedUpdate() {
         IncrementTimers();
+    }
+    public T get<T>() where T:Component {
+        if (!player_data.ContainsKey(typeof(T))) {
+            if (currentPlayer == null) {
+               currentPlayer = SpawnManager.GetLocalPlayerObject().gameObject;
+            }
+            if (currentPlayer == null) return null;
+            Component component = currentPlayer.GetComponentInChildren<T>();
+            if (component == null) return null;
+            player_data[typeof(T)] = component;
+        }
+        return (T) player_data[typeof(T)];
     }
 }
 

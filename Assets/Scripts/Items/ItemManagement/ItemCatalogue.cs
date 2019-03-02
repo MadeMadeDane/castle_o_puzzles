@@ -8,6 +8,7 @@ public class ItemCatalogue {
     private static Dictionary<string, ItemCatalogueEntry> items = new Dictionary<string, ItemCatalogueEntry>() {
         {new MagnetBoots().name(), new ItemCatalogueEntry(typeof(MagnetBoots), typeof(AbilityItem), "", "")},
         {new BoltCutters().name(), new ItemCatalogueEntry(typeof(BoltCutters), typeof(SharedItem), "", "")},
+        {new GoldKey().name(), new ItemCatalogueEntry(typeof(GoldKey), typeof(SharedItem), "", "")},
         {new Tankard().name(), new ItemCatalogueEntry(typeof(Tankard), typeof(SharedItem), "", "")}
     };
     public static Item RequestItem(string item_name) {
