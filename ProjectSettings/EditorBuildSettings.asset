@@ -11,6 +11,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/PracticeScene.unity
     guid: af29a2dede1e026439f90a27153e06b1
+  - enabled: 1
+    path: Assets/Scenes/SceneBuilder.unity
+    guid: 6f20bcfdee99e784188dcad9d7e74af1
   - enabled: 0
     path: Assets/Scenes/test/SceneLoading/TestSceneLoadingStart.unity
     guid: db253e8e99e2cf5448380cad16716051

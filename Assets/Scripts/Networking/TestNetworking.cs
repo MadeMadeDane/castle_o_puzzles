@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Linq;
 using UnityEngine.UI;
 using MLAPI;
+using MLAPI.Components;
 using MLAPI.Transports.UNET;
 using UnityEngine.Networking;
 
@@ -46,15 +47,22 @@ public class TestNetworking : NetworkedBehaviour {
     }
 
     private void StartHost() {
-        NetworkingManager.singleton.StartHost();
-        Debug.Log("Starting map...");
-        GameObject Map = Instantiate(MapPrefab);
-        Map.transform.position = new Vector3(30f, 0, 0);
-        Map.GetComponent<NetworkedObject>().Spawn();
-
         Destroy(transform.parent.gameObject, 0.1f);
         Destroy(gameObject);
-        foreach(GameObject obj in destroyList) Destroy(obj);
+        foreach (GameObject obj in destroyList) Destroy(obj);
+
+        NetworkingManager.singleton.StartHost();
+        Debug.Log("Starting map...");
+        SceneSwitchProgress ssp = NetworkSceneManager.SwitchScene("SceneBuilder");
+        ssp.OnComplete += (bool err) => {
+            if (err) {
+                Debug.Log("We timed out :(");
+                return;
+            }
+            GameObject Map = Instantiate(MapPrefab);
+            Map.transform.position = new Vector3(30f, 0, 0);
+            Map.GetComponent<NetworkedObject>().Spawn();
+        };
     }
 
     private void SubmitName(string ip) {
@@ -62,6 +70,6 @@ public class TestNetworking : NetworkedBehaviour {
         NetworkingManager.singleton.StartClient();
         Destroy(transform.parent.gameObject, 0.1f);
         Destroy(gameObject);
-        foreach(GameObject obj in destroyList) Destroy(obj);
+        foreach (GameObject obj in destroyList) Destroy(obj);
     }
 }

@@ -26,13 +26,17 @@ public class MovingCollider : MovingEntity {
     // Timers
     private string HOME_TIMER;
 
+    protected override void Awake() {
+        base.Awake();
+        utils = Utilities.Instance;
+        HOME_TIMER = "MovingColliderHomeReset_" + gameObject.GetInstanceID().ToString();
+        utils.CreateTimer(HOME_TIMER, HomeResetTime);
+    }
+
     // Use this for initialization
     public override void NetworkStart() {
         base.NetworkStart();
         if (!isOwner) return;
-        utils = Utilities.Instance;
-        HOME_TIMER = "MovingColliderHomeReset_" + gameObject.GetInstanceID().ToString();
-        utils.CreateTimer(HOME_TIMER, HomeResetTime);
 
         velocity = Vector3.zero;
         target_velocity = Vector3.zero;

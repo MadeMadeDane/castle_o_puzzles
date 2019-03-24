@@ -65,4 +65,10 @@ public class MovingGeneric : NetworkedObjectTransform {
     protected virtual Vector3 CalculatePlayerVelocity() {
         return velocity;
     }
+
+    private static void ShowDebugInfo() {
+        foreach (var kvp in MovingObjectDict) {
+            Debug.Log($"key: {kvp.Key}, value: {string.Join(", ", kvp.Value.Select((MovingGeneric k) => k.name))}");
+        }
+    }
 }

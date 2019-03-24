@@ -77,7 +77,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     /// </summary>
     public MoveValidationDelegate IsMoveValidDelegate = null;
 
-    private void Awake() {
+    protected virtual void Awake() {
         UPDATE_TIMER = "NetworkedTransformUpdate_" + gameObject.GetInstanceID().ToString();
     }
 
