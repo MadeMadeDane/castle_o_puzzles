@@ -11,7 +11,7 @@ public class IOBreakable : IOEntity {
     protected override void Startup() {
         breakable = GetComponent<Breakable>();
         Broken.initialize(false);
-        if (isServer) {
+        if (IsServer) {
             breakable.OnBreak.AddListener(OnBreakCallback);
         }
         Broken.OnReceiveNetworkValue = BrokenCallback;

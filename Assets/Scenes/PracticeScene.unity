@@ -1079,6 +1079,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1721145220}
   - component: {fileID: 1721145219}
+  - component: {fileID: 1721145218}
   m_Layer: 0
   m_Name: NetworkingManager
   m_TagString: Untagged
@@ -1086,6 +1087,29 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
+--- !u!114 &1721145218
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1721145217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 1554712238, guid: 66c1ef50f50774948b27183d7d3c79c8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MessageBufferSize: 5120
+  MaxConnections: 100
+  ConnectAddress: 127.0.0.1
+  ConnectPort: 7777
+  ServerListenPort: 7777
+  ServerWebsocketListenPort: 8887
+  SupportWebsocket: 0
+  Channels: []
+  UseMLAPIRelay: 0
+  MLAPIRelayAddress: 184.72.104.138
+  MLAPIRelayPort: 8888
 --- !u!114 &1721145219
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1103,52 +1127,40 @@ MonoBehaviour:
   LogLevel: 1
   NetworkConfig:
     ProtocolVersion: 0
-    Transport: 0
-    RelayAddress: 127.0.0.1
-    RelayPort: 8888
-    RelayEnabled: 0
-    Channels:
-    - Name: UnreliableChannel
-      Type: 0
-    - Name: ReliableChannel
-      Type: 3
+    NetworkTransport: {fileID: 1721145218}
     RegisteredScenes:
     - PracticeScene
     - SceneBuilder
     NetworkedPrefabs:
-    - prefab: {fileID: 3754669400956811389, guid: b5e540b85e600e24886da56547f2f5d8,
+    - Prefab: {fileID: 3754669400956811389, guid: b5e540b85e600e24886da56547f2f5d8,
         type: 3}
-      playerPrefab: 1
-    - prefab: {fileID: 52, guid: 417c56e68ced9a3449a11082afd376c9, type: 3}
-      playerPrefab: 0
-    - prefab: {fileID: 1503659747097095747, guid: 41429cb5465f8ac4d97e1bd3ec1a4e9e,
+      PlayerPrefab: 1
+    - Prefab: {fileID: 6131574351243999541, guid: 3389058717a25a7488115996621fb330,
         type: 3}
-      playerPrefab: 0
-    - prefab: {fileID: 6131574351243999541, guid: 3389058717a25a7488115996621fb330,
+      PlayerPrefab: 0
+    - Prefab: {fileID: 5507628094276737324, guid: 3591177ffc0c27744a89df6072cf3f25,
         type: 3}
-      playerPrefab: 0
-    - prefab: {fileID: 5507628094276737324, guid: 3591177ffc0c27744a89df6072cf3f25,
+      PlayerPrefab: 0
+    - Prefab: {fileID: 1503659747097095747, guid: 41429cb5465f8ac4d97e1bd3ec1a4e9e,
         type: 3}
-      playerPrefab: 0
-    PlayerPrefabName: PlayerContainer
-    MessageBufferSize: 1024
+      PlayerPrefab: 0
+    - Prefab: {fileID: 52, guid: 417c56e68ced9a3449a11082afd376c9, type: 3}
+      PlayerPrefab: 0
+    PlayerPrefabHash: 5108398183300213631
     ReceiveTickrate: 100
     MaxReceiveEventsPerTickRate: 500
     SendTickrate: 100
     EventTickrate: 100
-    MaxConnections: 100
-    ConnectPort: 7777
-    ConnectAddress: 107.13.57.42
+    MaxBehaviourUpdatesPerTick: -1
     ClientConnectionBufferTimeout: 10
     ConnectionApproval: 0
     ConnectionData: 
     SecondsHistory: 5
-    HandleObjectSpawning: 1
-    EnableSceneSwitching: 1
     EnableTimeResync: 1
+    EnableNetworkedVar: 1
     ForceSamePrefabs: 1
+    UsePrefabSync: 0
     RpcHashSize: 0
-    PrefabHashSize: 0
     LoadSceneTimeOut: 120
     EnableEncryption: 0
     SignKeyExchange: 0

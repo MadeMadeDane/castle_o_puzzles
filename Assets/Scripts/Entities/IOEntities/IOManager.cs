@@ -17,7 +17,7 @@ public class IOManager : UnitySingleton<IOManager> {
     //  The IOTickRate represents the maximum length of any IO event chain allowed to run in a game tick.
     public void IOTick(Action action) {
         // Prevent all IO from flowing if we are not the server
-        if (!NetworkingManager.singleton.isServer) return;
+        if (!NetworkingManager.Singleton.IsServer) return;
         if (CurrentIOTick >= IOTickRate) {
             Utilities.Instance.RunOnNextTick(() => IOTick(action));
         }

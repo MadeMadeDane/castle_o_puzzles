@@ -5,6 +5,7 @@ using UnityEngine;
 using MLAPI;
 using MLAPI.Serialization;
 using System.IO;
+using System;
 
 public class InventoryManager : NetworkedBehaviour {
     public string INVMANG_CHANNEL = "MLAPI_INTERNAL";
@@ -32,13 +33,13 @@ public class InventoryManager : NetworkedBehaviour {
     }
 
     void Start() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
     }
 
     // Update is called once per frame
     void Update() {
         if (!CheckForCameraController()) return;
-        if (!isOwner) return;
+        if (!IsOwner) return;
         WorldItem targetItem = HandleItemSelection();
         if (targetItem != null) {
             targetItem.Highlight();
@@ -81,14 +82,14 @@ public class InventoryManager : NetworkedBehaviour {
 
     #region AddItemRPCs
     void AddItemToInventory(WorldItem request) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         Item shipped_item = ItemCatalogue.RequestItem(request.item_name);
         if (SharedItem.isSharedItem(shipped_item)) {
-            if (!isServer) {
-                InvokeServerRpc(RPC_AddSharedItemNetwork, request.networkId, 1, channel: INVMANG_CHANNEL);
+            if (!IsServer) {
+                InvokeServerRpc(RPC_AddSharedItemNetwork, request.NetworkId, 1, channel: INVMANG_CHANNEL);
             }
             else {
-                RPC_AddSharedItemNetwork(request.networkId, 1);
+                RPC_AddSharedItemNetwork(request.NetworkId, 1);
             }
         }
         else if (AbilityItem.isAbilityItem(shipped_item)) {
@@ -101,8 +102,8 @@ public class InventoryManager : NetworkedBehaviour {
 
 
     [ServerRPC]
-    private void RPC_AddSharedItemNetwork(uint itemNetowrkId, int num) {
-        NetworkedObject nobj = GetNetworkedObject(itemNetowrkId);
+    private void RPC_AddSharedItemNetwork(ulong itemNetworkId, int num) {
+        NetworkedObject nobj = GetNetworkedObject(itemNetworkId);
         if (nobj == null) return;
         RPC_AddSharedItem(nobj.GetComponent<WorldItem>().item_name, num);
         Destroy(nobj.gameObject);
@@ -117,14 +118,14 @@ public class InventoryManager : NetworkedBehaviour {
 
     #region EquipRPCs
     public void EquipSharedItem(string item_name) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         Item shipped_item = ItemCatalogue.RequestItem(item_name);
         if (SharedItem.isSharedItem(shipped_item)) {
-            if (!isServer) {
+            if (!IsServer) {
                 InvokeServerRpc(RPC_EquipSharedItem, item_name, 1, channel: INVMANG_CHANNEL);
             }
             else {
-                uint clientId = NetworkingManager.singleton.LocalClientId;
+                ulong clientId = NetworkingManager.Singleton.LocalClientId;
                 NetworkSharedItem netItem;
                 if (NetworkSwapSharedItem(item_name, (int)clientId, out netItem, 1)) {
                     RPC_ClientEquipSharedItem(netItem.name);
@@ -149,7 +150,7 @@ public class InventoryManager : NetworkedBehaviour {
         if (item_name != "") {
             SharedItem shipped_item = (SharedItem)ItemCatalogue.RequestItem(item_name);
             shipped_item.context = this;
-            shipped_item.menu_form =  Resources.Load<Sprite>(shipped_item.name() + "MenuForm");
+            shipped_item.menu_form = Resources.Load<Sprite>(shipped_item.name() + "MenuForm");
             actionSlots.ChangeSharedItem(shipped_item);
         }
     }
@@ -157,14 +158,14 @@ public class InventoryManager : NetworkedBehaviour {
 
     #region UnequipRPCs
     public void UnequipSharedItem(string item_name) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         Item shipped_item = ItemCatalogue.RequestItem(item_name);
         if (SharedItem.isSharedItem(shipped_item)) {
-            if (!isServer) {
+            if (!IsServer) {
                 InvokeServerRpc(RPC_UnequipSharedItem, item_name, 1, channel: INVMANG_CHANNEL);
             }
             else {
-                uint clientId = NetworkingManager.singleton.LocalClientId;
+                ulong clientId = NetworkingManager.Singleton.LocalClientId;
                 bool success = networkInv.RevokeItem(item_name, (int)clientId, 1);
                 RPC_ClientUnequipSharedItem(success ? item_name : "");
             }
@@ -185,7 +186,7 @@ public class InventoryManager : NetworkedBehaviour {
 
     #region UpdateNetworkInventoryRPCs
     public void UpdateNetworkInventoryCache() {
-        if (!isServer) {
+        if (!IsServer) {
             InvokeServerRpc(RPC_GetUpdatedInventory, true, channel: INVMANG_CHANNEL);
         }
         else {
@@ -209,7 +210,7 @@ public class InventoryManager : NetworkedBehaviour {
 
     private bool CheckForCameraController() {
         if (cam_controller == null) {
-            cam_controller = networkedObject.GetComponentInChildren<CameraController>();
+            cam_controller = NetworkedObject.GetComponentInChildren<CameraController>();
         }
         return cam_controller != null;
     }

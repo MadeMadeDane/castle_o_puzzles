@@ -21,7 +21,7 @@ public class MovingGeneric : NetworkedObjectTransform {
     // by the MLAPI library to keep track of NetworkedBehaviors, however Unity does not document
     // the GetComponentsInChildren as being deterministic for a given prefab anywhere in it's docs. So
     // if this breaks, the entire networking library will also be broken.
-    public static Dictionary<uint, List<MovingGeneric>> MovingObjectDict;
+    public static Dictionary<ulong, List<MovingGeneric>> MovingObjectDict;
 
     public override void NetworkStart() {
         // Start indexing our moving platforms as soon as the networked object is spawned.
@@ -32,33 +32,33 @@ public class MovingGeneric : NetworkedObjectTransform {
 
     private void IndexMovingObjects() {
         if (MovingObjectDict == null) {
-            MovingObjectDict = new Dictionary<uint, List<MovingGeneric>>();
+            MovingObjectDict = new Dictionary<ulong, List<MovingGeneric>>();
         }
-        if (!MovingObjectDict.ContainsKey(networkId)) {
-            MovingObjectDict[networkId] = new List<MovingGeneric>();
-            MovingGeneric[] moving_objs = networkedObject.GetComponentsInChildren<MovingGeneric>();
+        if (!MovingObjectDict.ContainsKey(NetworkId)) {
+            MovingObjectDict[NetworkId] = new List<MovingGeneric>();
+            MovingGeneric[] moving_objs = NetworkedObject.GetComponentsInChildren<MovingGeneric>();
             foreach (MovingGeneric moving_obj in moving_objs) {
-                if (moving_obj.networkId == networkId) {
-                    MovingObjectDict[networkId].Add(moving_obj);
+                if (moving_obj.NetworkId == NetworkId) {
+                    MovingObjectDict[NetworkId].Add(moving_obj);
                 }
             }
         }
     }
 
     public override void OnDestroyed() {
-        MovingObjectDict[networkId].RemoveAt(GetMovingObjectIndex());
-        if (MovingObjectDict[networkId].Count == 0) MovingObjectDict.Remove(networkId);
+        MovingObjectDict[NetworkId].RemoveAt(GetMovingObjectIndex());
+        if (MovingObjectDict[NetworkId].Count == 0) MovingObjectDict.Remove(NetworkId);
     }
 
     public int GetMovingObjectIndex() {
-        return MovingObjectDict[networkId].IndexOf(this);
+        return MovingObjectDict[NetworkId].IndexOf(this);
     }
 
     public static int GetMovingObjectIndex(MovingGeneric moving_object) {
-        return MovingObjectDict[moving_object.networkId].IndexOf(moving_object);
+        return MovingObjectDict[moving_object.NetworkId].IndexOf(moving_object);
     }
 
-    public static MovingGeneric GetMovingObjectAt(uint target_networkId, int index) {
+    public static MovingGeneric GetMovingObjectAt(ulong target_networkId, int index) {
         return MovingObjectDict[target_networkId][index];
     }
 

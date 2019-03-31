@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,7 +11,7 @@ public class Grabable : PhysicsProp, IUsable {
     private Transform previous_transform;
     private NetworkedObjectTransform previous_network_transform;
     private bool is_grabbed = false;
-    private uint grabberId;
+    private ulong grabberId;
     private MovingGeneric moving_object;
     private Collider rb_collider;
     private int IGNORE_RAYCAST_LAYER;
@@ -62,7 +63,7 @@ public class Grabable : PhysicsProp, IUsable {
     }
 
     [ServerRPC(RequireOwnership = false)]
-    private void rpc_PickupOnServer(uint grabber_netId, int grabber_moId, Vector3 grab_offset) {
+    private void rpc_PickupOnServer(ulong grabber_netId, int grabber_moId, Vector3 grab_offset) {
         MovingGeneric target = MovingGeneric.GetMovingObjectAt(grabber_netId, grabber_moId);
         if (target == null) return;
 
@@ -71,7 +72,7 @@ public class Grabable : PhysicsProp, IUsable {
         InvokeClientRpcOnClient(rpc_PickupCallback, ExecutingRpcSender, success);
     }
 
-    public void PickupOnServer(uint grabber_netId, int grabber_moId, Vector3 grab_offset = default(Vector3)) {
+    public void PickupOnServer(ulong grabber_netId, int grabber_moId, Vector3 grab_offset = default(Vector3)) {
         InvokeServerRpc(rpc_PickupOnServer, grabber_netId, grabber_moId, grab_offset);
     }
 
@@ -120,7 +121,7 @@ public class Grabable : PhysicsProp, IUsable {
     public void Use() { }
 
     public void SetThrownState() {
-        rigidbody.isKinematic = !isServer;
+        rigidbody.isKinematic = !IsServer;
         rigidbody.useGravity = true;
         is_grabbed = false;
         parent = null;

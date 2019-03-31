@@ -139,7 +139,7 @@ public class PhysicsPropHandler : NetworkedBehaviour {
         return skip;
     }
 
-    public bool IsServer() {
-        return isServer;
+    public bool GetIsServer() {
+        return IsServer;
     }
 }

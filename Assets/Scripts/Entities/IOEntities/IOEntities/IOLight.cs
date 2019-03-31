@@ -20,7 +20,7 @@ public class IOLight : IOEntity {
         if (UseColorToggles) controlled_light.color = InactiveColor;
 
         // Set up output state callbacks for clients
-        if (!isServer) {
+        if (!IsServer) {
             TurnedOn.OnReceiveNetworkValue = Switch;
             ActiveColorOn.OnReceiveNetworkValue = SwitchToActiveColor;
             Intensity.OnReceiveNetworkValue = SetIntensity;

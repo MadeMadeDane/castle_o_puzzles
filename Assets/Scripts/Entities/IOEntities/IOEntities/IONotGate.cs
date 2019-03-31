@@ -8,7 +8,7 @@ public class IONotGate : IOEntity {
     public DigitalState Output;
 
     protected override void Startup() {
-        if (!isServer) return;
+        if (!IsServer) return;
         Output.state = !ConnectedDigitalInputs.Any((dState) => dState.state);
     }
 

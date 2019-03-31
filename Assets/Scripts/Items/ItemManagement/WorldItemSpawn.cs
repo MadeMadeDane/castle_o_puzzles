@@ -8,7 +8,7 @@ public class WorldItemSpawn : NetworkedBehaviour {
 
     // Use this for initialization
     public override void NetworkStart() {
-        if (!isServer) return;
+        if (!IsServer) return;
         Item item = ItemCatalogue.RequestItem(item_name);
         item.physical_form = Instantiate(item.physical_form);
         item.physical_form.transform.position = transform.position;

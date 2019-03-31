@@ -11,9 +11,9 @@ public class PhysicsPlugin : ComponentPlugin {
     protected InputManager input_manager;
     protected Utilities utils;
     protected NetworkedObject networkedObject;
-    protected uint networkId;
-    protected bool isServer;
-    protected bool isOwner;
+    protected ulong networkId;
+    protected bool IsServer;
+    protected bool IsOwner;
     public bool enabled = false;
 
     public PhysicsPlugin(PhysicsPropHandler context) : base(context) { }
@@ -27,10 +27,10 @@ public class PhysicsPlugin : ComponentPlugin {
         player = context.GetComponent<PlayerController>();
         moving_player = context.GetComponent<MovingPlayer>();
 
-        isOwner = (context as PhysicsPropHandler).isOwner;
-        networkId = (context as PhysicsPropHandler).networkId;
-        isServer = (context as PhysicsPropHandler).IsServer();
-        networkedObject = (context as PhysicsPropHandler).networkedObject;
+        IsOwner = (context as PhysicsPropHandler).IsOwner;
+        networkId = (context as PhysicsPropHandler).NetworkId;
+        IsServer = (context as PhysicsPropHandler).GetIsServer();
+        networkedObject = (context as PhysicsPropHandler).NetworkedObject;
         enabled = true;
     }
 

@@ -10,7 +10,7 @@ public class PlayerBuilder : NetworkedBehaviour {
     public GameObject startmenu_prefab;
 
     public override void NetworkStart() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
 
         gameObject.AddComponent<PlayerController>();
         GameObject camera = Instantiate(camera_prefab);

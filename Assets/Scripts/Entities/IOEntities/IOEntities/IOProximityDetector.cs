@@ -16,12 +16,12 @@ public class IOProximityDetector : IOEntity {
     }
 
     private void FixedUpdate() {
-        if (!isServer) return;
+        if (!IsServer) return;
         Detected.state = !utils.CheckTimer(DETECTION_TIMER);
     }
 
     private void OnTriggerStay(Collider other) {
-        if (!isServer) return;
+        if (!IsServer) return;
         if (!other.GetComponent<MovingPlayer>()) return;
         if ((other.transform.position - transform.position).magnitude < range) {
             utils.ResetTimer(DETECTION_TIMER);

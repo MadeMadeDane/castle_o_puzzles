@@ -83,8 +83,10 @@ MonoBehaviour:
   m_Script: {fileID: 209037615, guid: 66c1ef50f50774948b27183d7d3c79c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  NetworkedPrefabName: TestMap
-  SceneDelayedSpawn: 0
+  NetworkedInstanceId: 0
+  PrefabHash: 1905009226620900153
+  PrefabHashGenerator: TestMap
+  DontDestroyWithOwner: 0
 --- !u!1 &53
 GameObject:
   m_ObjectHideFlags: 0

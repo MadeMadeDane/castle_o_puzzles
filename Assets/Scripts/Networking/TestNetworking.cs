@@ -51,7 +51,7 @@ public class TestNetworking : NetworkedBehaviour {
         Destroy(gameObject);
         foreach (GameObject obj in destroyList) Destroy(obj);
 
-        NetworkingManager.singleton.StartHost();
+        NetworkingManager.Singleton.StartHost();
         Debug.Log("Starting map...");
         SceneSwitchProgress ssp = NetworkSceneManager.SwitchScene("SceneBuilder");
         ssp.OnComplete += (bool err) => {
@@ -66,8 +66,8 @@ public class TestNetworking : NetworkedBehaviour {
     }
 
     private void SubmitName(string ip) {
-        NetworkingManager.singleton.NetworkConfig.ConnectAddress = ip;
-        NetworkingManager.singleton.StartClient();
+        NetworkingManager.Singleton.GetComponent<UnetTransport>().ConnectAddress = ip;
+        NetworkingManager.Singleton.StartClient();
         Destroy(transform.parent.gameObject, 0.1f);
         Destroy(gameObject);
         foreach (GameObject obj in destroyList) Destroy(obj);

@@ -134,7 +134,7 @@ public class PlayerController : NetworkedBehaviour {
     #endregion
     // Use this for initialization
     private void Start() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         Setup();
         // Movement values
         //SetShooterVars();
@@ -185,7 +185,7 @@ public class PlayerController : NetworkedBehaviour {
     }
 
     private void Update() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         // If the player does not have a camera, do nothing
         if (player_camera == null) {
             return;
@@ -202,7 +202,7 @@ public class PlayerController : NetworkedBehaviour {
     }
 
     private void LateUpdate() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         // If the player does not have a camera, do nothing
         if (player_camera == null) {
             return;
@@ -216,7 +216,7 @@ public class PlayerController : NetworkedBehaviour {
 
     // Fixed Update is called once per physics tick
     private void FixedUpdate() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         // If the player does not have a camera, do nothing
         if (player_camera == null) {
             return;
@@ -236,7 +236,7 @@ public class PlayerController : NetworkedBehaviour {
     }
 
     private void OnTriggerStay(Collider other) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         if (!other.isTrigger) {
             lastTrigger = other;
         }
@@ -244,7 +244,7 @@ public class PlayerController : NetworkedBehaviour {
 
     // Handle collisions on player move
     private void OnControllerColliderHit(ControllerColliderHit hit) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         lastHit = hit;
     }
 
@@ -1158,7 +1158,7 @@ public class PlayerController : NetworkedBehaviour {
 
     // Double check if on ground using a separate test
     public bool OnGround() {
-        return isOwner && !utils.CheckTimer(LANDING_TIMER);
+        return IsOwner && !utils.CheckTimer(LANDING_TIMER);
     }
 
     public bool JumpBuffered() {
@@ -1275,7 +1275,7 @@ public class PlayerController : NetworkedBehaviour {
     }
 
     public void Recover(Collider other) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         utils.ResetTimer(STUCK_TIMER);
         utils.SetTimerFinished(WALL_HANG_TIMER);
 
@@ -1298,7 +1298,7 @@ public class PlayerController : NetworkedBehaviour {
     }
 
     public void RecoverSafe(Collider other) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         utils.ResetTimer(STUCK_TIMER);
         utils.SetTimerFinished(WALL_HANG_TIMER);
 

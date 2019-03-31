@@ -15,7 +15,7 @@ public class LaunchHandler : PhysicsPlugin {
     }
 
     public override void FixedUpdate() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         HandleLaunch();
     }
 
@@ -40,13 +40,13 @@ public class LaunchHandler : PhysicsPlugin {
     }
 
     public override void OnTriggerStay(Collider other, PhysicsProp prop) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         CurrentLauncher = prop as Launcher;
         utils.ResetTimer(LAUNCH_TIMER);
     }
 
     public override void OnTriggerEnter(Collider other, PhysicsProp prop) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         if (!utils.CheckTimer(LAUNCH_TIMER)) return;
         InitialPlayerVelocity = player.GetVelocity();
     }
