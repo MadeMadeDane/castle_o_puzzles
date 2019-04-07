@@ -37,6 +37,8 @@ public class PlayerController : NetworkedBehaviour {
     public float JumpBoostSpeed;
     public float JumpBoostRequiredSpeed;
     public float JumpBoostAdd;
+    public float GroundStepOffset;
+    public float AirStepOffset;
     public Vector3 StartPos;
     [Header("Movement toggles")]
     public bool wallRunEnabled;
@@ -49,6 +51,7 @@ public class PlayerController : NetworkedBehaviour {
     public bool ToggleCrouch;
     private Vector3 accel;
     private Vector3 current_velocity;
+    private bool enableMovement = true;
     public bool debug_mode = false;
 
     // Managers
@@ -82,6 +85,7 @@ public class PlayerController : NetworkedBehaviour {
     private bool isFalling;
     private bool isCrouching;
     private bool willJump;
+    private bool canAutoLedgeClimb;
     private float cc_standHeight;
     private float cc_standCenter;
     private float wr_standHeight;
@@ -90,6 +94,7 @@ public class PlayerController : NetworkedBehaviour {
     private float re_standCenter;
     private CapsuleCollider wall_run_collider;
     private CapsuleCollider recovery_collider;
+    private LayerMask DEFAULT_LAYER;
 
     // Wall related variables
     private Vector3 WallJumpReflect;
@@ -115,7 +120,8 @@ public class PlayerController : NetworkedBehaviour {
     private MovingGeneric lastMovingPlatform;
     private Collider lastMovingTrigger;
     private Collider lastTrigger;
-    private ControllerColliderHit currentHit;
+    private Vector3 lastFloorHitNormal;
+    private Vector3 currentHitNormal;
     private float GravityMult;
 
     // Other variables
@@ -143,6 +149,7 @@ public class PlayerController : NetworkedBehaviour {
         isJumping = false;
         isFalling = false;
         willJump = false;
+        canAutoLedgeClimb = true;
         isCrouching = false;
         // Wall related vars
         WallAxis = Vector3.zero;
@@ -172,7 +179,8 @@ public class PlayerController : NetworkedBehaviour {
         current_velocity = Vector3.zero;
         accel = Vector3.zero;
         GravityMult = 1;
-        currentHit = new ControllerColliderHit();
+        currentHitNormal = Vector3.up;
+        lastFloorHitNormal = currentHitNormal;
         StartPos = transform.position;
 
         // TODO: Test below
@@ -221,15 +229,17 @@ public class PlayerController : NetworkedBehaviour {
         if (player_camera == null) {
             return;
         }
+        //RecoverSmart();
         HandleChangesFromLastState();
         ProcessHits();
         ProcessTriggers();
         HandleCrouch();
         HandleMovement();
+        HandleClimbing();
         HandleJumping();
         HandleUse();
         HandleGravity();
-        UpdatePlayerState();
+        if (enableMovement) UpdatePlayerState();
         if (debug_mode) {
             IncrementCounters();
         }
@@ -250,6 +260,7 @@ public class PlayerController : NetworkedBehaviour {
 
     #region SETUP_CONFIGURATIONS
     private void Setup() {
+        DEFAULT_LAYER = LayerMask.GetMask("Default");
         player_container = transform.parent.gameObject;
         input_manager = InputManager.Instance;
         utils = Utilities.Instance;
@@ -320,6 +331,8 @@ public class PlayerController : NetworkedBehaviour {
         WallRunImpulse = 0.0f;
         WallRunSpeed = 15.0f;
         WallRunClimbCosAngle = Mathf.Cos(Mathf.Deg2Rad * 30f);
+        GroundStepOffset = 1f;
+        AirStepOffset = 1f;
         // Toggles
         conserveUpwardMomentum = true;
         wallJumpEnabled = true;
@@ -360,6 +373,8 @@ public class PlayerController : NetworkedBehaviour {
         WallRunImpulse = 0.0f;
         WallRunSpeed = 15f;
         WallRunClimbCosAngle = Mathf.Cos(Mathf.Deg2Rad * 30f);
+        GroundStepOffset = 1f;
+        AirStepOffset = 5f;
         // Toggles
         conserveUpwardMomentum = false;
         wallJumpEnabled = true;
@@ -482,13 +497,13 @@ public class PlayerController : NetworkedBehaviour {
     }
 
     private Vector3 ComputeMove(Vector3 desired_move) {
-        Vector3 ground_move = Vector3.ProjectOnPlane(desired_move, transform.up);
-        if (ground_move.normalized == Vector3.zero) {
+        // Save a bit on perfomance by returning early if we don't need to raycast
+        HandleStairs(desired_move);
+        if (!OverlapPlayerCheck(desired_move)) {
             return desired_move;
         }
-        // Save a bit on perfomance by returning early if we don't need to raycast
-        Vector3 desired_pos = transform.position + desired_move + cc.center;
-        if (!Physics.CheckCapsule(desired_pos - (cc.height / 2 - cc.radius) * transform.up, desired_pos + (cc.height / 2 - cc.radius) * transform.up, cc.radius)) {
+        Vector3 ground_move = Vector3.ProjectOnPlane(desired_move, transform.up);
+        if (ground_move.normalized == Vector3.zero) {
             return desired_move;
         }
         ground_move = ground_move.normalized * cc.radius;
@@ -531,6 +546,34 @@ public class PlayerController : NetworkedBehaviour {
             }
         }
         return desired_move;
+    }
+
+    private void HandleStairs(Vector3 desiredMove, float stepMaxHeight = 2f, float stepMaxDepth = 2f) {
+        // Scan for a step infront of us
+        if (!OnGround()) return;
+        float stepExtraHeight = 0.1f;
+        Vector3 stepScanOrigin = transform.position + cc.center + desiredMove + (transform.up * stepMaxHeight);
+        float scanDepth = stepMaxHeight + stepMaxDepth;
+        if (!CapsulteCastPlayer(origin: stepScanOrigin, direction: -transform.up, out RaycastHit stepSurfaceHit, maxDistance: scanDepth)) return;
+        //if (!IsFloor(stepSurfaceHit.normal)) return;
+
+        Vector3 ledgeOffset = Vector3.Project(stepSurfaceHit.point - GetFootPosition(), transform.up);
+        // Make sure the step isn't too high
+        if (ledgeOffset.magnitude > GroundStepOffset || ledgeOffset.magnitude < (cc.radius / 3f)) return;
+        //Debug.DrawRay(stepSurfaceHit.point, ledgeOffset, Color.green, 10f);
+        //Debug.Log($"ledgeOff: {ledgeOffset.magnitude}");
+
+        Vector3 desiredPlayerPos = ledgeOffset + transform.position + (ledgeOffset.normalized * stepExtraHeight);
+        Teleport(desiredPlayerPos);
+
+        Vector3 surfaceProbeOrigin = stepSurfaceHit.point + Vector3.ProjectOnPlane(desiredMove.normalized * cc.radius, stepSurfaceHit.normal) + transform.up * 0.1f;
+        //Debug.DrawRay(surfaceProbeOrigin, -transform.up, Color.red, 10f);
+        if (!Physics.Raycast(surfaceProbeOrigin, -transform.up, out RaycastHit surfaceProbe, 0.5f)) return;
+        //Debug.DrawRay(surfaceProbe.point, surfaceProbe.normal, Color.blue, 10f);
+        if (IsFloor(surfaceProbe.normal)) {
+            currentHitNormal = lastFloorHitNormal = surfaceProbe.normal;
+            current_velocity = Vector3.ProjectOnPlane(current_velocity, lastFloorHitNormal);
+        }
     }
 
     private void IncrementCounters() {
@@ -656,8 +699,20 @@ public class PlayerController : NetworkedBehaviour {
         }
     }
 
+    private bool IsCeiling(Vector3 normal) {
+        return normal.y <= -0.17f;
+    }
+
     private bool IsWall(Vector3 normal) {
         return normal.y > -0.17f && normal.y <= 0.34f;
+    }
+
+    private bool IsSlide(Vector3 normal) {
+        return normal.y > 0.34f && normal.y <= 0.6f;
+    }
+
+    private bool IsFloor(Vector3 normal) {
+        return normal.y > 0.6f;
     }
 
     private void UpdateWallConditions(Vector3 wall_normal) {
@@ -721,15 +776,15 @@ public class PlayerController : NetworkedBehaviour {
             return;
         }
         // Save the most recent last hit
-        currentHit = lastHit;
+        currentHitNormal = lastHit.normal;
 
-        if (currentHit.normal.y > 0.6f) {
+        if (IsFloor(currentHitNormal)) {
             ProcessFloorHit();
         }
-        else if (currentHit.normal.y > 0.34f) {
+        else if (IsSlide(currentHitNormal)) {
             ProcessSlideHit();
         }
-        else if (currentHit.normal.y > -0.17f) {
+        else if (IsWall(currentHitNormal)) {
             ProcessWallHit();
         }
         else {
@@ -737,13 +792,10 @@ public class PlayerController : NetworkedBehaviour {
         }
         // Keep velocity in the direction of the plane if the plane is not a ceiling
         // Or if it is a ceiling only cancel out the velocity if we are moving fast enough into its normal
-        if (Vector3.Dot(currentHit.normal, Physics.gravity) < 0 || Vector3.Dot(current_velocity, currentHit.normal) < -1f) {
-            current_velocity = Vector3.ProjectOnPlane(current_velocity, currentHit.normal);
+        if (Vector3.Dot(currentHitNormal, Physics.gravity) < 0 || Vector3.Dot(current_velocity, currentHitNormal) < -1f) {
+            current_velocity = Vector3.ProjectOnPlane(current_velocity, currentHitNormal);
         }
 
-        if (currentHit.gameObject.tag == "Respawn") {
-            Teleport(StartPos);
-        }
         // Set last hit null so we don't process it again
         lastHit = null;
     }
@@ -769,10 +821,11 @@ public class PlayerController : NetworkedBehaviour {
             utils.ResetTimer(MOVING_PLATFORM_TIMER);
         }
 
-        if (currentHit.normal.y < 0.8f && IsSliding()) utils.ResetTimer(SLIDE_TIMER);
+        if (currentHitNormal.y < 0.8f && IsSliding()) utils.ResetTimer(SLIDE_TIMER);
         PreviousWallNormal = Vector3.zero;
         PreviousWallJumpNormal = Vector3.zero;
         PreviousWallJumpPos = Vector3.positiveInfinity;
+        lastFloorHitNormal = currentHitNormal;
     }
 
     private void ProcessSlideHit() {
@@ -785,7 +838,7 @@ public class PlayerController : NetworkedBehaviour {
 
     private void ProcessWallHit() {
         if (!OnGround()) {
-            UpdateWallConditions(currentHit.normal);
+            UpdateWallConditions(currentHitNormal);
         }
     }
 
@@ -805,7 +858,7 @@ public class PlayerController : NetworkedBehaviour {
         else {
             // Push the character controller into the normal of the surface
             // This should trigger ground detection
-            accel += -Mathf.Sign(currentHit.normal.y) * Physics.gravity.magnitude * currentHit.normal;
+            accel += -Mathf.Sign(lastFloorHitNormal.y) * Physics.gravity.magnitude * lastFloorHitNormal;
         }
         GravityMult = 1;
     }
@@ -880,10 +933,10 @@ public class PlayerController : NetworkedBehaviour {
             return;
         }
 
-        Vector3 planevelocity = Vector3.ProjectOnPlane(current_velocity, currentHit.normal);
+        Vector3 planevelocity = Vector3.ProjectOnPlane(current_velocity, lastFloorHitNormal);
         Vector3 movVec = GetMoveVector();
         // Force a 20% cutoff region where only the player is rotated but not moved
-        float movmag = movVec.magnitude < 0.2f ? 0f : movVec.magnitude;
+        float movmag = Mathf.Clamp(movVec.magnitude < 0.2f ? 0f : movVec.magnitude, 0f, 1f);
         // Do this first so we cancel out incremented time from update before checking it
         if (!OnGround()) {
             // We are in the air (for atleast LandingGracePeriod). We will slide on landing if moving fast enough.
@@ -894,7 +947,7 @@ public class PlayerController : NetworkedBehaviour {
             // If we weren't fast enough we aren't going to slide
             utils.SetTimerFinished(SLIDE_TIMER);
             // dot(new_movVec, normal) = 0 --> dot(movVec, normal) + dot(up, normal)*k = 0 --> k = -dot(movVec, normal)/dot(up, normal)
-            float slope_correction = -Vector3.Dot(movVec, currentHit.normal) / Vector3.Dot(transform.up, currentHit.normal);
+            float slope_correction = -Vector3.Dot(movVec, lastFloorHitNormal) / Vector3.Dot(transform.up, lastFloorHitNormal);
             if (slope_correction < 0f) {
                 movVec += slope_correction * transform.up;
             }
@@ -987,7 +1040,7 @@ public class PlayerController : NetworkedBehaviour {
             Vector3 plane_normal;
             bool onRotatingPlatform = OnMovingPlatform() && (lastMovingPlatform is RotatingCollider);
             if (onRotatingPlatform) plane_normal = Physics.gravity;
-            else plane_normal = currentHit.normal;
+            else plane_normal = lastFloorHitNormal;
             Vector3 new_plane_velocity = Vector3.ProjectOnPlane(current_velocity + deltaVel, plane_normal);
             Vector3 plane_velocity = Vector3.ProjectOnPlane(current_velocity, plane_normal);
             if (new_plane_velocity.magnitude <= desiredSpeed) {
@@ -999,7 +1052,7 @@ public class PlayerController : NetworkedBehaviour {
             /*else if (desiredSpeed > GetGroundVelocity().magnitude) {
                 current_velocity = Vector3.ClampMagnitude(Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity), desiredSpeed) + (current_velocity + Vector3.Project(deltaVel, Physics.gravity) - GetGroundVelocity());
             }*/
-            accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, currentHit.normal) * SpeedDamp;
+            accel += -Vector3.ProjectOnPlane(current_velocity + moving_frame_velocity, lastFloorHitNormal) * SpeedDamp;
         }
         else {
             if (Vector3.ProjectOnPlane(current_velocity + deltaVel, Physics.gravity).magnitude <= Mathf.Max(GetGroundVelocity().magnitude, MaxAirSpeed)) {
@@ -1014,6 +1067,101 @@ public class PlayerController : NetworkedBehaviour {
         //Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), deltaVel, Color.cyan, Time.fixedDeltaTime);
         //Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), current_velocity, Color.red, Time.fixedDeltaTime);
         //Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), accel, Color.blue, Time.fixedDeltaTime);
+    }
+    #endregion
+
+    #region HANDLE_CLIMBING
+    private void HandleClimbing() {
+        // TODO: Work on auto climbing
+        // if (OnGround()) {
+        //     canAutoLedgeClimb = true;
+        // }
+        // else {
+        //     if (canAutoLedgeClimb) HandleAutoLedgeClimb();
+        // }
+    }
+
+    private IEnumerator SeekTarget(Vector3 target) {
+        bool seeking = true;
+        float seek_time = 0.5f;
+        float speed = (target - transform.position).magnitude / seek_time;
+        SetCollision(false);
+        utils.WaitAndRun(seek_time, () => { seeking = false; });
+        while (seeking) {
+            transform.position = transform.position + ((target - transform.position).normalized * speed * Time.fixedDeltaTime);
+            yield return new WaitForFixedUpdate();
+        }
+        SetCollision(true);
+    }
+
+    private void HandleAutoLedgeClimb() {
+        if (!input_manager.GetJumpHold()) return;
+        // These constants will change with character size
+        float leapDistance = 4f;
+        float leapSpeedRequirement = 0f;
+        float leapJumpSpeedLimit = JumpVelocity;
+        if (!ScanForNearestStep(scanDir: transform.forward,
+                                scanReach: cc.radius + cc.skinWidth + leapDistance,
+                                out RaycastHit stepSurface,
+                                out RaycastHit stepWall,
+                                scanDepthOffset: 2f)) return;
+        // If we aren't moving fast enough to make the ledge jump, abort
+        if (Vector3.Dot(current_velocity, -stepWall.normal) < leapSpeedRequirement) return;
+        Vector3 ledgeOffset = Vector3.Project(stepSurface.point - GetFootPosition(), transform.up);
+        if (ledgeOffset.magnitude > AirStepOffset || ledgeOffset.magnitude < (cc.radius * 0.1f)) return;
+
+        float ledgeDistance = Vector3.ProjectOnPlane(stepWall.point - transform.position, transform.up).magnitude - cc.radius;
+        float timeToLedge = ledgeDistance / GetGroundVelocity().magnitude;
+
+        // d = -(a*t^2)/2 + v*t ----> v = (a*t/2) + (d/t)
+        float requiredLeapImpulse = (Physics.gravity.magnitude * timeToLedge / 2) + (ledgeOffset.magnitude / timeToLedge);
+        float currentUpwardVel = Vector3.Dot(current_velocity, transform.up);
+        // If we already have enough speed, we're good. Also don't give ourselves too much speed.
+        if (currentUpwardVel > requiredLeapImpulse || requiredLeapImpulse > leapJumpSpeedLimit) return;
+
+        // Otherwise, give ourselves the needed velocity to make the jump
+        current_velocity += (requiredLeapImpulse - currentUpwardVel) * transform.up;
+        //StartCoroutine(SeekTarget((stepSurface.point - GetFootPosition()) + transform.position));
+        // We won't be able to do another auto ledge climb until we hit the ground again
+        canAutoLedgeClimb = false;
+    }
+
+    private bool CapsulteCastPlayer(Vector3 origin, Vector3 direction, out RaycastHit hitInfo, float maxDistance) {
+        float radius = cc.radius;
+        Vector3 start = origin - transform.up * (cc.height / 2 - radius);
+        Vector3 end = origin + transform.up * (cc.height / 2 - radius);
+        return Physics.CapsuleCast(start, end, radius, direction, out hitInfo, maxDistance);
+    }
+
+    private bool ScanForNearestStep(Vector3 scanDir, float scanReach, out RaycastHit stepSurface, out RaycastHit stepWall, float scanDepthOffset = 0f) {
+        // This constant will change with character size
+        float stepLipOffset = 0.2f;
+        stepSurface = default(RaycastHit);
+        stepWall = default(RaycastHit);
+        scanDir.Normalize();
+
+        // Scan for a step infront of us
+        Vector3 stepScanOrigin = transform.position + cc.center + (scanDir * scanReach) + (transform.up * scanDepthOffset);
+        float scanDepth = cc.height * 0.5f + scanDepthOffset;
+        if (!Physics.Raycast(origin: stepScanOrigin, direction: -transform.up, out RaycastHit stepSurfaceHit, maxDistance: scanDepth)) return false;
+        if (!IsFloor(stepSurfaceHit.normal)) return false;
+
+        // Scan for the wall of the step
+        float stepWallDistance = Vector3.Project(stepSurfaceHit.point - transform.position, scanDir).magnitude;
+        Vector3 stepGapScanOrigin = transform.position + Vector3.Project(stepSurfaceHit.point - transform.position, transform.up) + (transform.up * stepLipOffset);
+        // First make sure there is no wall above the step
+        if (Physics.Raycast(origin: stepGapScanOrigin, direction: scanDir, maxDistance: stepWallDistance)) return false;
+        Vector3 stepWallScanOrigin = transform.position + Vector3.Project(stepSurfaceHit.point - transform.position, transform.up) - (transform.up * stepLipOffset);
+        if (!CapsulteCastPlayer(origin: stepWallScanOrigin, direction: scanDir, out RaycastHit stepWallHit, maxDistance: stepWallDistance)) return false;
+        if (!IsWall(stepWallHit.normal)) return false;
+
+        // Make sure the wall is in front of the step
+        if (Vector3.Dot((stepWallHit.point - stepSurfaceHit.point), stepWallHit.normal) < 0f) return false;
+
+        // The step surface is a valid step, so we can return it
+        stepSurface = stepSurfaceHit;
+        stepWall = stepWallHit;
+        return true;
     }
     #endregion
 
@@ -1245,6 +1393,14 @@ public class PlayerController : NetworkedBehaviour {
         return ((cc.height / 2) - cc.radius + cc.center.y);
     }
 
+    public Vector3 GetHeadPosition() {
+        return transform.position + cc.center + ((cc.height / 2 - cc.radius) * transform.up);
+    }
+
+    public Vector3 GetFootPosition() {
+        return transform.position + cc.center - (cc.height / 2 * transform.up);
+    }
+
     public bool CanJumpBoost() {
         bool can_jump_boost = true;
         // Ground behavior
@@ -1306,14 +1462,58 @@ public class PlayerController : NetworkedBehaviour {
         Teleport(transform.position + path_from_center.normalized * cc.radius * 0.25f);
     }
 
+    private bool OverlapPlayerCheck() {
+        return OverlapPlayerCheck(Vector3.zero);
+    }
+
+    private bool OverlapPlayerCheck(Vector3 offset) {
+        float radius = cc.radius;
+        Vector3 origin = transform.position + cc.center + offset;
+        Vector3 start = origin - (transform.up * (cc.height / 2 - radius));
+        Vector3 end = origin + (transform.up * (cc.height / 2 - radius));
+        return Physics.CheckCapsule(start, end, radius, DEFAULT_LAYER);
+    }
+
+    public void RecoverSmart() {
+        float radius = cc.radius;
+        Vector3 start = transform.position - transform.up * (cc.height / 2 - radius);
+        Vector3 end = transform.position + transform.up * (cc.height / 2 - radius);
+        Collider[] cols = Physics.OverlapCapsule(start, end, radius, DEFAULT_LAYER);
+        Collider cc_col = GetComponent<Collider>();
+        if (cols.Length > 0) SetCollision(false);
+        foreach (Collider col in cols) {
+            Debug.Log("smart recovering");
+            Debug.Log($"CC_COL {cc_col.name}");
+            Debug.Log($"CC_COL t: {cc_col.isTrigger}");
+            Debug.Log($"cols: {string.Join(", ", cols.Select((c) => c.name))}");
+            if (Physics.ComputePenetration(cc_col, cc_col.transform.position, cc_col.transform.rotation,
+                                          col, col.transform.position, col.transform.rotation,
+                                          out Vector3 dir, out float dist)) {
+                transform.position += (dir * dist);
+            }
+        }
+        if (cols.Length > 0) SetCollision(true);
+    }
+
+    private void SetCollision(bool on) {
+        if (on) {
+            foreach (Collider col in GetComponents<Collider>()) {
+                col.enabled = true;
+            }
+            enableMovement = true;
+        }
+        else {
+            foreach (Collider col in GetComponents<Collider>()) {
+                col.enabled = false;
+            }
+            enableMovement = false;
+        }
+    }
+
     private void Teleport(Vector3 position) {
-        foreach (Collider col in GetComponents<Collider>()) {
-            col.enabled = false;
-        }
+        SetCollision(false);
         transform.position = position;
-        foreach (Collider col in GetComponents<Collider>()) {
-            col.enabled = true;
-        }
+        SetCollision(true);
     }
     #endregion
 }
