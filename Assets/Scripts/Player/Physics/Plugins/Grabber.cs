@@ -17,7 +17,7 @@ public class Grabber : PhysicsPlugin {
 
     public override void NetworkStart() {
         base.NetworkStart();
-        if (!isOwner) return;
+        if (!IsOwner) return;
         // Register callbacks for networked functions
         Grabable.pickup_callback = PickupCallback;
         Grabable.throw_callback = ThrowCallback;
@@ -26,13 +26,13 @@ public class Grabber : PhysicsPlugin {
     }
 
     public override bool OnUse(PhysicsProp prop) {
-        if (!isOwner) return false;
+        if (!IsOwner) return false;
         Grabable grabable = prop as Grabable;
         if (grabbed == null && grabbing == null) {
             Collider grabable_collider = grabable.GetComponent<Collider>();
             float grabable_height = grabable_collider.bounds.size.y;
             grabbing = grabable;
-            if (isServer) {
+            if (IsServer) {
                 bool success = grabable.Pickup(
                     grabber: context.gameObject,
                     grab_offset: Vector3.up * (0.2f + (player.cc.height / 2f) + (grabable_height / 2f)));
@@ -56,7 +56,7 @@ public class Grabber : PhysicsPlugin {
     private void PickupCallback(bool success) {
         if (success) {
             if (grabbing != null) {
-                grabbing.SetPickupState(context.gameObject, disable_collision: !isServer);
+                grabbing.SetPickupState(context.gameObject, disable_collision: !IsServer);
             }
             // Wait until the grab button is released to finish the pick up
             utils.WaitUntilCondition(
@@ -79,7 +79,7 @@ public class Grabber : PhysicsPlugin {
     }
 
     public override void Update() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         if (input_manager.GetUse() && grabbed) {
             utils.ResetTimer(THROW_METER);
         }
@@ -96,11 +96,11 @@ public class Grabber : PhysicsPlugin {
     }
 
     public override void FixedUpdate() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         if (!utils.CheckTimer(THROW_PRESS) && grabbed) {
             Vector3 local_velocity = player.transform.InverseTransformVector(player.GetWorldVelocity());
             float throw_power = (throw_base_strength + throw_added_strength * utils.GetTimerPercent(THROW_METER));
-            if (isServer) {
+            if (IsServer) {
                 bool success = grabbed.Throw(
                     velocity: local_velocity + throw_power * (Vector3.forward + Vector3.up));
                 ThrowCallback(success);

@@ -37,7 +37,7 @@ public class MovingColliderTrigger : NetworkedBehaviour {
     }
 
     private void OnTriggerEnter(Collider other) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         if (!other.GetComponent<MovingPlayer>()) return;
         if (!triggering) {
             triggering = true;
@@ -46,7 +46,7 @@ public class MovingColliderTrigger : NetworkedBehaviour {
     }
 
     private void OnTriggerStay(Collider other) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         if (!other.GetComponent<MovingPlayer>()) return;
         if (HoldOnStay && !staying) {
             staying = true;

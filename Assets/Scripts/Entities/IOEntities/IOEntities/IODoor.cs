@@ -71,7 +71,7 @@ public class IODoor : IOEntity, IUsable {
     }
 
     private void FixedUpdate() {
-        if (!isServer) return;
+        if (!IsServer) return;
         MoveDoor();
     }
 }

@@ -71,7 +71,7 @@ public class FluidDynamic : PhysicsProp {
     }
 
     private void FixedUpdate() {
-        if (isServer) ApplyForces();
+        if (IsServer) ApplyForces();
         HandleWind();
     }
 }

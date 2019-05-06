@@ -15,7 +15,7 @@ public class FluidDynamicHandler : PhysicsPlugin {
     }
 
     public override void FixedUpdate() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         HandleFluidDynamicChildren();
     }
 }

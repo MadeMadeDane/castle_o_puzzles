@@ -29,8 +29,8 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     # region new vars
     private const string POS_CHANNEL = "MLAPI_DEFAULT_MESSAGE";
     private TransformPacket? lastReceivedPacket = null;
-    private (Vector3, Quaternion, uint, int)? lastReceivedInfo;
-    private (Vector3, Quaternion, uint, int)? lastSentInfo;
+    private (Vector3, Quaternion, ulong, int)? lastReceivedInfo;
+    private (Vector3, Quaternion, ulong, int)? lastSentInfo;
     private float lastSendTime;
     private float lastReceiveTime;
     private float lastRecieveClientTime;
@@ -77,7 +77,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     /// </summary>
     public MoveValidationDelegate IsMoveValidDelegate = null;
 
-    private void Awake() {
+    protected virtual void Awake() {
         UPDATE_TIMER = "NetworkedTransformUpdate_" + gameObject.GetInstanceID().ToString();
     }
 
@@ -94,22 +94,22 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     /// Registers message handlers
     /// </summary>
     public override void NetworkStart() {
-        lastSendTime = NetworkingManager.singleton.NetworkTime;
-        if (isOwner) {
+        lastSendTime = NetworkingManager.Singleton.NetworkTime;
+        if (IsOwner) {
             Utilities.Instance.CreateTimer(UPDATE_TIMER, inactive_delay);
         }
-        else if (!isServer) {
-            InvokeServerRpc(RequestTransform, NetworkingManager.singleton.LocalClientId);
+        else if (!IsServer) {
+            InvokeServerRpc(RequestTransform, NetworkingManager.Singleton.LocalClientId);
         }
-        /*if (isOwner) {
+        /*if (IsOwner) {
             InvokeRepeating("TransmitPosition", 0f, (1f / FixedSendsPerSecond));
         }*/
     }
 
     private void TransmitPosition() {
-        if (!networkedObject.isSpawned) return;
+        if (!NetworkedObject.IsSpawned) return;
 
-        (uint parentId, int movingObjectId) = GetParentMovingObjectIds();
+        (ulong parentId, int movingObjectId) = GetParentMovingObjectIds();
         Vector3 relativePos = GetRelativePosition(transform.position, parentId, movingObjectId);
         Quaternion relativeRot = GetRelativeRotation(transform.rotation, parentId, movingObjectId);
 
@@ -123,36 +123,36 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
         using (PooledBitStream stream = PooledBitStream.Get()) {
             using (PooledBitWriter writer = PooledBitWriter.Get(stream)) {
                 TransformPacket.WritePacket(
-                    NetworkingManager.singleton.NetworkTime,
+                    NetworkingManager.Singleton.NetworkTime,
                     relativePos,
                     relativeRot,
                     parentId,
                     movingObjectId,
                     writer);
 
-                if (isServer)
-                    InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, stream, channel: POS_CHANNEL);
+                if (IsServer)
+                    InvokeClientRpcOnEveryoneExceptPerformance(ApplyTransform, OwnerClientId, stream, channel: POS_CHANNEL);
                 else
-                    InvokeServerRpc(SubmitTransform, stream, channel: POS_CHANNEL);
+                    InvokeServerRpcPerformance(SubmitTransform, stream, channel: POS_CHANNEL);
             }
         }
     }
 
-    private (uint, int) GetParentMovingObjectIds() {
+    private (ulong, int) GetParentMovingObjectIds() {
         // Find the moving platform we are parented to. Skip ourselves if we happen to be a moving platform.
         MovingGeneric parent_moving_obj = null;
         if (transform.parent != null) parent_moving_obj = transform.parent.GetComponentInParent<MovingGeneric>();
         if (parent_moving_obj == null && networkParent != null) parent_moving_obj = networkParent.GetComponent<MovingGeneric>();
         if (parent_moving_obj == null) return (0, -1);
 
-        return (parent_moving_obj.networkId, parent_moving_obj.GetMovingObjectIndex());
+        return (parent_moving_obj.NetworkId, parent_moving_obj.GetMovingObjectIndex());
     }
 
     private void Update() {
-        if (!isOwner) {
+        if (!IsOwner) {
             //If we are server and interpolation is turned on for server OR we are not server and interpolation is turned on
-            if ((isServer && InterpolateServer && InterpolatePosition) || (!isServer && InterpolatePosition)) {
-                float interp_time = NetworkingManager.singleton.NetworkTime - latency - interp_delay;
+            if ((IsServer && InterpolateServer && InterpolatePosition) || (!IsServer && InterpolatePosition)) {
+                float interp_time = NetworkingManager.Singleton.NetworkTime - latency - interp_delay;
                 Vector3 new_pos = position_buffer.Interpolate(interp_time, transform.position, FixedSendsPerSecond, Vector3.Lerp);
                 if ((transform.position - new_pos).magnitude > 2f) {
                     Debug.Log("LARGE DIFF IN DISTANCE!");
@@ -167,11 +167,11 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
             }
         }
         else {
-            if (NetworkingManager.singleton.NetworkTime - lastSendTime >= (1f / FixedSendsPerSecond)) {
-                lastSendTime = NetworkingManager.singleton.NetworkTime;
+            if (NetworkingManager.Singleton.NetworkTime - lastSendTime >= (1f / FixedSendsPerSecond)) {
+                lastSendTime = NetworkingManager.Singleton.NetworkTime;
                 TransmitPosition();
             }
-            if (isServer) {
+            if (IsServer) {
                 if (networkParent != null) {
                     transform.position = networkParent.transform.position + networkParentLocalPosition;
                     transform.rotation = networkParentLocalRotation * networkParent.transform.rotation;
@@ -181,18 +181,18 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     }
 
     [ClientRPC]
-    private void ApplyTransform(uint clientId, Stream stream) {
+    private void ApplyTransform(ulong clientId, Stream stream) {
         if (!enabled) return;
         TransformPacket received_transform = TransformPacket.FromStream(stream);
 
         if (InterpolatePosition) {
-            lastReceiveTime = NetworkingManager.singleton.NetworkTime;
+            lastReceiveTime = NetworkingManager.Singleton.NetworkTime;
             if (received_transform.timestamp < lastRecieveClientTime) {
                 Debug.Log("OUT OF ORDER PACKET DETECTED");
             }
 
             if (lastReceivedInfo != null) {
-                (Vector3 lastReceivedPosition, Quaternion lastReceivedRotation, uint lastReceivedParentId, int lastReceivedMovingObjectId) = lastReceivedInfo.Value;
+                (Vector3 lastReceivedPosition, Quaternion lastReceivedRotation, ulong lastReceivedParentId, int lastReceivedMovingObjectId) = lastReceivedInfo.Value;
                 Vector3 world_pos = GetWorldPosition(received_transform.position, received_transform.parentId, received_transform.movingObjectId);
                 Vector3 prev_world_pos = GetWorldPosition(lastReceivedPosition, lastReceivedParentId, lastReceivedMovingObjectId);
                 // Use local velocity if we are on the same moving platform as the previous packet
@@ -227,14 +227,14 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
         lastReceivedInfo = (received_transform.position, received_transform.rotation, received_transform.parentId, received_transform.movingObjectId);
     }
 
-    private Transform GetNetworkedObjectTransform(uint netId, int MovingObjectId) {
+    private Transform GetNetworkedObjectTransform(ulong netId, int MovingObjectId) {
         // 0 parentId indicates that there is no parent and -1 movingObjectId indicates no moving platform
         if (netId == 0 || MovingObjectId == -1) return null;
 
         return MovingGeneric.GetMovingObjectAt(netId, MovingObjectId).transform;
     }
 
-    private Vector3 GetWorldPosition(Vector3 relative_pos, uint parentId, int MovingObjectId) {
+    private Vector3 GetWorldPosition(Vector3 relative_pos, ulong parentId, int MovingObjectId) {
         // 0 parentId indicates that there is no parent and -1 movingObjectId indicates no moving platform
         if (parentId == 0 || MovingObjectId == -1) return relative_pos;
         // try and get the world position converted from the parent platforms local space
@@ -244,7 +244,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
         return parent_transform.TransformPoint(relative_pos);
     }
 
-    private Vector3 GetRelativePosition(Vector3 world_pos, uint parentId, int MovingObjectId) {
+    private Vector3 GetRelativePosition(Vector3 world_pos, ulong parentId, int MovingObjectId) {
         // 0 parentId indicates that there is no parent and -1 movingObjectId indicates no moving platform
         if (parentId == 0 || MovingObjectId == -1) return world_pos;
         // try and get the relative position to the parent platform
@@ -254,7 +254,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
         return parent_transform.InverseTransformPoint(world_pos);
     }
 
-    private Quaternion GetRelativeRotation(Quaternion world_rotation, uint parentId, int MovingObjectId) {
+    private Quaternion GetRelativeRotation(Quaternion world_rotation, ulong parentId, int MovingObjectId) {
         // 0 parentId indicates that there is no parent and -1 movingObjectId indicates no moving platform
         if (parentId == 0 || MovingObjectId == -1) return world_rotation;
         // try and get the relative position to the parent platform
@@ -265,23 +265,23 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     }
 
     [ServerRPC(RequireOwnership = false)]
-    private void RequestTransform(uint clientId) {
+    private void RequestTransform(ulong clientId) {
         if (!enabled) return;
-        if (isOwner) {
-            (uint parentId, int movingObjectId) = GetParentMovingObjectIds();
+        if (IsOwner) {
+            (ulong parentId, int movingObjectId) = GetParentMovingObjectIds();
             Vector3 relativePos = GetRelativePosition(transform.position, parentId, movingObjectId);
             Quaternion relativeRot = GetRelativeRotation(transform.rotation, parentId, movingObjectId);
 
             using (PooledBitStream writeStream = PooledBitStream.Get()) {
                 using (PooledBitWriter writer = PooledBitWriter.Get(writeStream)) {
                     TransformPacket.WritePacket(
-                        NetworkingManager.singleton.NetworkTime,
+                        NetworkingManager.Singleton.NetworkTime,
                         relativePos,
                         relativeRot,
                         parentId,
                         movingObjectId,
                         writer);
-                    InvokeClientRpcOnClient(ApplyTransform, clientId, writeStream, channel: POS_CHANNEL);
+                    InvokeClientRpcOnClientPerformance(ApplyTransform, clientId, writeStream, channel: POS_CHANNEL);
                 }
             }
         }
@@ -289,14 +289,14 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
             using (PooledBitStream writeStream = PooledBitStream.Get()) {
                 using (PooledBitWriter writer = PooledBitWriter.Get(writeStream)) {
                     lastReceivedPacket.Value.Write(writer);
-                    InvokeClientRpcOnClient(ApplyTransform, clientId, writeStream, channel: POS_CHANNEL);
+                    InvokeClientRpcOnClientPerformance(ApplyTransform, clientId, writeStream, channel: POS_CHANNEL);
                 }
             }
         }
     }
 
     [ServerRPC]
-    private void SubmitTransform(uint clientId, Stream stream) {
+    private void SubmitTransform(ulong clientId, Stream stream) {
         if (!enabled) return;
         TransformPacket received_transform = TransformPacket.FromStream(stream);
         if (IsMoveValidDelegate != null && !IsMoveValidDelegate(transform.position, received_transform.position)) {
@@ -309,7 +309,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
         using (PooledBitStream writeStream = PooledBitStream.Get()) {
             using (PooledBitWriter writer = PooledBitWriter.Get(writeStream)) {
                 received_transform.Write(writer);
-                InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, writeStream, channel: POS_CHANNEL);
+                InvokeClientRpcOnEveryoneExceptPerformance(ApplyTransform, OwnerClientId, writeStream, channel: POS_CHANNEL);
             }
         }
     }
@@ -320,7 +320,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
     /// <param name="position">The position to teleport to</param>
     /// <param name="rotation">The rotation to teleport to</param>
     public void Teleport(Vector3 position, Quaternion rotation) {
-        if (InterpolateServer && isServer || isClient) {
+        if (InterpolateServer && IsServer || IsClient) {
             // Implement when needed
         }
     }
@@ -330,13 +330,13 @@ public struct TransformPacket {
     public float timestamp;
     public Vector3 position;
     public Quaternion rotation;
-    public uint parentId;
+    public ulong parentId;
     public int movingObjectId;
 
     public TransformPacket(float timestamp,
                            Vector3 position,
                            Quaternion rotation,
-                           uint parentId,
+                           ulong parentId,
                            int movingObjectId) {
         this.timestamp = timestamp;
         this.position = position;
@@ -357,7 +357,7 @@ public struct TransformPacket {
             float yRot = reader.ReadSinglePacked();
             float zRot = reader.ReadSinglePacked();
 
-            uint pId = reader.ReadUInt32Packed();
+            ulong pId = reader.ReadUInt64Packed();
             int moId = reader.ReadInt32Packed();
 
             return new TransformPacket(time, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), pId, moId);
@@ -375,14 +375,14 @@ public struct TransformPacket {
         writer.WriteSinglePacked(rotation.eulerAngles.y);
         writer.WriteSinglePacked(rotation.eulerAngles.z);
 
-        writer.WriteUInt32Packed(parentId);
+        writer.WriteUInt64Packed(parentId);
         writer.WriteInt32Packed(movingObjectId);
     }
 
     public static void WritePacket(float timestamp,
                                    Vector3 position,
                                    Quaternion rotation,
-                                   uint parentId,
+                                   ulong parentId,
                                    int movingObjectId,
                                    PooledBitWriter writer) {
         new TransformPacket(timestamp, position, rotation, parentId, movingObjectId).Write(writer);

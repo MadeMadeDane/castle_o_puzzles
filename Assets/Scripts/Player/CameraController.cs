@@ -90,7 +90,7 @@ public class CameraController : NetworkedBehaviour {
     }
 
     void Start() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         Setup();
         // TODO: Move this mouse hiding logic somewhere else
         Cursor.lockState = CursorLockMode.Locked;
@@ -190,7 +190,7 @@ public class CameraController : NetworkedBehaviour {
     }
 
     private void Update() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         handleViewToggle();
     }
 
@@ -220,7 +220,7 @@ public class CameraController : NetworkedBehaviour {
 
     // LateUpdate is called after update. Ensures we are operating on the latest transform changes.
     private void LateUpdate() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         UpdateCameraAngles();
     }
 
@@ -291,7 +291,7 @@ public class CameraController : NetworkedBehaviour {
     }
 
     private void FixedUpdate() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         SetTargetPos();
         HideHome();
         handlePlayerRotate();

@@ -8,7 +8,7 @@ public class CollisionRecovery : NetworkedBehaviour {
 
     // Use this for initialization
     void Start() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         Collider my_collider = GetComponent<Collider>();
         foreach (Collider col in GetComponentsInParent<Collider>()) {
             Physics.IgnoreCollision(my_collider, col);
@@ -17,7 +17,7 @@ public class CollisionRecovery : NetworkedBehaviour {
     }
 
     private void OnTriggerStay(Collider other) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         // Don't recover on collision with triggers because they won't constrain us
         if (other.isTrigger) return;
         if (player != null) {

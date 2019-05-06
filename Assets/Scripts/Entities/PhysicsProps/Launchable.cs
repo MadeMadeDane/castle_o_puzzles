@@ -18,7 +18,7 @@ public class Launchable : PhysicsProp {
     }
 
     private void FixedUpdate() {
-        if (!isServer) return;
+        if (!IsServer) return;
         HandleLaunch();
     }
 
@@ -46,7 +46,7 @@ public class Launchable : PhysicsProp {
     }
 
     private void OnTriggerStay(Collider other) {
-        if (!isServer) return;
+        if (!IsServer) return;
         Launcher newLauncher = other.GetComponent<Launcher>();
         if (!newLauncher) return;
         CurrentLauncher = newLauncher;
@@ -54,7 +54,7 @@ public class Launchable : PhysicsProp {
     }
 
     private void OnTriggerEnter(Collider other) {
-        if (!isServer) return;
+        if (!IsServer) return;
         if (!utils.CheckTimer(LAUNCH_TIMER)) return;
         if (!other.GetComponent<Launcher>()) return;
         InitialVelocity = rigidbody.velocity;

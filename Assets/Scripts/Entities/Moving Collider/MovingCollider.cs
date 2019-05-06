@@ -26,13 +26,17 @@ public class MovingCollider : MovingEntity {
     // Timers
     private string HOME_TIMER;
 
-    // Use this for initialization
-    public override void NetworkStart() {
-        base.NetworkStart();
-        if (!isOwner) return;
+    protected override void Awake() {
+        base.Awake();
         utils = Utilities.Instance;
         HOME_TIMER = "MovingColliderHomeReset_" + gameObject.GetInstanceID().ToString();
         utils.CreateTimer(HOME_TIMER, HomeResetTime);
+    }
+
+    // Use this for initialization
+    public override void NetworkStart() {
+        base.NetworkStart();
+        if (!IsOwner) return;
 
         velocity = Vector3.zero;
         target_velocity = Vector3.zero;
@@ -53,7 +57,7 @@ public class MovingCollider : MovingEntity {
     }
 
     private void FixedUpdate() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
 
         if (!PlayerControlled) {
             Move();
@@ -93,12 +97,12 @@ public class MovingCollider : MovingEntity {
     }
 
     public void Stay() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         utils.ResetTimer(HOME_TIMER);
     }
 
     public void GoHome() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         if (!moving) {
             nextTargetObject = home;
             StartCoroutine(MoveToNextTarget());
@@ -112,7 +116,7 @@ public class MovingCollider : MovingEntity {
     }
 
     public void Trigger() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         StartCoroutine(MoveToNextTarget());
     }
 
@@ -122,7 +126,7 @@ public class MovingCollider : MovingEntity {
 
     private IEnumerator MoveToNextTarget() {
         // Basic lock for coroutines. Do not allow other coroutines to run when moving
-        if (moving || !isOwner) {
+        if (moving || !IsOwner) {
             yield break;
         }
         moving = true;
@@ -170,7 +174,7 @@ public class MovingCollider : MovingEntity {
     }
 
     private void OnCollisionStay(Collision collision) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         MovingColliderRigidBody other = collision.gameObject.GetComponent<MovingColliderRigidBody>();
         if (other != null) {
             other.attach(gameObject);

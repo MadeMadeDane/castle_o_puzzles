@@ -17,12 +17,12 @@ public class IOSpeaker : IOEntity {
         source.loop = true;
         source.Play();
         source.enabled = false;
-        if  (!isServer) {
+        if (!IsServer) {
             // Set up output state callbacks for clients
             TurnedOn.OnReceiveNetworkValue = Switch;
             Volume.OnReceiveNetworkValue = SetVolume;
             return;
-        } 
+        }
         // Set up the initial output state on the server
         Switch(StartOn);
         SetVolume(StartingVolume);

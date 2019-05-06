@@ -14,7 +14,7 @@ public class Pusher : PhysicsPlugin {
 
     public override void NetworkStart() {
         base.NetworkStart();
-        if (!isOwner) return;
+        if (!IsOwner) return;
         utils.CreateTimer(PUSH_TIMER, 0.1f).setFinished();
         utils.CreateTimer(PUSH_START_TIMER, 0.3f);
         // disable this plugin until the camera is created
@@ -28,7 +28,7 @@ public class Pusher : PhysicsPlugin {
     }
 
     public override void OnTriggerStay(Collider other, PhysicsProp prop) {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         Pushable pushable = prop as Pushable;
         Vector3 motion_vector = player.GetMoveVector();
         RaycastHit hit;
@@ -40,7 +40,7 @@ public class Pusher : PhysicsPlugin {
                 utils.ResetTimer(PUSH_START_TIMER);
             }
             if (utils.CheckTimer(PUSH_START_TIMER)) {
-                if (isServer) {
+                if (IsServer) {
                     pushable.Push(Vector3.Project(player.GetVelocity() - pushable.rigidbody.velocity, -hit.normal), true);
                 }
                 else {
@@ -57,7 +57,7 @@ public class Pusher : PhysicsPlugin {
     }
 
     public override void FixedUpdate() {
-        if (!isOwner) return;
+        if (!IsOwner) return;
         if (!utils.CheckTimer(PUSH_TIMER)) {
             if (camera.GetViewMode() == ViewMode.Third_Person) {
                 camera.RotateCameraToward(direction: -lastpushsurface,

@@ -23,7 +23,7 @@ public class Pushable : PhysicsProp {
     }
 
     private void FixedUpdate() {
-        if (!isServer) return;
+        if (!IsServer) return;
 
         if (lastPush != null) {
             (Vector3 force, bool impulse) = lastPush.Value;

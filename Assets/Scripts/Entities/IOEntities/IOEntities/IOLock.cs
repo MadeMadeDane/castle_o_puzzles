@@ -8,24 +8,20 @@ using MLAPI;
 [RequireComponent(typeof(Collider))]
 public class IOLock : IOEntity {
     public static string IOLOCK_CHANNEL = "MLAPI_INTERNAL";
-    private Utilities utils;
     public DigitalState Locked;
     public string key_name = "GoldKey";
     public bool takes_key = true;
 
     protected override void Startup() {
-        utils = Utilities.Instance;
-        if (!isServer) {
+        if (!IsServer) {
             // Set up output state callbacks for clients
             Locked.OnReceiveNetworkValue = SetLockedState;
-            return;
         }
-
         // Set up the initial output state on the server
         SetLockedState(true);
     }
 
-    public void SetLockedState (DigitalState input) {
+    public void SetLockedState(DigitalState input) {
         SetLockedState(input.state);
     }
 
@@ -34,11 +30,11 @@ public class IOLock : IOEntity {
     }
 
     #region Lock RPCs
-    private bool HandleLockStateChangeRequest(uint clientID, bool lock_state) {
-        (NetworkSharedItem item, int count) = InventoryManager.networkInv.GetFirstOwnedItem((int) clientID);
+    private bool HandleLockStateChangeRequest(ulong clientID, bool lock_state) {
+        (NetworkSharedItem item, int count) = InventoryManager.networkInv.GetFirstOwnedItem((int)clientID);
         if (item.name == key_name && count > 0) {
             if (takes_key) {
-                InventoryManager.networkInv.RevokeItem(item.name, (int) clientID);
+                InventoryManager.networkInv.RevokeItem(item.name, (int)clientID);
                 InventoryManager.networkInv.RemoveItem(item.name);
             }
             Locked.state = lock_state;
@@ -48,7 +44,7 @@ public class IOLock : IOEntity {
     }
     [ServerRPC(RequireOwnership = false)]
     private void RPC_RequestLockStateChange(bool lock_state) {
-        if (HandleLockStateChangeRequest(ExecutingRpcSender,lock_state))
+        if (HandleLockStateChangeRequest(ExecutingRpcSender, lock_state))
             InvokeClientRpcOnClient(RPC_LockStateChangeFinish, ExecutingRpcSender, lock_state);
     }
     [ClientRPC]
@@ -58,11 +54,11 @@ public class IOLock : IOEntity {
         }
     }
     public void RequestLockStateChange(bool lock_state) {
-        if (!isServer) {
+        if (!IsServer) {
             InvokeServerRpc(RPC_RequestLockStateChange, lock_state, channel: IOLOCK_CHANNEL);
         }
-        else {  
-            uint id = NetworkingManager.singleton.LocalClientId;
+        else {
+            ulong id = NetworkingManager.Singleton.LocalClientId;
             if (HandleLockStateChangeRequest(id, lock_state))
                 RPC_LockStateChangeFinish(lock_state);
         }

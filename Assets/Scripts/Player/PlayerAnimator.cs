@@ -48,14 +48,14 @@ public class PlayerAnimator : NetworkedBehaviour {
 
     public override void NetworkStart() {
         netptransform = GetComponent<MovingPlayer>();
-        if (isOwner) {
+        if (IsOwner) {
             InvokeRepeating("TransmitAnimationStates", 0f, (1f / FixedSendsPerSecond));
         }
     }
 
     // Update is called once per frame
     void Update() {
-        if (isOwner && (cc == null || pc == null)) {
+        if (IsOwner && (cc == null || pc == null)) {
             cc = GetComponent<CharacterController>();
             pc = GetComponent<PlayerController>();
             return;
@@ -67,7 +67,7 @@ public class PlayerAnimator : NetworkedBehaviour {
         float velocity_mag;
         bool on_ground;
         bool is_hanging;
-        if (isOwner) {
+        if (IsOwner) {
             velocity_mag = cc.velocity.magnitude;
             on_ground = lastGroundState = pc.OnGround();
             is_hanging = lastHangState = pc.IsHanging();
@@ -135,16 +135,16 @@ public class PlayerAnimator : NetworkedBehaviour {
             using (PooledBitWriter writer = PooledBitWriter.Get(stream)) {
                 AnimationPacket.WritePacket(lastGroundState, lastHangState, writer);
 
-                if (isServer)
-                    InvokeClientRpcOnEveryoneExcept(ApplyAnimationState, OwnerClientId, stream, channel: ANIM_CHANNEL);
+                if (IsServer)
+                    InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimationState, OwnerClientId, stream, channel: ANIM_CHANNEL);
                 else
-                    InvokeServerRpc(SubmitAnimationState, stream, channel: ANIM_CHANNEL);
+                    InvokeServerRpcPerformance(SubmitAnimationState, stream, channel: ANIM_CHANNEL);
             }
         }
     }
 
     [ClientRPC]
-    private void ApplyAnimationState(uint clientId, Stream stream) {
+    private void ApplyAnimationState(ulong clientId, Stream stream) {
         if (!enabled) return;
         AnimationPacket received_animation = AnimationPacket.FromStream(stream);
         lastGroundState = received_animation.ground_state;
@@ -152,14 +152,14 @@ public class PlayerAnimator : NetworkedBehaviour {
     }
 
     [ServerRPC]
-    private void SubmitAnimationState(uint clientId, Stream stream) {
+    private void SubmitAnimationState(ulong clientId, Stream stream) {
         if (!enabled) return;
         AnimationPacket received_animation = AnimationPacket.FromStream(stream);
 
         using (PooledBitStream writeStream = PooledBitStream.Get()) {
             using (PooledBitWriter writer = PooledBitWriter.Get(writeStream)) {
                 received_animation.Write(writer);
-                InvokeClientRpcOnEveryoneExcept(ApplyAnimationState, OwnerClientId, writeStream, channel: ANIM_CHANNEL);
+                InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimationState, OwnerClientId, writeStream, channel: ANIM_CHANNEL);
             }
         }
     }

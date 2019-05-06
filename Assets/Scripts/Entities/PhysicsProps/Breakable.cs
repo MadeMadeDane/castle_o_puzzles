@@ -13,7 +13,7 @@ public class Breakable : PhysicsProp {
     public bool broken = false;
 
     private void OnCollisionEnter(Collision other) {
-        if (broken || !isServer) return;
+        if (broken || !IsServer) return;
 
         Vector3 normalVel = Vector3.Project(other.relativeVelocity, other.contacts[0].normal);
         if (normalVel.magnitude > VelocityThreshold) {

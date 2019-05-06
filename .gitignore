@@ -5,6 +5,8 @@
 /[Bb]uilds/
 /Assets/AssetStoreTools*
 /Logs/
+/Assets/SabreCSG*
+/Assets/Plugins/RealtimeCSG*
 
 # Visual Studio 2015 cache directory
 /.vs/

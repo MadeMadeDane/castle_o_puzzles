@@ -98,21 +98,21 @@ public class IOPressurePlate : IOEntity {
     }
 
     private void FixedUpdate() {
-        if (!isServer) return;
+        if (!IsServer) return;
         HandlePress();
         MovePlate();
         Pressed.state = !utils.CheckTimer(ACTIVE_TIMER);
     }
 
     private void OnCollisionStay(Collision other) {
-        if (!isServer) return;
+        if (!IsServer) return;
         if (other.contacts[0].normal.y > -0.9f) return;
         utils.ResetTimer(PRESS_TIMER);
         lastPresser = other.gameObject;
     }
 
     private void OnCollisionEnter(Collision other) {
-        if (!isServer) return;
+        if (!IsServer) return;
         Press(0.1f * Mathf.Abs(other.relativeVelocity.y) / Time.fixedDeltaTime);
     }
 }
