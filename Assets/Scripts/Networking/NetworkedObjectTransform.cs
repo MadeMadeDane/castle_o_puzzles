@@ -154,7 +154,7 @@ public class NetworkedObjectTransform : NetworkedBehaviour {
             if ((IsServer && InterpolateServer && InterpolatePosition) || (!IsServer && InterpolatePosition)) {
                 float interp_time = NetworkingManager.Singleton.NetworkTime - latency - interp_delay;
                 Vector3 new_pos = position_buffer.Interpolate(interp_time, transform.position, FixedSendsPerSecond, Vector3.Lerp);
-                if ((transform.position - new_pos).magnitude > 2f) {
+                if ((transform.position - new_pos).magnitude > 2f) { // TODO: improve debug info
                     Debug.Log("LARGE DIFF IN DISTANCE!");
                 }
                 Quaternion new_rot = rotation_buffer.Interpolate(interp_time, transform.rotation, FixedSendsPerSecond, Quaternion.Slerp);

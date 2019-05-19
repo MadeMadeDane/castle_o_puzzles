@@ -362,7 +362,7 @@ public class CameraController : NetworkedBehaviour {
         Vector3 desired_move = Vector3.zero;
         float interp_multiplier = 1f;
 
-        if (ground_velocity.magnitude < current_player.RunSpeed / 3) {
+        if (ground_velocity.magnitude < (current_player.RunSpeedMult * current_player.cc.radius / 3)) {
             //Debug.Log("Controller move");
             desired_move = move_vector.normalized;
             interp_multiplier = 0.5f;
@@ -443,15 +443,15 @@ public class CameraController : NetworkedBehaviour {
         Vector3 path = (yaw_pivot.transform.position + world_target_vec - startpos);
         //Debug.DrawRay(startpos, path.normalized*(path.magnitude+1f), Color.green);
 
-        if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude + 1f)) {
+        if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude + 1f)) { // MAGIC
             Vector3 pivot_hit = (hit.point - yaw_pivot.transform.position);
             // Ignore hits that are too far away
-            if (pivot_hit.magnitude > target_follow_distance.magnitude + 1f) {
+            if (pivot_hit.magnitude > target_follow_distance.magnitude + 1f) { // MAGIC
                 //Debug.Log("Too far hit");
                 transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
             }
             // Very close hits should move the camera to a predefined location
-            else if (hit.distance < 1f) {
+            else if (hit.distance < 1f) { // MAGIC
                 //Debug.Log("Too close hit");
                 if (pitch_pivot.transform.localRotation.x < 0) {
                     transform.localPosition = Vector3.Lerp(transform.localPosition, (Quaternion.Inverse(pitch_pivot.transform.localRotation) * Vector3.up * target_follow_distance.y), 0.1f);
@@ -465,10 +465,10 @@ public class CameraController : NetworkedBehaviour {
             else {
                 //Debug.Log("Wall hit");
                 float horizontal_displacement = Vector3.Dot(pivot_hit, pitch_pivot.transform.forward);
-                if (pitch_pivot.transform.localRotation.x < 0) {
+                if (pitch_pivot.transform.localRotation.x < 0) { // MAGIC
                     transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - 1f) * Vector3.forward) + (Quaternion.Inverse(pitch_pivot.transform.localRotation) * Vector3.up * target_follow_distance.y);
                 }
-                else {
+                else { // MAGIC
                     transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - 1f) * Vector3.forward) + (Vector3.up * target_follow_distance.y);
                 }
                 transform.localPosition += transform.InverseTransformDirection(hit.normal) * controlled_camera.rect.width / 2;
@@ -487,7 +487,7 @@ public class CameraController : NetworkedBehaviour {
         }
         if (!current_player.IsHanging()) {
             Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
-            float lerp_factor = Mathf.Max(player_ground_vel.magnitude / current_player.RunSpeed, 0.2f);
+            float lerp_factor = Mathf.Max(player_ground_vel.magnitude / (current_player.RunSpeedMult * current_player.cc.radius), 0.2f);
             mouseAccumulator.x = Mathf.LerpAngle(mouseAccumulator.x, idleOrientation.x, 0.005f * lerp_factor);
             mouseAccumulator.y = Mathf.LerpAngle(mouseAccumulator.y, idleOrientation.y, 0.005f * lerp_factor);
         }

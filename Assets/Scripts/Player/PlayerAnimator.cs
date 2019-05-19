@@ -18,8 +18,8 @@ public class PlayerAnimator : NetworkedBehaviour {
     //private bool isClimbing;
     private bool isSliding;
     //private bool isRolling;
-    public float walkMaxSpeed = 6.0f;
-    public float runMinSpeed = 8.0f;
+    public float walkMaxSpeedMult = 12f;
+    public float runMinSpeedMult = 16f;
 
     // For networked players
     public float FixedSendsPerSecond = 10f;
@@ -92,11 +92,11 @@ public class PlayerAnimator : NetworkedBehaviour {
                 isWalking = false;
                 isRunning = false;
             }
-            else if (on_ground && velocity_mag < walkMaxSpeed) {
+            else if (on_ground && velocity_mag < (walkMaxSpeedMult * cc.radius)) {
                 isWalking = true;
                 isRunning = false;
             }
-            else if (on_ground && velocity_mag > runMinSpeed) {
+            else if (on_ground && velocity_mag > (runMinSpeedMult * cc.radius)) {
                 isRunning = true;
                 isWalking = false;
             }

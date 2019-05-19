@@ -17,7 +17,7 @@ public class InventoryManager : NetworkedBehaviour {
     public static NetworkInventory networkInv;
     public Sprite image;
     public float select_cone_threshold = Mathf.Sqrt(3f) / 2f;
-    public float select_reach_dist = 5.0f;
+    public float select_reach_dist = 5.0f; // TODO: change this to scan using the camera
     public bool enable_logs = false;
     private Utilities utils;
     private InputManager im;

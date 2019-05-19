@@ -44,7 +44,7 @@ public class Pusher : PhysicsPlugin {
                     pushable.Push(Vector3.Project(player.GetVelocity() - pushable.rigidbody.velocity, -hit.normal), true);
                 }
                 else {
-                    pushable.PushOnServer(-hit.normal * 12f);
+                    pushable.PushOnServer(-hit.normal * 24f * player.cc.radius);
                 }
             }
             lastpushsurface = hit.normal;
