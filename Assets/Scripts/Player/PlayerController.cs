@@ -269,9 +269,22 @@ public class PlayerController : NetworkedBehaviour {
         wall_run_collider.isTrigger = true;
         // x=0, y=1, z=2
         wall_run_collider.direction = 1;
-        wall_run_collider.height = cc.height - 0.3f; // 5.5f originally
+        wall_run_collider.height = cc.height * 0.95f; // 5.5f originally
         wall_run_collider.radius = cc.radius * 1.5f; // 0.75f originally
-        recovery_collider = GetComponentInChildren<CollisionRecovery>().GetComponent<CapsuleCollider>();
+        wall_run_collider.center = cc.center;
+        GameObject recovery_go = new GameObject("RecoveryTrigger");
+        recovery_go.transform.parent = transform;
+        recovery_collider = recovery_go.AddComponent<CapsuleCollider>();
+        recovery_collider.height = cc.height * 0.95f; // 5.5f originally
+        recovery_collider.radius = cc.radius * 0.8f; // 0.4f originally
+        recovery_collider.center = cc.center;
+        Rigidbody recovery_rb = recovery_go.AddComponent<Rigidbody>();
+        recovery_rb.isKinematic = true;
+        recovery_rb.drag = 0f;
+        recovery_rb.angularDrag = 0f;
+        CollisionRecovery recovery_cr = recovery_go.AddComponent<CollisionRecovery>();
+        recovery_cr.player = this;
+
         cc_standHeight = cc.height;
         cc_standCenter = cc.center.y;
         wr_standHeight = wall_run_collider.height;

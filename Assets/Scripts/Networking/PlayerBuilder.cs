@@ -15,8 +15,6 @@ public class PlayerBuilder : NetworkedBehaviour {
         gameObject.AddComponent<PlayerController>();
         GameObject camera = Instantiate(camera_prefab);
         camera.transform.parent = transform;
-        GameObject recover = Instantiate(recover_prefab);
-        recover.transform.parent = transform;
 
         GameObject parent = transform.parent.gameObject;
         MenuHandler mh = parent.AddComponent<MenuHandler>();
