@@ -271,10 +271,13 @@ public class PlayerController : NetworkedBehaviour {
         wall_run_collider.direction = 1;
         wall_run_collider.height = cc.height * 0.95f; // 5.5f originally
         wall_run_collider.radius = cc.radius * 1.5f; // 0.75f originally
-        wall_run_collider.center = cc.center;
+        //wall_run_collider.center = cc.center;
         GameObject recovery_go = new GameObject("RecoveryTrigger");
         recovery_go.transform.parent = transform;
+        recovery_go.layer = LayerMask.NameToLayer("Ignore Raycast");
         recovery_collider = recovery_go.AddComponent<CapsuleCollider>();
+        recovery_collider.isTrigger = true;
+        recovery_collider.direction = 1;
         recovery_collider.height = cc.height * 0.95f; // 5.5f originally
         recovery_collider.radius = cc.radius * 0.8f; // 0.4f originally
         recovery_collider.center = cc.center;
@@ -282,6 +285,7 @@ public class PlayerController : NetworkedBehaviour {
         recovery_rb.isKinematic = true;
         recovery_rb.drag = 0f;
         recovery_rb.angularDrag = 0f;
+        recovery_rb.useGravity = false;
         CollisionRecovery recovery_cr = recovery_go.AddComponent<CollisionRecovery>();
         recovery_cr.player = this;
 
@@ -329,19 +333,19 @@ public class PlayerController : NetworkedBehaviour {
         // Gravity modifiers
         DownGravityAdd = 0;
         // Jump/Wall modifiers
-        JumpVelocityMult = 2f; // proportional to height
+        JumpVelocityMult = 4.9f; // proportional to sqrt(height)
         JumpBoostSpeedMult = 24f; // proportional to radius
         JumpBoostRequiredSpeedMult = 24f; // proportional to radius
         JumpBoostAddMult = 0f; // proportional to radius
         WallJumpThresholdMult = 16f; // proportional to radius
         WallJumpBoost = 1f;
-        WallJumpSpeedMult = 4f; // proportional to height
+        WallJumpSpeedMult = 9.8f; // proportional to sqrt(height)
         WallRunLimitMult = 16f; // proportional to radius
         WallRunJumpBoostSpeedMult = 12f; // proportional to radius
         WallRunJumpBoostAddMult = 0f; // proportional to radius
         WallRunJumpSpeedMult = 30f; // proportional to radius
-        WallRunJumpUpSpeedMult = 2f; // proportional to height
-        WallRunImpulseMult = 0f; // proportional to height
+        WallRunJumpUpSpeedMult = 4.9f; // proportional to sqrt(height)
+        WallRunImpulseMult = 0f; // proportional to sqrt(height)
         WallRunSpeedMult = 30f; // proportional to radius
         WallRunClimbCosAngle = Mathf.Cos(Mathf.Deg2Rad * 30f);
         GroundStepOffsetMult = 0.2f; // proportional to height
@@ -371,19 +375,19 @@ public class PlayerController : NetworkedBehaviour {
         // Gravity modifiers
         DownGravityAdd = 0;
         // Jump/Wall modifiers
-        JumpVelocityMult = 2.5f; // proportional to height
+        JumpVelocityMult = 6.53f; // proportional to sqrt(height)
         JumpBoostSpeedMult = 36f; // proportional to radius
         JumpBoostRequiredSpeedMult = 24f; // proportional to radius
         JumpBoostAddMult = 20f; // proportional to radius
         WallJumpThresholdMult = 16f; // proportional to radius
         WallJumpBoost = 1f;
-        WallJumpSpeedMult = 2f; // proportional to height
+        WallJumpSpeedMult = 4.9f; // proportional to sqrt(height)
         WallRunLimitMult = 16f; // proportional to radius
         WallRunJumpBoostSpeedMult = 40f; // proportional to radius
         WallRunJumpBoostAddMult = 20f; // proportional to radius
         WallRunJumpSpeedMult = 24f; // proportional to radius
-        WallRunJumpUpSpeedMult = 2f; // proportional to height
-        WallRunImpulseMult = 0f; // proportional to height
+        WallRunJumpUpSpeedMult = 4.9f; // proportional to sqrt(height)
+        WallRunImpulseMult = 0f; // proportional to sqrt(height)
         WallRunSpeedMult = 30f; // proportional to radius
         WallRunClimbCosAngle = Mathf.Cos(Mathf.Deg2Rad * 30f);
         GroundStepOffsetMult = 0.2f; // proportional to height
@@ -753,7 +757,7 @@ public class PlayerController : NetworkedBehaviour {
                     if (AlongWallVel.magnitude < (WallRunSpeedMult * cc.radius)) {
                         current_velocity = UpWallVel + Mathf.Sign(Vector3.Dot(current_velocity, WallAxis)) * (WallRunSpeedMult * cc.radius) * WallAxis;
                     }
-                    current_velocity.y = Math.Max(current_velocity.y + (WallRunImpulseMult * cc.height), (WallRunImpulseMult * cc.height));
+                    current_velocity.y = Math.Max(current_velocity.y + (WallRunImpulseMult * Mathf.Sqrt(cc.height)), (WallRunImpulseMult * Mathf.Sqrt(cc.height)));
                 }
                 utils.ResetTimer(WALL_RUN_TIMER);
             }
@@ -1112,7 +1116,7 @@ public class PlayerController : NetworkedBehaviour {
         // These constants will change with character size
         float leapDistance = 4f;
         float leapSpeedRequirement = 0f;
-        float leapJumpSpeedLimit = JumpVelocityMult * cc.height;
+        float leapJumpSpeedLimit = JumpVelocityMult * Mathf.Sqrt(cc.height);
         if (!ScanForNearestStep(scanDir: transform.forward,
                                 scanReach: cc.radius + cc.skinWidth + leapDistance,
                                 out RaycastHit stepSurface,
@@ -1221,10 +1225,10 @@ public class PlayerController : NetworkedBehaviour {
                 //Debug.Log("Wall Jump");
                 current_velocity += (WallJumpReflect - current_velocity) * WallJumpBoost * JumpMeterComputed;
                 if (conserveUpwardMomentum) {
-                    current_velocity.y = Math.Max(current_velocity.y + (WallJumpSpeedMult * cc.height * JumpMeterComputed), WallJumpSpeedMult * cc.height * JumpMeterComputed);
+                    current_velocity.y = Math.Max(current_velocity.y + (WallJumpSpeedMult * Mathf.Sqrt(cc.height) * JumpMeterComputed), WallJumpSpeedMult * Mathf.Sqrt(cc.height) * JumpMeterComputed);
                 }
                 else {
-                    current_velocity.y = Math.Max(current_velocity.y, WallJumpSpeedMult * cc.height * JumpMeterComputed);
+                    current_velocity.y = Math.Max(current_velocity.y, WallJumpSpeedMult * Mathf.Sqrt(cc.height) * JumpMeterComputed);
                 }
                 utils.ResetTimer(JUMP_METER);
                 utils.SetTimerFinished(WALL_HIT_TIMER);
@@ -1235,17 +1239,17 @@ public class PlayerController : NetworkedBehaviour {
                 float pathvel = Vector3.Dot(current_velocity, transform.forward);
                 float newspeed = Mathf.Clamp(pathvel + (WallRunJumpBoostAddMult * cc.radius * JumpMeterComputed), 0f, WallRunJumpBoostSpeedMult * cc.radius);
                 current_velocity += transform.forward * (newspeed - pathvel);
-                current_velocity.y = Math.Max(current_velocity.y, WallRunJumpUpSpeedMult * cc.height * JumpMeterComputed);
+                current_velocity.y = Math.Max(current_velocity.y, WallRunJumpUpSpeedMult * Mathf.Sqrt(cc.height) * JumpMeterComputed);
                 utils.ResetTimer(JUMP_METER);
                 utils.SetTimerFinished(WALL_HIT_TIMER);
             }
             else if (OnGround()) {
                 //Debug.Log("Upward Jump");
                 if (conserveUpwardMomentum) {
-                    current_velocity.y = Math.Max(current_velocity.y + (JumpVelocityMult * cc.height * JumpMeterComputed), JumpVelocityMult * cc.height * JumpMeterComputed);
+                    current_velocity.y = Math.Max(current_velocity.y + (JumpVelocityMult * Mathf.Sqrt(cc.height) * JumpMeterComputed), JumpVelocityMult * Mathf.Sqrt(cc.height) * JumpMeterComputed);
                 }
                 else {
-                    current_velocity.y = Math.Max(current_velocity.y, JumpVelocityMult * cc.height * JumpMeterComputed);
+                    current_velocity.y = Math.Max(current_velocity.y, JumpVelocityMult * Mathf.Sqrt(cc.height) * JumpMeterComputed);
                 }
             }
             if (JumpBoostEnabled && CanJumpBoost()) {
