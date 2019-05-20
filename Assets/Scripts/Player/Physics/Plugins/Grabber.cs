@@ -9,8 +9,8 @@ public class Grabber : PhysicsPlugin {
     private const string THROW_PRESS = "ThrowPress";
     private Grabable grabbing = null;
     private Grabable grabbed = null;
-    public float throw_base_strength = 5f;
-    public float throw_added_strength = 5f;
+    public float throw_base_strength_mult = 10f;
+    public float throw_added_strength_mult = 10f;
     public float grab_timeout = 3f;
 
     public Grabber(PhysicsPropHandler context) : base(context) { }
@@ -99,7 +99,7 @@ public class Grabber : PhysicsPlugin {
         if (!IsOwner) return;
         if (!utils.CheckTimer(THROW_PRESS) && grabbed) {
             Vector3 local_velocity = player.transform.InverseTransformVector(player.GetWorldVelocity());
-            float throw_power = (throw_base_strength + throw_added_strength * utils.GetTimerPercent(THROW_METER));
+            float throw_power = ((throw_base_strength_mult + throw_added_strength_mult) * player.cc.radius * utils.GetTimerPercent(THROW_METER));
             if (IsServer) {
                 bool success = grabbed.Throw(
                     velocity: local_velocity + throw_power * (Vector3.forward + Vector3.up));
