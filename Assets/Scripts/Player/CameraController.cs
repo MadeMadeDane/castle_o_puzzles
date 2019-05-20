@@ -45,7 +45,7 @@ public class CameraController : NetworkedBehaviour {
     private Utilities utils;
 
     // Other Settings
-    private float transparency_divider;
+    private float transparency_divider_mult;
     private float fully_translucent_threshold;
     private bool fade_texture_in_use;
     private Material opaque_material;
@@ -58,7 +58,7 @@ public class CameraController : NetworkedBehaviour {
     private void Setup() {
         QualitySettings.vSyncCount = 0;
         // Application.targetFrameRate = 45;
-        transparency_divider = 4;
+        transparency_divider_mult = 8;
         fully_translucent_threshold = 1;
         if (home == null) {
             home = transform.parent.gameObject;
@@ -70,6 +70,7 @@ public class CameraController : NetworkedBehaviour {
         pitch_pivot.transform.parent = yaw_pivot.transform;
         if (controlled_camera == null) {
             controlled_camera = gameObject.AddComponent<Camera>();
+            controlled_camera.nearClipPlane = 0.01f;
         }
 
         input_manager = InputManager.Instance;
@@ -124,7 +125,7 @@ public class CameraController : NetworkedBehaviour {
         handleCameraMove = ThirdPersonCameraMove;
         handlePlayerRotate = ThirdPersonPlayerRotate;
         target_follow_angle = new Vector3(14f, 0, 0);
-        target_follow_distance = new Vector3(0, target.GetHeadHeight(), -target.cc.height * 1.5f);
+        target_follow_distance = new Vector3(0, target.GetHeadHeight() * 1.75f, -target.cc.height * 1.75f);
 
         if (current_player != null) {
             current_player.player_camera = null;
@@ -307,7 +308,7 @@ public class CameraController : NetworkedBehaviour {
                 break;
             case ViewMode.Third_Person:
                 target_follow_distance = new Vector3(
-                    0, current_player.GetHeadHeight(), -current_player.cc.height * 1.5f);
+                    0, current_player.GetHeadHeight() * 1.75f, -current_player.cc.height * 1.75f);
                 break;
             case ViewMode.Third_Person_Shooter:
                 target_follow_distance = new Vector3(
@@ -322,13 +323,13 @@ public class CameraController : NetworkedBehaviour {
         foreach (SkinnedMeshRenderer render in renderers) {
             if (view_mode == ViewMode.Third_Person || !show_model_in_inspection) {
                 float distance_to_head = (current_player.GetHeadHeight() * current_player.transform.up + current_player.transform.position - transform.position).magnitude;
-                if (distance_to_head < transparency_divider) {
+                if (distance_to_head < (transparency_divider_mult * current_player.cc.radius)) {
                     if (!fade_texture_in_use) {
                         fade_texture_in_use = true;
                         render.material = fade_material;
                     }
                     textureColor = render.material.color;
-                    textureColor.a = distance_to_head < fully_translucent_threshold ? 0 : distance_to_head / transparency_divider;
+                    textureColor.a = distance_to_head < fully_translucent_threshold ? 0 : distance_to_head / (transparency_divider_mult * current_player.cc.radius);
                     render.material.color = textureColor;
                 }
                 else {
@@ -443,15 +444,15 @@ public class CameraController : NetworkedBehaviour {
         Vector3 path = (yaw_pivot.transform.position + world_target_vec - startpos);
         //Debug.DrawRay(startpos, path.normalized*(path.magnitude+1f), Color.green);
 
-        if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude + 1f)) { // MAGIC
+        if (Physics.Raycast(startpos, path.normalized, out hit, path.magnitude + (current_player.cc.height / 12f))) {
             Vector3 pivot_hit = (hit.point - yaw_pivot.transform.position);
             // Ignore hits that are too far away
-            if (pivot_hit.magnitude > target_follow_distance.magnitude + 1f) { // MAGIC
+            if (pivot_hit.magnitude > target_follow_distance.magnitude + (current_player.cc.height / 12f)) {
                 //Debug.Log("Too far hit");
                 transform.localPosition = Vector3.Lerp(transform.localPosition, target_follow_distance, 0.1f);
             }
             // Very close hits should move the camera to a predefined location
-            else if (hit.distance < 1f) { // MAGIC
+            else if (hit.distance < (current_player.cc.height / 12f)) {
                 //Debug.Log("Too close hit");
                 if (pitch_pivot.transform.localRotation.x < 0) {
                     transform.localPosition = Vector3.Lerp(transform.localPosition, (Quaternion.Inverse(pitch_pivot.transform.localRotation) * Vector3.up * target_follow_distance.y), 0.1f);
@@ -465,11 +466,11 @@ public class CameraController : NetworkedBehaviour {
             else {
                 //Debug.Log("Wall hit");
                 float horizontal_displacement = Vector3.Dot(pivot_hit, pitch_pivot.transform.forward);
-                if (pitch_pivot.transform.localRotation.x < 0) { // MAGIC
-                    transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - 1f) * Vector3.forward) + (Quaternion.Inverse(pitch_pivot.transform.localRotation) * Vector3.up * target_follow_distance.y);
+                if (pitch_pivot.transform.localRotation.x < 0) {
+                    transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - (current_player.cc.height / 12f)) * Vector3.forward) + (Quaternion.Inverse(pitch_pivot.transform.localRotation) * Vector3.up * target_follow_distance.y);
                 }
-                else { // MAGIC
-                    transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - 1f) * Vector3.forward) + (Vector3.up * target_follow_distance.y);
+                else {
+                    transform.localPosition = (Mathf.Sign(horizontal_displacement) * (Mathf.Abs(horizontal_displacement) - (current_player.cc.height / 12f)) * Vector3.forward) + (Vector3.up * target_follow_distance.y);
                 }
                 transform.localPosition += transform.InverseTransformDirection(hit.normal) * controlled_camera.rect.width / 2;
                 transform.localPosition = new Vector3(target_follow_distance.x, transform.localPosition.y, transform.localPosition.z);

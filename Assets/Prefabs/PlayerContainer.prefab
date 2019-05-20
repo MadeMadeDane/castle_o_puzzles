@@ -69,13 +69,13 @@ CharacterController:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Height: 5.8
-  m_Radius: 0.5
+  m_Height: 1.3
+  m_Radius: 0.2
   m_SlopeLimit: 80
   m_StepOffset: 0.3
   m_SkinWidth: 0.01
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: -0.2, z: 0}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!54 &3809476801668544939
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -124,8 +124,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animator: {fileID: 3840802101551939593}
-  walkMaxSpeed: 4
-  runMinSpeed: 4.5
+  walkMaxSpeedMult: 12
+  runMinSpeedMult: 16
   FixedSendsPerSecond: 20
 --- !u!114 &6527275195553282519
 MonoBehaviour:
@@ -245,6 +245,11 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -5669697556203348248, guid: 0ccaea5a4f6a4794581a3ff5839d61a8,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: a9f0478299418f74ea18f42d9e8e5d10, type: 2}
     - target: {fileID: -4216859302048453862, guid: 0ccaea5a4f6a4794581a3ff5839d61a8,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -300,6 +305,16 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5425147557818186844, guid: 0ccaea5a4f6a4794581a3ff5839d61a8,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: a9f0478299418f74ea18f42d9e8e5d10, type: 2}
+    - target: {fileID: 6990484485100347698, guid: 0ccaea5a4f6a4794581a3ff5839d61a8,
+        type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: a9f0478299418f74ea18f42d9e8e5d10, type: 2}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0ccaea5a4f6a4794581a3ff5839d61a8, type: 3}
 --- !u!4 &7915236393023738418 stripped
