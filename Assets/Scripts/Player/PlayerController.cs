@@ -162,7 +162,7 @@ public class PlayerController : NetworkedBehaviour {
         LedgeClimbOffsetMult = 2f;
         WallScanDistanceMult = 3f;
         LedgeClimbBoost = Mathf.Sqrt(2 * cc.height * 1.1f * Physics.gravity.magnitude);
-        WallDistanceThresholdMult = 28f;
+        WallDistanceThresholdMult = 56f; // proportional to radius^2
         LedgeGapTolerance = 0.1f;
         ShortHopTempDisable = false;
 
@@ -580,13 +580,15 @@ public class PlayerController : NetworkedBehaviour {
         //Debug.DrawRay(stepSurfaceHit.point, ledgeOffset, Color.green, 10f);
         //Debug.Log($"ledgeOff: {ledgeOffset.magnitude}");
 
-        Vector3 desiredPlayerPos = ledgeOffset + transform.position + (ledgeOffset.normalized * stepExtraHeight);
-        Teleport(desiredPlayerPos);
-
         Vector3 surfaceProbeOrigin = stepSurfaceHit.point + Vector3.ProjectOnPlane(desiredMove.normalized * cc.radius, stepSurfaceHit.normal) + transform.up * stepExtraHeight;
         //Debug.DrawRay(surfaceProbeOrigin, -transform.up, Color.red, 10f);
         if (!Physics.Raycast(surfaceProbeOrigin, -transform.up, out RaycastHit surfaceProbe, cc.height / 12f)) return;
         //Debug.DrawRay(surfaceProbe.point, surfaceProbe.normal, Color.blue, 10f);
+        // If neither the original surface or the probe are floors, than this is definitely not a staircase or slope tip
+        if (!IsFloor(surfaceProbe.normal) && !IsFloor(stepSurfaceHit.normal)) return;
+
+        Vector3 desiredPlayerPos = ledgeOffset + transform.position + (ledgeOffset.normalized * stepExtraHeight);
+        Teleport(desiredPlayerPos);
         if (IsFloor(surfaceProbe.normal)) {
             currentHitNormal = lastFloorHitNormal = surfaceProbe.normal;
             current_velocity = Vector3.ProjectOnPlane(current_velocity, lastFloorHitNormal);
@@ -789,7 +791,7 @@ public class PlayerController : NetworkedBehaviour {
 
     private bool WallDistanceCheck() {
         float horizontal_distance_sqr = Vector3.ProjectOnPlane(PreviousWallJumpPos - transform.position, Physics.gravity).sqrMagnitude;
-        return float.IsNaN(horizontal_distance_sqr) || horizontal_distance_sqr > (cc.radius * WallDistanceThresholdMult);
+        return float.IsNaN(horizontal_distance_sqr) || horizontal_distance_sqr > (Mathf.Pow(cc.radius, 2) * WallDistanceThresholdMult);
     }
 
     private void ProcessHits() {
