@@ -584,7 +584,7 @@ public class PlayerController : NetworkedBehaviour {
         //Debug.DrawRay(surfaceProbeOrigin, -transform.up, Color.red, 10f);
         if (!Physics.Raycast(surfaceProbeOrigin, -transform.up, out RaycastHit surfaceProbe, cc.height / 12f)) return;
         //Debug.DrawRay(surfaceProbe.point, surfaceProbe.normal, Color.blue, 10f);
-        // If neither the original surface or the probe are floors, than this is definitely not a staircase or slope tip
+        // If neither the original surface or the probe are floors, then this is definitely not a staircase or slope tip
         if (!IsFloor(surfaceProbe.normal) && !IsFloor(stepSurfaceHit.normal)) return;
 
         Vector3 desiredPlayerPos = ledgeOffset + transform.position + (ledgeOffset.normalized * stepExtraHeight);
