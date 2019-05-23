@@ -1033,6 +1033,7 @@ public class PlayerController : NetworkedBehaviour {
         }
 
         Vector3 move = Vector3.ProjectOnPlane(current_velocity, lastFloorHitNormal) * Mathf.Pow(GetMoveVector().magnitude, 2);
+        move = Vector3.ProjectOnPlane(move, Physics.gravity).normalized * move.magnitude;
         Vector3 move_percent_vec = moveAccumulator / MoveAccumulatorMax;
         Vector3 delta = MoveAccumulatorScaleFactor * (move - (0.8f * RunSpeedMult * cc.radius * move_percent_vec)) * Time.fixedDeltaTime;
         if (move.magnitude > 0.1f * RunSpeedMult * cc.radius) {
