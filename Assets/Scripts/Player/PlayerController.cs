@@ -97,6 +97,7 @@ public class PlayerController : NetworkedBehaviour {
     private CapsuleCollider wall_run_collider;
     private CapsuleCollider recovery_collider;
     private LayerMask DEFAULT_LAYER;
+    public float GetStandingHeight() => cc_standHeight;
 
     // Wall related variables
     private Vector3 WallJumpReflect;
@@ -1427,8 +1428,14 @@ public class PlayerController : NetworkedBehaviour {
         return LastHangingNormal;
     }
 
-    public Vector3 GetGroundVelocity() {
+    public Vector3 GetGroundVelocity(bool use_cc = false) {
+        if (use_cc) return Vector3.ProjectOnPlane(cc.velocity, Physics.gravity);
         return Vector3.ProjectOnPlane(current_velocity, Physics.gravity);
+    }
+
+    public Vector3 GetPlaneVelocity(bool use_cc = false) {
+        if (use_cc) return Vector3.ProjectOnPlane(cc.velocity, lastFloorHitNormal);
+        return Vector3.ProjectOnPlane(current_velocity, lastFloorHitNormal);
     }
 
     public Vector3 GetWorldVelocity() {
