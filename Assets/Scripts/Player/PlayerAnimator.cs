@@ -109,7 +109,6 @@ public class PlayerAnimator : NetworkedBehaviour {
             }
             else {
                 isJumping = false;
-
             }
             if (is_hanging) {
                 isJumping = false;
