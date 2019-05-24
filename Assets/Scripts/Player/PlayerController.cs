@@ -977,9 +977,9 @@ public class PlayerController : NetworkedBehaviour {
             utils.SetTimerFinished(SLIDE_TIMER);
             // dot(new_movVec, normal) = 0 --> dot(movVec, normal) + dot(up, normal)*k = 0 --> k = -dot(movVec, normal)/dot(up, normal)
             float slope_correction = -Vector3.Dot(movVec, lastFloorHitNormal) / Vector3.Dot(transform.up, lastFloorHitNormal);
-            if (slope_correction < 0f) {
-                movVec += slope_correction * transform.up;
-            }
+            //if (slope_correction < 0f) {
+            movVec += slope_correction * transform.up;
+            //}
             // Debug.DrawRay(transform.position + transform.up * (cc.height / 2 + 1f), movVec, Color.green);
             accelerate(movVec, RunSpeedMult * cc.radius * movmag, (GroundAccelerationMult * cc.radius), true);
         }
