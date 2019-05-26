@@ -17,12 +17,14 @@ public class PlayerController : NetworkedBehaviour {
     public CameraController player_camera;
     [Header("Movement constants")]
     public float RunSpeedMult;
+    public float ClimbSpeedMult;
     public float AirSpeedMult;
     public float MaxAirSpeedMult;
     public float GroundAccelerationMult;
     public float AirAccelerationMult;
     public float SpeedDampMult;
     public float AirSpeedDampMult;
+    public float ClimbSpeedDampMult;
     public float SlideSpeedMult;
     public float DownGravityAdd;
     public float JumpVelocityMult;
@@ -87,7 +89,6 @@ public class PlayerController : NetworkedBehaviour {
     private bool isFalling;
     private bool isCrouching;
     private bool willJump;
-    private bool canAutoLedgeClimb;
     private float cc_standHeight;
     private float cc_standCenter;
     private float wr_standHeight;
@@ -153,7 +154,6 @@ public class PlayerController : NetworkedBehaviour {
         isJumping = false;
         isFalling = false;
         willJump = false;
-        canAutoLedgeClimb = true;
         isCrouching = false;
         // Wall related vars
         WallAxis = Vector3.zero;
@@ -326,12 +326,14 @@ public class PlayerController : NetworkedBehaviour {
     private void SetShooterVars() {
         // Movement modifiers
         RunSpeedMult = 30f; // proportional to radius
+        ClimbSpeedMult = 60f; // proportional to radius
         AirSpeedMult = 1.8f; // proportional to radius
         MaxAirSpeedMult = Mathf.Infinity; // proportional to radius
         GroundAccelerationMult = 40; // proportional to radius
         AirAccelerationMult = 1000; // proportional to radius
         SpeedDampMult = 40f; // proportional to radius
         AirSpeedDampMult = 0.02f; // proportional to radius
+        ClimbSpeedDampMult = 40f; // proportional to radius
         SlideSpeedMult = 36f; // proportional to radius
         // Gravity modifiers
         DownGravityAdd = 0;
@@ -370,12 +372,14 @@ public class PlayerController : NetworkedBehaviour {
     private void SetThirdPersonActionVars() {
         // Movement modifiers
         RunSpeedMult = 30f; // proportional to radius
+        ClimbSpeedMult = 60f; // proportional to radius
         AirSpeedMult = 30f; // proportional to radius
         MaxAirSpeedMult = 10f; // proportional to radius
         GroundAccelerationMult = 600f; // proportional to radius
         AirAccelerationMult = 60f; // proportional to radius
         SpeedDampMult = 40f; // proportional to radius
         AirSpeedDampMult = 0.02f; // proportional to radius
+        ClimbSpeedDampMult = 40f; // proportional to radius
         SlideSpeedMult = 44f; // proportional to radius
         // Gravity modifiers
         DownGravityAdd = 0;
@@ -575,10 +579,21 @@ public class PlayerController : NetworkedBehaviour {
     private void HandleStairs(Vector3 desiredMove, float stepMaxHeight = 0.5f, float stepMaxDepth = 0.5f) {
         // If we are in the air, handle running into the edge of the top of a wall
         if (!OnGround()) {
+            desiredMove = GetMoveVector();
+            if (desiredMove.magnitude < 0.2f) return;
             // Make sure we are running into a wall
             if (!IsOnWall() || !IsWall(currentHitNormal)) return;
+            // Make sure we are moving along the wall normal axis
+            if (Vector3.Dot(desiredMove.normalized, currentHitNormal) > -0.3f) {
+                // if (Vector3.Dot(desiredMove.normalized, currentHitNormal) > 0.3f) {
+                //     player_camera.RotatePlayerToward(Vector3.ProjectOnPlane(-currentHitNormal, transform.up), 1.0f);
+                // }
+                return;
+            }
             // Make sure the wall hit is near our feet
             if ((currentHitPos - GetFootPosition()).magnitude > cc.radius * 1.5f) return;
+            // If we hit a wall at our torso, abort
+            if (Physics.Raycast(transform.position, -currentHitNormal, 2f * cc.radius)) return;
             // Check if we can fit on the surface above wall we are running into
             if (CapsuleCastPlayer(transform.position + (transform.up * cc.radius * 1.2f) - (desiredMove.normalized * cc.radius * 0.1f), desiredMove, out RaycastHit hitinfo, cc.radius)) {
                 if (!IsFloor(hitinfo.normal) && !IsSlide(hitinfo.normal)) return;
@@ -1137,13 +1152,30 @@ public class PlayerController : NetworkedBehaviour {
 
     #region HANDLE_CLIMBING
     private void HandleClimbing() {
-        // TODO: Work on auto climbing
-        // if (OnGround()) {
-        //     canAutoLedgeClimb = true;
-        // }
-        // else {
-        //     if (canAutoLedgeClimb) HandleAutoLedgeClimb();
-        // }
+        // HandleClimbableSurfaces();
+    }
+
+    private void HandleClimbableSurfaces() {
+        if (!OnGround()) {
+            // Make sure we are running into a wall
+            if (!IsOnWall()) return;
+            GravityMult = 0f;
+            Accelerate(-PreviousWallNormal * cc.radius * 20f);
+            if (Vector3.Dot(current_velocity, PreviousWallNormal) > 0) {
+                current_velocity = Vector3.ProjectOnPlane(current_velocity, PreviousWallNormal);
+            }
+            Accelerate(-Vector3.ProjectOnPlane(current_velocity, PreviousWallNormal) * ClimbSpeedDampMult * cc.radius);
+            float wallAxisMove = Vector3.Dot(GetMoveVector(), -PreviousWallNormal);
+            Debug.DrawRay(transform.position, GetMoveVector(), Color.green);
+            Debug.DrawRay(transform.position, transform.up * wallAxisMove, Color.red);
+            Accelerate(transform.up * wallAxisMove * ClimbSpeedMult * cc.radius);
+            player_camera.RotatePlayerToward(Vector3.ProjectOnPlane(-PreviousWallNormal, transform.up), 0.5f);
+            utils.ResetTimer(REGRAB_TIMER);
+            Debug.DrawRay(currentHitPos, currentHitNormal, Color.blue, 10f);
+        }
+        else {
+            if (IsOnWall()) Debug.Log("On wall on ground");
+        }
     }
 
     private IEnumerator SeekTarget(Vector3 target) {
@@ -1157,38 +1189,6 @@ public class PlayerController : NetworkedBehaviour {
             yield return new WaitForFixedUpdate();
         }
         SetCollision(true);
-    }
-
-    private void HandleAutoLedgeClimb() {
-        if (!input_manager.GetJumpHold()) return;
-        // These constants will change with character size
-        float leapDistance = 4f;
-        float leapSpeedRequirement = 0f;
-        float leapJumpSpeedLimit = JumpVelocityMult * cc_standHeight;
-        if (!ScanForNearestStep(scanDir: transform.forward,
-                                scanReach: cc.radius + cc.skinWidth + leapDistance,
-                                out RaycastHit stepSurface,
-                                out RaycastHit stepWall,
-                                scanDepthOffset: 2f)) return;
-        // If we aren't moving fast enough to make the ledge jump, abort
-        if (Vector3.Dot(current_velocity, -stepWall.normal) < leapSpeedRequirement) return;
-        Vector3 ledgeOffset = Vector3.Project(stepSurface.point - GetFootPosition(), transform.up);
-        if (ledgeOffset.magnitude > (AirStepOffsetMult * cc_standHeight) || ledgeOffset.magnitude < (cc.radius * 0.1f)) return;
-
-        float ledgeDistance = Vector3.ProjectOnPlane(stepWall.point - transform.position, transform.up).magnitude - cc.radius;
-        float timeToLedge = ledgeDistance / GetGroundVelocity().magnitude;
-
-        // d = -(a*t^2)/2 + v*t ----> v = (a*t/2) + (d/t)
-        float requiredLeapImpulse = (Physics.gravity.magnitude * timeToLedge / 2) + (ledgeOffset.magnitude / timeToLedge);
-        float currentUpwardVel = Vector3.Dot(current_velocity, transform.up);
-        // If we already have enough speed, we're good. Also don't give ourselves too much speed.
-        if (currentUpwardVel > requiredLeapImpulse || requiredLeapImpulse > leapJumpSpeedLimit) return;
-
-        // Otherwise, give ourselves the needed velocity to make the jump
-        current_velocity += (requiredLeapImpulse - currentUpwardVel) * transform.up;
-        //StartCoroutine(SeekTarget((stepSurface.point - GetFootPosition()) + transform.position));
-        // We won't be able to do another auto ledge climb until we hit the ground again
-        canAutoLedgeClimb = false;
     }
 
     private bool CapsuleCastPlayer(Vector3 origin, Vector3 direction, out RaycastHit hitInfo, float maxDistance) {
