@@ -124,6 +124,7 @@ public class PlayerController : NetworkedBehaviour {
     private Collider lastTrigger;
     private Vector3 lastFloorHitNormal;
     private Vector3 currentHitNormal;
+    private Vector3 currentHitPos;
     private float GravityMult;
     private float GravityTimeConstant;
 
@@ -572,8 +573,21 @@ public class PlayerController : NetworkedBehaviour {
     }
 
     private void HandleStairs(Vector3 desiredMove, float stepMaxHeight = 0.5f, float stepMaxDepth = 0.5f) {
+        // If we are in the air, handle running into the edge of the top of a wall
+        if (!OnGround()) {
+            // Make sure we are running into a wall
+            if (!IsOnWall() || !IsWall(currentHitNormal)) return;
+            // Make sure the wall hit is near our feet
+            if ((currentHitPos - GetFootPosition()).magnitude > cc.radius * 1.5f) return;
+            // Check if we can fit on the surface above wall we are running into
+            if (CapsuleCastPlayer(transform.position + (transform.up * cc.radius * 1.2f) - (desiredMove.normalized * cc.radius * 0.1f), desiredMove, out RaycastHit hitinfo, cc.radius)) {
+                if (!IsFloor(hitinfo.normal) && !IsSlide(hitinfo.normal)) return;
+            }
+            // If we pass all the above tests, give the player enough upward velocity to move upward one radius of the capsule
+            current_velocity.y = Mathf.Max(Mathf.Sqrt(2 * cc.radius * Physics.gravity.magnitude * cc_standHeight * GravityTimeConstant), current_velocity.y);
+            return;
+        }
         // Scan for a step infront of us
-        if (!OnGround()) return;
         float stepExtraHeight = cc_standHeight / 60f;
         Vector3 stepScanOrigin = transform.position + cc.center + desiredMove + (transform.up * stepMaxHeight);
         float scanDepth = stepMaxHeight + stepMaxDepth;
@@ -806,6 +820,7 @@ public class PlayerController : NetworkedBehaviour {
         }
         // Save the most recent last hit
         currentHitNormal = lastHit.normal;
+        currentHitPos = lastHit.point;
 
         if (IsFloor(currentHitNormal)) {
             ProcessFloorHit();
