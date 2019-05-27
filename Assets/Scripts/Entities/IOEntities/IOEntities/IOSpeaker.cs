@@ -21,11 +21,12 @@ public class IOSpeaker : IOEntity {
             // Set up output state callbacks for clients
             TurnedOn.OnReceiveNetworkValue = Switch;
             Volume.OnReceiveNetworkValue = SetVolume;
-            return;
         }
         // Set up the initial output state on the server
-        Switch(StartOn);
-        SetVolume(StartingVolume);
+        else {
+            Switch(StartOn);
+            SetVolume(StartingVolume);
+        }
     }
 
     public void TurnOn() {

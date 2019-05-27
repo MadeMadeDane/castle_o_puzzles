@@ -8,8 +8,10 @@ using MLAPI;
 public class IOEntity : NetworkedBehaviour {
     public HashSet<DigitalState> ConnectedDigitalInputs = new HashSet<DigitalState>();
     public HashSet<AnalogState> ConnectedAnalogInputs = new HashSet<AnalogState>();
+    public HashSet<VectorState> ConnectedVectorInputs = new HashSet<VectorState>();
     public HashSet<DigitalState> DigitalOutputs = new HashSet<DigitalState>();
-    public HashSet<AnalogState> AnaloglOutputs = new HashSet<AnalogState>();
+    public HashSet<AnalogState> AnalogOutputs = new HashSet<AnalogState>();
+    public HashSet<VectorState> VectorOutputs = new HashSet<VectorState>();
     protected Utilities utils;
 
     private void Awake() {
@@ -17,6 +19,7 @@ public class IOEntity : NetworkedBehaviour {
         // Use reflection to determine which IOEntities we are hooked up to
         IndexDigitalConnections();
         IndexAnalogConnections();
+        IndexVectorConnections();
         Startup();
     }
 
@@ -44,7 +47,7 @@ public class IOEntity : NetworkedBehaviour {
     protected void IndexAnalogConnections() {
         List<AnalogState> myAnalogStates = utils.GetAllFieldsOfType<IOEntity, AnalogState>(this);
         foreach (AnalogState aState in myAnalogStates) {
-            AnaloglOutputs.Add(aState);
+            AnalogOutputs.Add(aState);
             // Find every analog state change event on that specific analog state
             foreach (AnalogStateChange aChange in utils.GetAllFieldsOfType<AnalogState, AnalogStateChange>(aState)) {
                 // Find every listener on that specific analog state change
@@ -53,6 +56,23 @@ public class IOEntity : NetworkedBehaviour {
                     Object target = aChange.GetPersistentTarget(idx);
                     if (!(target is IOEntity)) continue;
                     (target as IOEntity).ConnectedAnalogInputs.Add(aState);
+                }
+            }
+        }
+    }
+
+    protected void IndexVectorConnections() {
+        List<VectorState> myVectorStates = utils.GetAllFieldsOfType<IOEntity, VectorState>(this);
+        foreach (VectorState vState in myVectorStates) {
+            VectorOutputs.Add(vState);
+            // Find every analog state change event on that specific analog state
+            foreach (VectorStateChange vChange in utils.GetAllFieldsOfType<VectorState, VectorStateChange>(vState)) {
+                // Find every listener on that specific analog state change
+                foreach (int idx in Enumerable.Range(0, vChange.GetPersistentEventCount())) {
+                    // Add myself to the targets list of analog input connections
+                    Object target = vChange.GetPersistentTarget(idx);
+                    if (!(target is IOEntity)) continue;
+                    (target as IOEntity).ConnectedVectorInputs.Add(vState);
                 }
             }
         }

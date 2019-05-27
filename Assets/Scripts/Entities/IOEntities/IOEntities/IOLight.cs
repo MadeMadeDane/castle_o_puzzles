@@ -26,8 +26,10 @@ public class IOLight : IOEntity {
             Intensity.OnReceiveNetworkValue = SetIntensity;
         }
         // Set up the initial output state on the server
-        SetIntensity(1f);
-        Switch(StartOn);
+        else {
+            SetIntensity(1f);
+            Switch(StartOn);
+        }
     }
 
     public void TurnOn() {

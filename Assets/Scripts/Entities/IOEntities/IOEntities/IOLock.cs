@@ -18,7 +18,9 @@ public class IOLock : IOEntity {
             Locked.OnReceiveNetworkValue = SetLockedState;
         }
         // Set up the initial output state on the server
-        SetLockedState(true);
+        else {
+            SetLockedState(true);
+        }
     }
 
     public void SetLockedState(DigitalState input) {

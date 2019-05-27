@@ -26,7 +26,7 @@ public class Launchable : PhysicsProp {
         if (utils.CheckTimer(LAUNCH_TIMER)) CurrentLauncher = null;
         if (CurrentLauncher == null) return;
 
-        Vector3 force = CurrentLauncher.Force;
+        Vector3 force = CurrentLauncher.force;
         if (CurrentLauncher.isLocalForce) force = CurrentLauncher.transform.TransformVector(force);
         if (CurrentLauncher.isImpulse) {
             // Calculate the necessary force to accelerate the player to the desired velocity
@@ -48,7 +48,7 @@ public class Launchable : PhysicsProp {
     private void OnTriggerStay(Collider other) {
         if (!IsServer) return;
         Launcher newLauncher = other.GetComponent<Launcher>();
-        if (!newLauncher) return;
+        if (!newLauncher || !newLauncher.activated) return;
         CurrentLauncher = newLauncher;
         utils.ResetTimer(LAUNCH_TIMER);
     }
@@ -56,7 +56,8 @@ public class Launchable : PhysicsProp {
     private void OnTriggerEnter(Collider other) {
         if (!IsServer) return;
         if (!utils.CheckTimer(LAUNCH_TIMER)) return;
-        if (!other.GetComponent<Launcher>()) return;
+        Launcher newLauncher = other.GetComponent<Launcher>();
+        if (!newLauncher || !newLauncher.activated) return;
         InitialVelocity = rigidbody.velocity;
     }
 }
