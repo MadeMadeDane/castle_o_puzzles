@@ -22,9 +22,11 @@ public class IOProximityDetector : IOEntity {
 
     private void OnTriggerStay(Collider other) {
         if (!IsServer) return;
-        if (!other.GetComponent<MovingPlayer>()) return;
+        if (!other.GetComponent<MovingPlayer>() && !other.GetComponent<Detectable>()) return;
         if ((other.transform.position - transform.position).magnitude < range) {
             utils.ResetTimer(DETECTION_TIMER);
         }
     }
 }
+
+public class Detectable : Component { }
