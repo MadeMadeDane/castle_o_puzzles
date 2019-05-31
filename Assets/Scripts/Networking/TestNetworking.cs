@@ -53,15 +53,15 @@ public class TestNetworking : NetworkedBehaviour {
 
         NetworkingManager.Singleton.StartHost();
         Debug.Log("Starting map...");
-        SceneSwitchProgress ssp = NetworkSceneManager.SwitchScene("SceneBuilder");
+        SceneSwitchProgress ssp = NetworkSceneManager.SwitchScene("Workspace");
         ssp.OnComplete += (bool err) => {
             if (err) {
                 Debug.Log("We timed out :(");
                 return;
             }
-            GameObject Map = Instantiate(MapPrefab);
-            Map.transform.position = new Vector3(30f, 0, 0);
-            Map.GetComponent<NetworkedObject>().Spawn();
+            // GameObject Map = Instantiate(MapPrefab);
+            // Map.transform.position = new Vector3(30f, 0, 0);
+            // Map.GetComponent<NetworkedObject>().Spawn();
         };
     }
 
