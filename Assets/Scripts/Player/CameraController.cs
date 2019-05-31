@@ -54,6 +54,10 @@ public class CameraController : NetworkedBehaviour {
     public Mesh headless_model;
     public bool show_model_in_inspection = false;
 
+    // Constants
+    private float upVelTrackingPointMult = 4.615f;
+    private float upVelTrackingLimitMult = 9f;
+
     // Use this for initialization
     private void Setup() {
         QualitySettings.vSyncCount = 0;
@@ -411,7 +415,19 @@ public class CameraController : NetworkedBehaviour {
 
     private void FollowPlayerVelocity() {
         if (utils.CheckTimer(IDLE_TIMER) && !ManualCamera) {
-            Vector3 player_ground_vel = Vector3.ProjectOnPlane(current_player.cc.velocity, current_player.transform.up);
+            Vector3 player_ground_vel;
+            if (current_player.OnGround()) {
+                player_ground_vel = current_player.GetPlaneVelocity(use_cc: true);
+            }
+            else {
+                player_ground_vel = current_player.GetGroundVelocity(use_cc: true);
+                Vector3 player_up_vel = current_player.cc.velocity - player_ground_vel;
+                if (player_up_vel.magnitude > current_player.GetStandingHeight() * upVelTrackingPointMult) {
+                    player_up_vel = Vector3.ClampMagnitude(player_up_vel, current_player.GetStandingHeight() * upVelTrackingLimitMult);
+                    player_ground_vel += player_up_vel - (player_up_vel.normalized * current_player.GetStandingHeight() * upVelTrackingPointMult);
+                }
+            }
+
             if (player_ground_vel.normalized != Vector3.zero && Vector3.Dot(player_ground_vel.normalized, yaw_pivot.transform.forward) > -0.8) {
                 Quaternion velocity_angle = Quaternion.LookRotation(player_ground_vel.normalized, current_player.transform.up);
                 idleOrientation = EulerToMouseAccum(velocity_angle.eulerAngles);

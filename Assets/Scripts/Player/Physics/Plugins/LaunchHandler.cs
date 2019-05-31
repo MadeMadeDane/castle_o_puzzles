@@ -24,7 +24,7 @@ public class LaunchHandler : PhysicsPlugin {
         if (CurrentLauncher == null) return;
 
         player.ShortHopTempDisable = true;
-        Vector3 force = CurrentLauncher.Force;
+        Vector3 force = CurrentLauncher.force;
         if (CurrentLauncher.isLocalForce) force = CurrentLauncher.transform.TransformVector(force);
         if (CurrentLauncher.isImpulse) {
             // Calculate the necessary force to accelerate the player to the desired velocity
@@ -42,11 +42,13 @@ public class LaunchHandler : PhysicsPlugin {
     public override void OnTriggerStay(Collider other, PhysicsProp prop) {
         if (!IsOwner) return;
         CurrentLauncher = prop as Launcher;
+        if (!CurrentLauncher.activated) return;
         utils.ResetTimer(LAUNCH_TIMER);
     }
 
     public override void OnTriggerEnter(Collider other, PhysicsProp prop) {
         if (!IsOwner) return;
+        if (!(prop as Launcher).activated) return;
         if (!utils.CheckTimer(LAUNCH_TIMER)) return;
         InitialPlayerVelocity = player.GetVelocity();
     }

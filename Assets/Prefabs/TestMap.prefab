@@ -27758,6 +27758,7 @@ GameObject:
   - component: {fileID: 4489686707097384506}
   - component: {fileID: 9007333504534629334}
   - component: {fileID: 4455365981862667943}
+  - component: {fileID: 1305096384292037548}
   m_Layer: 2
   m_Name: LaunchZone
   m_TagString: Untagged
@@ -28079,9 +28080,42 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rigidbody: {fileID: 0}
-  Force: {x: 0, y: 32, z: 0}
+  force: {x: 0, y: 32, z: 0}
   isLocalForce: 1
   isImpulse: 1
+  activated: 1
+--- !u!114 &1305096384292037548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1318074410361847751}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d45637812f9b754099a267258063751, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  force:
+    InternalValue: {x: 0, y: 0, z: 0}
+    Change:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: VectorStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+  activated:
+    InternalValue: 0
+    Trigger:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: UnityEngine.Events.UnityEvent, UnityEngine.CoreModule, Version=0.0.0.0,
+        Culture=neutral, PublicKeyToken=null
+    Change:
+      m_PersistentCalls:
+        m_Calls: []
+      m_TypeName: DigitalStateChange, Assembly-CSharp, Version=0.0.0.0, Culture=neutral,
+        PublicKeyToken=null
+  launcher: {fileID: 0}
 --- !u!1 &2007625703914111173
 GameObject:
   m_ObjectHideFlags: 0

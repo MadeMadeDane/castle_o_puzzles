@@ -68,14 +68,14 @@ public class PlayerAnimator : NetworkedBehaviour {
         bool on_ground;
         bool is_hanging;
         if (IsOwner) {
-            velocity_mag = cc.velocity.magnitude;
+            velocity_mag = Vector3.ProjectOnPlane(cc.velocity, Physics.gravity).magnitude;
             on_ground = lastGroundState = pc.OnGround();
             is_hanging = lastHangState = pc.IsHanging();
         }
         else {
             on_ground = lastGroundState;
             is_hanging = lastHangState;
-            velocity_mag = netptransform.velocity.magnitude;
+            velocity_mag = Vector3.ProjectOnPlane(netptransform.velocity, Physics.gravity).magnitude;
             previous_position = transform.position;
         }
         // NOTE: This makes animations framerate dependent. We may want to move this into fixed update in the future.
@@ -100,6 +100,7 @@ public class PlayerAnimator : NetworkedBehaviour {
                 isRunning = true;
                 isWalking = false;
             }
+            else if (on_ground && !isWalking && !isRunning) isWalking = true;
 
             if (!on_ground) {
                 isJumping = true;
