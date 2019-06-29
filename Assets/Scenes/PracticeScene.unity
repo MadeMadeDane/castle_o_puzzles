@@ -1145,6 +1145,7 @@ MonoBehaviour:
     RegisteredScenes:
     - PracticeScene
     - SceneBuilder
+    - Workspace
     NetworkedPrefabs:
     - Prefab: {fileID: 3754669400956811389, guid: b5e540b85e600e24886da56547f2f5d8,
         type: 3}
