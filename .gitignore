@@ -39,3 +39,5 @@ sysinfo.txt
 
 #Mac Garbage
 .DS_Store
+/Assets/MLAPI/Lib/MLAPI-Editor.unitypackage.meta
+/Assets/MLAPI/Lib/MLAPI-Installer.unitypackage.meta

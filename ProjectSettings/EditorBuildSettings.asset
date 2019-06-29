@@ -29,4 +29,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/test/SceneLoading/TestSceneLoading1.unity
     guid: 024fb97c2187d4f48aca0d04c2ec2edc
+  - enabled: 1
+    path: Assets/MappingResources/PlayerVillage/ZoneSections/Windmill/Workspace.unity
+    guid: 2252390fb722435438bdd74129126092
   m_configObjects: {}
